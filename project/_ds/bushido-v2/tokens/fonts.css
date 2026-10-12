@@ -1,0 +1,12 @@
+/* Bushido webfonts — Roboto Condensed (headings/buttons), Inter (body), Roboto Mono (numbers/code). */
+/* Open Sans is used by some Figma layers (Modal description, a few generated/legacy sets). No local binary exists in the project or AI package, so it loads from Google Fonts. Never substitute it with Inter. */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@font-face{font-family:"Inter";src:url("../fonts/Inter-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Inter";src:url("../fonts/Inter-SemiBold.ttf") format("truetype");font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:"Inter";src:url("../fonts/Inter-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Condensed";src:url("../fonts/RobotoCondensed-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Condensed";src:url("../fonts/RobotoCondensed-Medium.ttf") format("truetype");font-weight:500;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Condensed";src:url("../fonts/RobotoCondensed-SemiBold.ttf") format("truetype");font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Condensed";src:url("../fonts/RobotoCondensed-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Mono";src:url("../fonts/RobotoMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Roboto Mono";src:url("../fonts/RobotoMono-Medium.ttf") format("truetype");font-weight:500;font-style:normal;font-display:swap;}

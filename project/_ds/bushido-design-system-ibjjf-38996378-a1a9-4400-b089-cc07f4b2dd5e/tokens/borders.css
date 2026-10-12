@@ -1,0 +1,19 @@
+/* Borders — verbatim from design-tokens/borders.css */
+:root{
+  --ib-border-width-none:0;/* @kind other */--ib-border-width-thin:1px;--ib-border-width-medium:2px;--ib-border-width-thick:4px;
+  --ib-border-radius-none:0;/* @kind radius */
+  /* menu-items, pagination, filters, fine details */
+  --ib-border-radius-small:4px;
+  /* default rounding — inputs, boxes, general UI */
+  --ib-border-radius-normal:6px;
+  /* buttons, cards, menus, tooltips, toolbar */
+  --ib-border-radius-medium:8px;
+  /* modal panels, toasts */
+  --ib-border-radius-large:12px;
+  /* hero cards, feature panels */
+  --ib-border-radius-x-large:16px;
+  --ib-border-radius-circle:50%;
+  /* tags, badges, pill buttons */
+  --ib-border-radius-pill:9999px;
+  --ib-border-color-default:var(--ib-neutral-100);--ib-border-color-strong:var(--ib-neutral-200);--ib-border-color-divider:var(--ib-neutral-200);
+}

@@ -1,0 +1,25 @@
+/* Elevation, motion, opacity, z-index, focus, overlay — verbatim from design-tokens/ */
+:root{
+  --ib-shadow-none:none;
+  /* Elevation 1 */ --ib-shadow-xs:0px 1px 2px rgba(0,0,0,0.3),0px 1px 3px 1px rgba(0,0,0,0.15);
+  /* Elevation 2 */ --ib-shadow-small:0px 1px 2px rgba(0,0,0,0.3),0px 2px 6px 2px rgba(0,0,0,0.15);
+  /* Elevation 3 */ --ib-shadow-medium:0px 4px 8px 3px rgba(0,0,0,0.15),0px 1px 3px rgba(0,0,0,0.3);
+  /* Elevation 4 */ --ib-shadow-large:0px 6px 10px 4px rgba(0,0,0,0.15),0px 2px 3px rgba(0,0,0,0.3);
+  /* Elevation 5 */ --ib-shadow-xl:0px 8px 12px 6px rgba(0,0,0,0.15),0px 4px 4px rgba(0,0,0,0.3);
+  --ib-shadow-inner:inset 0 2px 4px 0 rgba(0,0,0,0.06);
+  --ib-shadow-popup:var(--ib-shadow-medium);
+  --ib-transition-x-fast:50ms;/* @kind other */--ib-transition-fast:150ms;/* @kind other */--ib-transition-medium:250ms;/* @kind other */--ib-transition-slow:500ms;/* @kind other */--ib-transition-x-slow:1000ms;/* @kind other */
+  --ib-transition-duration-fast:var(--ib-transition-fast);/* @kind other */--ib-transition-duration-medium:var(--ib-transition-medium);/* @kind other */--ib-transition-duration-slow:var(--ib-transition-slow);/* @kind other */
+  --ib-transition-timing-ease:ease;/* @kind other */--ib-transition-timing-ease-in:ease-in;/* @kind other */--ib-transition-timing-ease-out:ease-out;/* @kind other */--ib-transition-timing-ease-in-out:ease-in-out;/* @kind other */
+  --ib-transition-timing-decelerate:cubic-bezier(0,0,0.2,1);/* @kind other */--ib-transition-timing-accelerate:cubic-bezier(0.4,0,1,1);/* @kind other */--ib-transition-timing-standard:cubic-bezier(0.4,0,0.2,1);/* @kind other */
+  --ib-animation-spin-duration:1s;/* @kind other */--ib-animation-shimmer-duration:1.5s;/* @kind other */--ib-animation-pulse-duration:2s;/* @kind other */
+  --ib-opacity-disabled:0.5;/* @kind other */--ib-opacity-hover:0.8;/* @kind other */--ib-opacity-placeholder:0.6;/* @kind other */--ib-opacity-backdrop:0.65;/* @kind other */--ib-opacity-loading-min:0.4;/* @kind other */--ib-opacity-loading-max:0.6;/* @kind other */--ib-opacity-secondary:0.7;/* @kind other */
+  --ib-z-index-dropdown:700;/* @kind other */--ib-z-index-backdrop:750;/* @kind other */--ib-z-index-sticky:800;/* @kind other */--ib-z-index-drawer:850;/* @kind other */--ib-z-index-dialog:900;/* @kind other */--ib-z-index-toast:950;/* @kind other */--ib-z-index-tooltip:1000;/* @kind other */
+  --ib-focus-ring-color:color-mix(in srgb,var(--ib-primary-500) 40%,transparent);--ib-focus-ring-width:2px;--ib-focus-ring-offset:2px;--ib-focus-ring-style:solid;/* @kind other */
+  --ib-focus-ring:var(--ib-focus-ring-width) var(--ib-focus-ring-style) var(--ib-focus-ring-color);
+  --ib-focus-ring-shadow:0 0 0 var(--ib-focus-ring-width) var(--ib-focus-ring-color);
+  --ib-focus-ring-color-danger:color-mix(in srgb,var(--ib-danger-500) 40%,transparent);
+  --ib-focus-ring-color-success:color-mix(in srgb,var(--ib-success-500) 40%,transparent);
+  --ib-overlay-background-color:rgba(0,0,0,0.65);--ib-overlay-backdrop-blur:6px;
+  --ib-panel-background-color:var(--ib-white);--ib-panel-border-color:var(--ib-neutral-100);--ib-panel-border-width:1px;
+}

@@ -1,0 +1,8 @@
+/* Spacing — verbatim from design-tokens/spacing.css */
+:root{
+  --ib-spacing-none:0;--ib-spacing-00:2px;--ib-spacing-01:4px;--ib-spacing-02:8px;--ib-spacing-03:12px;--ib-spacing-04:16px;--ib-spacing-05:20px;--ib-spacing-06:24px;--ib-spacing-07:32px;--ib-spacing-08:40px;--ib-spacing-09:48px;--ib-spacing-10:64px;--ib-spacing-11:72px;--ib-spacing-12:96px;--ib-spacing-13:128px;--ib-spacing-14:144px;
+  /* @deprecated padding aliases */
+  --ib-padding-4xs:1px;--ib-padding-3xs:2px;--ib-padding-2xs:var(--ib-spacing-01);--ib-padding-xs:var(--ib-spacing-02);--ib-padding-small:var(--ib-spacing-03);--ib-padding-medium:var(--ib-spacing-04);--ib-padding-large:var(--ib-spacing-06);--ib-padding-xl:var(--ib-spacing-07);--ib-padding-2xl:var(--ib-spacing-09);--ib-padding-3xl:var(--ib-spacing-10);
+  /* @deprecated gap aliases */
+  --ib-gap-4xs:1px;--ib-gap-3xs:2px;--ib-gap-2xs:var(--ib-spacing-01);--ib-gap-xs:var(--ib-spacing-02);--ib-gap-small:var(--ib-spacing-03);--ib-gap-medium:var(--ib-spacing-04);--ib-gap-large:var(--ib-spacing-06);--ib-gap-xl:var(--ib-spacing-07);--ib-gap-2xl:var(--ib-spacing-09);--ib-gap-3xl:var(--ib-spacing-10);
+}

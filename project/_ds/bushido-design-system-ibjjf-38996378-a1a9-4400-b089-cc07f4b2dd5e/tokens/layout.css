@@ -1,0 +1,8 @@
+/* Breakpoints & grid — verbatim from design-tokens/breakpoints.css */
+:root{
+  --ib-breakpoint-mobile:var(--ib-breakpoint-xs);/* @kind other */--ib-breakpoint-tablet:var(--ib-breakpoint-sm);/* @kind other */--ib-breakpoint-desktop:var(--ib-breakpoint-md);/* @kind other */--ib-breakpoint-widescreen:var(--ib-breakpoint-lg);/* @kind other */--ib-breakpoint-fullhd:var(--ib-breakpoint-xl);/* @kind other */--ib-breakpoint-quadhd:var(--ib-breakpoint-2xl);/* @kind other */--ib-breakpoint-4k:var(--ib-breakpoint-3xl);/* @kind other */
+  --ib-breakpoint-xs:320px;/* @kind other */--ib-breakpoint-sm:600px;/* @kind other */--ib-breakpoint-md:1024px;/* @kind other */--ib-breakpoint-lg:1440px;/* @kind other */--ib-breakpoint-xl:1920px;/* @kind other */--ib-breakpoint-2xl:2560px;/* @kind other */--ib-breakpoint-3xl:3200px;/* @kind other */
+  --ib-breakpoint-cols-xs:4;/* @kind other */--ib-breakpoint-cols-sm:8;/* @kind other */--ib-breakpoint-cols-md:12;/* @kind other */--ib-breakpoint-cols-lg:12;/* @kind other */--ib-breakpoint-cols-xl:12;/* @kind other */--ib-breakpoint-cols-2xl:12;/* @kind other */--ib-breakpoint-cols-3xl:12;/* @kind other */
+  --ib-breakpoint-margin-xs:20px;--ib-breakpoint-margin-sm:20px;--ib-breakpoint-margin-md:100px;--ib-breakpoint-margin-lg:100px;--ib-breakpoint-margin-xl:100px;--ib-breakpoint-margin-2xl:100px;--ib-breakpoint-margin-3xl:100px;
+  --ib-breakpoint-gutter-xs:16px;--ib-breakpoint-gutter-sm:16px;--ib-breakpoint-gutter-md:24px;--ib-breakpoint-gutter-lg:24px;--ib-breakpoint-gutter-xl:24px;--ib-breakpoint-gutter-2xl:24px;--ib-breakpoint-gutter-3xl:24px;
+}

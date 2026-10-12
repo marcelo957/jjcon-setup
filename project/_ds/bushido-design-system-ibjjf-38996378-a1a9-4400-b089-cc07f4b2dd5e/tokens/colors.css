@@ -1,0 +1,30 @@
+/* Colors — verbatim from bushido-ui/src/styles/design-tokens/colors.css */
+:root{
+  /* IBJJF Color Palette */
+  --ib-primary-500:#004581;--ib-primary-400:#336a9a;--ib-primary-300:#5482ab;--ib-primary-200:#8aa9c5;--ib-primary-100:#CCDAE6;--ib-primary-50:#E6EEF5;--ib-primary:var(--ib-primary-500);
+  --ib-complementary-500:#fcb30e;--ib-complementary-400:#fdc23e;--ib-complementary-300:#fdcc5e;--ib-complementary-200:#fedc90;--ib-complementary-100:#FEF0CF;--ib-complementary:var(--ib-complementary-500);
+  --ib-secondary-500:#0b2a53;--ib-secondary-400:#3c5575;--ib-secondary-300:#5c708c;--ib-secondary-200:#8f9db0;--ib-secondary-100:#CED4DD;--ib-secondary:var(--ib-secondary-500);
+  --ib-tertiary-500:#26abe9;--ib-tertiary-400:#51bced;--ib-tertiary-300:#6ec7f0;--ib-tertiary-200:#9bd8f5;--ib-tertiary-100:#D4EEFB;--ib-tertiary:var(--ib-tertiary-500);
+  /* CBJJ Color Palette */
+  --cbjj-primary-500:#154e3c;--cbjj-primary-400:#416a5d;--cbjj-primary-300:#608278;--cbjj-primary-200:#92a9a2;--cbjj-primary-100:#b6c5c0;--cbjj-primary:var(--cbjj-primary-500);
+  --cbjj-complementary-500:#fcb30e;--cbjj-complementary-400:#fdc23e;--cbjj-complementary-300:#fdcc5e;--cbjj-complementary-200:#fedc90;--cbjj-complementary-100:#FEF0CF;--cbjj-complementary:var(--ib-complementary-500);
+  --cbjj-secondary-500:#21cb49;--cbjj-secondary-400:#4dd56d;--cbjj-secondary-300:#6adc85;--cbjj-secondary-200:#99e7ab;--cbjj-secondary-100:#baefc7;--cbjj-secondary:var(--cbjj-secondary-500);
+  /* Alerts */
+  --ib-success-500:#00a51a;--ib-success-400:#33b748;--ib-success-300:#54c366;--ib-success-200:#8ad696;--ib-success-100:#CCEDD1;--ib-success-50:#D9EFE0;--ib-success:var(--ib-success-500);
+  --ib-warning-500:#f38f39;--ib-warning-400:#f5a561;--ib-warning-300:#f7b47a;--ib-warning-200:#f9cba4;--ib-warning-100:#FDE9D7;--ib-warning-50:#FDEFE3;--ib-warning:var(--ib-warning-500);
+  --ib-danger-500:#ce0000;--ib-danger-400:#d83333;--ib-danger-300:#de5454;--ib-danger-200:#e88a8a;--ib-danger-100:#F5CCCC;--ib-danger-50:#FCE8E6;--ib-danger:var(--ib-danger-500);
+  --ib-info-500:#26abe9;--ib-info-400:#51bced;--ib-info-300:#6ec7f0;--ib-info-200:#9bd8f5;--ib-info-100:#D4EEFB;--ib-info-50:#D4EEFB;--ib-info:var(--ib-info-500);
+  /* Neutral */
+  --ib-neutral-500:#333333;--ib-neutral-450:#4D4D4D;--ib-neutral-400:#555555;--ib-neutral-300:#777777;--ib-neutral-200:#999999;--ib-neutral-100:#CCCCCC;--ib-neutral-50:#E9EBF8;--ib-neutral:var(--ib-neutral-500);
+  /* Grey */
+  --ib-grey-500:#333333;--ib-grey-400:#5c5c5c;--ib-grey-300:#767676;--ib-grey-200:#a1a1a1;--ib-grey-100:#c0c0c0;--ib-grey-50:#ebebeb;--ib-grey:var(--ib-grey-500);
+  /* Surface */
+  --ib-surface-500:#eeeeee;--ib-surface-400:#f1f1f1;--ib-surface-300:#f4f4f4;--ib-surface-200:#f7f7f7;--ib-surface-100:#fafafa;--ib-surface-50:#fdfdfd;--ib-surface:var(--ib-surface-500);
+  --ib-white:#ffffff;--ib-black:#000000;
+  /* IBJJF business colors */
+  --male-gender:#0084a6;--female-gender:#db5461;
+  --white-belt:#e0e0e0;--grey-belt:#6d6d6d;--yellow-belt:#bdc23d;--orange-belt:#c27d3d;--green-belt:#369b40;--blue-belt:#3d9ac2;--purple-belt:#673dc2;--brown-belt:#733e3e;--black-belt:#2d2c2c;--red-belt:#d03d3d;
+  --gold-medal:#E3C000;--gold-medal-pending:#E3C000;--gold-medal-delivered:#E3C000;
+  --silver-medal:#C0C0C0;--silver-medal-pending:#C0C0C0;--silver-medal-delivered:#C0C0C0;
+  --bronze-medal:#CD7F32;--bronze-medal-pending:#CD7F32;--bronze-medal-delivered:#CD7F32;
+}

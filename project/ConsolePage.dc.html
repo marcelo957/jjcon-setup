@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0}
+a{color:var(--ib-primary-500);text-decoration:none}
+a:hover{color:var(--ib-primary-400);text-decoration:underline}
+</style>
+</helmet>
+<div class="ib-app-shell" style="font-family:Inter,'Open Sans',sans-serif;color:var(--ib-neutral-500)">
+<aside class="ib-sidebar" data-ib-sidebar="{{ sbState }}">
+<div class="ib-sidebar__header" style="font-family:'Roboto Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ib-primary-500);white-space:nowrap;justify-content:space-between">
+<span style="display:flex;align-items:center;gap:8px"><i class="fa-solid fa-warehouse"></i><span>Set up</span></span>
+<button onClick="{{ toggleSidebar }}" style="border:0;background:transparent;color:var(--ib-neutral-200);cursor:pointer;padding:4px" aria-label="Collapse sidebar"><i class="fa-solid fa-angle-double-left"></i></button>
+</div>
+<div class="ib-sidebar__content">
+<div class="ib-sidebar-group">
+<div class="ib-sidebar-group__label">Jiu-Jitsu Con 2027</div>
+<nav class="ib-sidebar-menu">
+<button class="ib-sidebar-item {{ cls.overview }}" onClick="{{ goOverview }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-gauge-high"></i></span><span style="flex:1;text-align:left">Overview</span></button>
+<button class="ib-sidebar-item {{ cls.sectors }}" onClick="{{ goSectors }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-vector-square"></i></span><span style="flex:1;text-align:left">Sectors</span><span style="font-family:'Roboto Mono',monospace;font-size:12px;opacity:.75">16</span></button>
+<button class="ib-sidebar-item {{ cls.truss }}" onClick="{{ goTruss }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-grip-lines"></i></span><span style="flex:1;text-align:left">Truss</span></button>
+<button class="ib-sidebar-item {{ cls.truck }}" onClick="{{ goTruck }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-truck"></i></span><span style="flex:1;text-align:left">Truck unload</span></button>
+<button class="ib-sidebar-item {{ cls.staff }}" onClick="{{ goStaff }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-users"></i></span><span style="flex:1;text-align:left">Staff</span></button>
+<button class="ib-sidebar-item {{ cls.goodie }}" onClick="{{ goGoodie }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-bag-shopping"></i></span><span style="flex:1;text-align:left">Goodie bag montagem</span></button>
+<button class="ib-sidebar-item {{ cls.sponsors }}" onClick="{{ goSponsors }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-handshake"></i></span><span style="flex:1;text-align:left">Sponsors</span></button>
+</nav>
+</div>
+<div class="ib-sidebar-group">
+<div class="ib-sidebar-group__label">On site</div>
+<nav class="ib-sidebar-menu">
+<button class="ib-sidebar-item {{ cls.crew }}" onClick="{{ goCrew }}"><span class="ib-sidebar-item__prefix"><i class="fa-solid fa-mobile-screen-button"></i></span><span style="flex:1;text-align:left">Crew phone view</span></button>
+</nav>
+</div>
+</div>
+<div class="ib-sidebar__footer">
+<div style="font-size:12px;color:var(--ib-neutral-200);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Viewing as</div>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Select" size="small" value="{{ role }}" options="{{ roleOptions }}" on-change="{{ setRole }}" hint-size="100%,36px"></x-import>
+</div>
+</aside>
+<div class="ib-app-shell__main">
+<nav class="ib-navbar">
+<span class="ib-navbar__brand">IBJJF</span>
+<div class="ib-navbar__center" style="overflow:hidden">
+<a href="#" class="ib-navbar__link ib-navbar__link--active" style="white-space:nowrap">Set up</a>
+<a href="#" class="ib-navbar__link" style="white-space:nowrap">Registrations</a>
+<a href="#" class="ib-navbar__link" style="white-space:nowrap">Brackets</a>
+<a href="#" class="ib-navbar__link" style="white-space:nowrap">Results</a>
+</div>
+<div class="ib-navbar__end" style="font-size:14px;white-space:nowrap">
+<i class="fa-solid fa-bell"></i>
+<span>A. Moreira</span>
+</div>
+</nav>
+<main style="flex:1;min-width:0;padding:20px;overflow-y:auto">
+<sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Overview">
+<header class="ib-page-header">
+<div>
+<div style="font-size:12px;color:var(--ib-neutral-200);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Trade show set up</div>
+<h1 class="ib-page-header__title">Jiu-Jitsu Con 2027</h1>
+<div class="ib-page-header__sub">Las Vegas Convention Center, West Hall · Load-in 24–26 Aug · Doors open 27 Aug, 09:00</div>
+<div style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--ib-primary-500);margin-top:6px">Load-in day 2 · today 25 Aug</div>
+</div>
+<div class="ib-page-header__actions">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" variant="neutral" outlined="{{ true }}" left-icon="print" hint-size="150px,40px">Print set up book</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" left-icon="plus" hint-size="140px,40px">New sector</x-import>
+</div>
+</header>
+<div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;background:var(--ib-white);border-radius:6px;box-shadow:var(--ib-shadow-small);padding:16px 20px;margin-bottom:16px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.ProgressRing" value="{{ overall.pct }}" size="{{ 84 }}" thickness="{{ 8 }}" hint-size="84px,84px"></x-import>
+<div style="min-width:180px">
+<div style="font-family:'Roboto Condensed',sans-serif;font-size:22px;line-height:30px">Set up verified</div>
+<div style="font-family:'Roboto Mono',monospace;font-size:14px;color:var(--ib-neutral-300)">{{ overall.detail }}</div>
+</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-left:auto">
+<sc-for list="{{ overall.counts }}" as="c" hint-placeholder-count="4">
+<div style="min-width:120px;padding:8px 14px;border-left:4px solid var(--ib-grey-50);background:var(--ib-surface-100);border-radius:4px">
+<div style="font-family:'Roboto Mono',monospace;font-size:24px;line-height:30px;color:var(--ib-neutral-500)">{{ c.n }}</div>
+<div style="font-size:12px;color:var(--ib-neutral-300);text-transform:uppercase;letter-spacing:.05em">{{ c.label }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="font-family:'Roboto Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ib-neutral-200);margin:20px 0 8px">Progress by branch</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+<sc-for list="{{ branches }}" as="b" hint-placeholder-count="6">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Card" on-click="{{ b.go }}" hint-size="100%,124px">
+<div style="display:flex;align-items:center;gap:16px;padding:4px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.ProgressRing" value="{{ b.pct }}" size="{{ 60 }}" thickness="{{ 6 }}" hint-size="60px,60px"></x-import>
+<div style="min-width:0;flex:1">
+<div style="display:flex;align-items:center;gap:8px;font-family:'Roboto Condensed',sans-serif;font-size:18px;line-height:26px"><i class="fa-solid fa-{{ b.icon }}" style="color:var(--ib-primary-300);font-size:14px"></i><span>{{ b.name }}</span></div>
+<div style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--ib-neutral-300);margin-top:2px">{{ b.detail }}</div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:6px">{{ b.next }}</div>
+</div>
+<i class="fa-solid fa-angle-right" style="color:var(--ib-neutral-200)"></i>
+</div>
+</x-import>
+</sc-for>
+</div>
+<sc-if value="{{ showAttention }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:24px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Panel" title="Needs attention before doors open" hint-size="100%,240px">
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ attention }}" as="a" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--ib-grey-50);flex-wrap:wrap">
+<i class="fa-solid fa-circle-exclamation" style="color:var(--ib-warning-500)"></i>
+<div style="min-width:200px;flex:1">
+<div style="font-weight:500">{{ a.name }}</div>
+<div style="font-size:13px;color:var(--ib-neutral-300)">{{ a.reason }}</div>
+</div>
+<span style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--ib-neutral-300)">{{ a.win }}</span>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" size="small" variant="neutral" outlined="{{ true }}" on-click="{{ a.go }}" hint-size="80px,32px">Open</x-import>
+</div>
+</sc-for>
+</div>
+</x-import>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ isBranch }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Branch list">
+<header class="ib-page-header">
+<div>
+<div class="ib-breadcrumb" style="margin-bottom:4px"><a href="#" onClick="{{ goOverview }}">Jiu-Jitsu Con 2027</a><span class="ib-breadcrumb__sep">/</span><span style="color:var(--ib-neutral-500)">{{ branchName }}</span></div>
+<h1 class="ib-page-header__title">{{ branchName }}</h1>
+<div class="ib-page-header__sub">{{ branchSub }}</div>
+</div>
+<div class="ib-page-header__actions">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" variant="neutral" outlined="{{ true }}" left-icon="download" hint-size="120px,40px">Export list</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" left-icon="plus" hint-size="130px,40px">Add sector</x-import>
+</div>
+</header>
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.StatusFiltersBar" hint-size="auto,38px">
+<sc-for list="{{ statusFilters }}" as="f" hint-placeholder-count="5">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.StatusFilterButton" label="{{ f.label }}" count="{{ f.n }}" color="{{ f.color }}" active="{{ f.active }}" on-click="{{ f.go }}" hint-size="120px,38px"></x-import>
+</sc-for>
+</x-import>
+<sc-if value="{{ isSectorsBranch }}" hint-placeholder-val="{{ true }}">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.ButtonGroup" hint-size="300px,36px">
+<sc-for list="{{ typeFilters }}" as="t" hint-placeholder-count="3">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" size="small" variant="primary" outlined="{{ t.outlined }}" on-click="{{ t.go }}" hint-size="100px,36px">{{ t.label }}</x-import>
+</sc-for>
+</x-import>
+</sc-if>
+</div>
+<div style="background:var(--ib-white);border-radius:6px;box-shadow:var(--ib-shadow-small);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--ib-grey-50)">
+<span style="font-family:'Roboto Condensed',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.5px;color:var(--ib-neutral-500)">{{ tableTitle }}</span>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.SearchInput" size="small" placeholder="Search sectors" value="{{ q }}" on-change="{{ setQuery }}" on-clear="{{ clearQuery }}" hint-size="220px,36px"></x-import>
+</div>
+<div style="overflow-x:auto">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Table" columns="{{ columns }}" rows="{{ rows }}" on-row-click="{{ openRow }}" hint-size="100%,440px"></x-import>
+</div>
+</div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:8px">Crew marks a sector installed on the phone. Verification stays with the ops manager.</div>
+</div>
+</sc-if>
+<sc-if value="{{ isItem }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Sector detail">
+<header class="ib-page-header">
+<div style="min-width:0">
+<div class="ib-breadcrumb" style="margin-bottom:4px"><a href="#" onClick="{{ goOverview }}">Jiu-Jitsu Con 2027</a><span class="ib-breadcrumb__sep">/</span><a href="#" onClick="{{ backToBranch }}">{{ branchName }}</a><span class="ib-breadcrumb__sep">/</span><span style="color:var(--ib-neutral-500)">{{ item.name }}</span></div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<h1 class="ib-page-header__title">{{ item.name }}</h1>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Tag" size="small" variant="{{ typeVariant }}" hint-size="76px,22px">{{ item.type }}</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Tag" size="small" variant="{{ statusVariant }}" hint-size="90px,22px">{{ statusLabel }}</x-import>
+</div>
+<div class="ib-page-header__sub">{{ item.loc }} · {{ item.dims }}</div>
+</div>
+<div class="ib-page-header__actions">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" variant="neutral" outlined="{{ true }}" left-icon="arrow-left" on-click="{{ backToBranch }}" hint-size="100px,40px">Back</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" variant="{{ primaryAction.variant }}" left-icon="{{ primaryAction.icon }}" disabled="{{ primaryAction.disabled }}" on-click="{{ primaryAction.go }}" hint-size="190px,40px">{{ primaryAction.label }}</x-import>
+</div>
+</header>
+<div style="display:flex;flex-wrap:wrap;background:var(--ib-white);border:1px solid var(--ib-border-color-default,#CCCCCC);border-radius:6px;overflow:hidden;margin-bottom:16px">
+<sc-for list="{{ meta }}" as="m" hint-placeholder-count="5">
+<div style="flex:1 1 160px;padding:12px 16px;border-right:1px solid var(--ib-grey-50)">
+<div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ib-neutral-200)">{{ m.label }}</div>
+<div style="font-family:'Roboto Mono',monospace;font-size:15px;margin-top:4px;color:var(--ib-neutral-500)">{{ m.value }}</div>
+</div>
+</sc-for>
+</div>
+<div style="background:var(--ib-white);border-radius:6px;box-shadow:var(--ib-shadow-small);padding:0 16px 16px">
+<div style="overflow-x:auto">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.TabGroup" tabs="{{ tabs }}" value="{{ tab }}" size="small" on-change="{{ setTab }}" hint-size="100%,48px"></x-import>
+</div>
+<sc-if value="{{ tabIs.floorplan }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.IconButton" icon="minus" variant="neutral" outlined="{{ true }}" size="small" label="Zoom out" on-click="{{ zoomOut }}" hint-size="36px,36px"></x-import>
+<span style="font-family:'Roboto Mono',monospace;min-width:56px;text-align:center">{{ zoomLabel }}</span>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.IconButton" icon="plus" variant="neutral" outlined="{{ true }}" size="small" label="Zoom in" on-click="{{ zoomIn }}" hint-size="36px,36px"></x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" size="small" variant="neutral" ghost="{{ true }}" on-click="{{ zoomReset }}" hint-size="70px,36px">Reset</x-import>
+<span style="font-size:13px;color:var(--ib-neutral-300);margin-left:auto">Revision 3 · uploaded 18 Aug by R. Tanaka</span>
+</div>
+<div style="height:460px;overflow:auto;background:var(--ib-surface-500);border:1px solid var(--ib-border-color-default,#CCCCCC);border-radius:6px;padding:16px">
+<div style="{{ planStyle }}">
+<div style="width:900px;height:600px">
+<image-slot id="plan-{{ item.id }}" shape="rect" placeholder="Drop this sector's floorplan"></image-slot>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ tabIs.materials }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px">
+<div style="overflow-x:auto">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Table" columns="{{ matColumns }}" rows="{{ matRows }}" hint-size="100%,240px"></x-import>
+</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px">
+<span style="font-family:'Roboto Mono',monospace;font-size:14px">{{ matSummary }}</span>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Button" size="small" variant="neutral" outlined="{{ true }}" left-icon="pen" hint-size="130px,36px">Edit material list</x-import>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ tabIs.instructions }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px;max-width:760px">
+<ol style="padding-left:22px;margin:0;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:24px">
+<sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+<li>{{ st }}</li>
+</sc-for>
+</ol>
+<div style="margin-top:16px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Message" variant="info" title="Info | Installation" hint-size="100%,80px">Questions on site go to the set up desk at Room 112, radio channel 3. Do not change the footprint without the ops manager.</x-import>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ tabIs.photos }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+<div>
+<div style="height:200px"><image-slot id="ph1-{{ item.id }}" shape="rounded" radius="6" placeholder="Empty footprint, before build"></image-slot></div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:6px">Before build</div>
+</div>
+<div>
+<div style="height:200px"><image-slot id="ph2-{{ item.id }}" shape="rounded" radius="6" placeholder="Sector built, wide shot"></image-slot></div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:6px">Built · wide shot</div>
+</div>
+<div>
+<div style="height:200px"><image-slot id="ph3-{{ item.id }}" shape="rounded" radius="6" placeholder="Signage and branding detail"></image-slot></div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:6px">Signage detail</div>
+</div>
+</div>
+<div style="font-size:13px;color:var(--ib-neutral-300);margin-top:12px">Crew uploads these from the phone. A verified sector keeps its photos as the record for next year.</div>
+</div>
+</sc-if>
+<sc-if value="{{ tabIs.power }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Panel" title="Power" hint-size="100%,200px">
+<sc-for list="{{ powerRows }}" as="p" hint-placeholder-count="4">
+<div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--ib-grey-50)">
+<span style="font-size:14px">{{ p.label }}</span>
+<span style="font-family:'Roboto Mono',monospace;font-size:14px">{{ p.value }}</span>
+</div>
+</sc-for>
+</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Panel" title="Network" hint-size="100%,200px">
+<sc-for list="{{ netRows }}" as="n" hint-placeholder-count="4">
+<div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--ib-grey-50)">
+<span style="font-size:14px">{{ n.label }}</span>
+<span style="font-family:'Roboto Mono',monospace;font-size:14px">{{ n.value }}</span>
+</div>
+</sc-for>
+</x-import>
+</div>
+</sc-if>
+<sc-if value="{{ tabIs.subs }}" hint-placeholder-val="{{ true }}">
+<div style="padding-top:16px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ subs }}" as="sb" hint-placeholder-count="3">
+<div style="border:1px solid var(--ib-border-color-default,#CCCCCC);border-radius:6px;padding:12px 16px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<span style="font-family:'Roboto Condensed',sans-serif;font-size:18px;flex:1">{{ sb.name }}</span>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Tag" size="small" variant="{{ sb.color }}" hint-size="90px,22px">{{ sb.label }}</x-import>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+<sc-for list="{{ sb.kids }}" as="k" hint-placeholder-count="0">
+<span style="font-size:13px;padding:4px 10px;border-radius:999px;background:var(--ib-surface-300);color:var(--ib-neutral-400)">{{ k }}</span>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ isCrew }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Crew phone">
+<header class="ib-page-header">
+<div>
+<div style="font-size:12px;color:var(--ib-neutral-200);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">On site</div>
+<h1 class="ib-page-header__title">Crew phone view</h1>
+<div class="ib-page-header__sub">What the setup crew carries on the floor. Read the plan, check materials, mark a sector installed. Verification stays with the ops manager.</div>
+</div>
+</header>
+<div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" title="Load-in · Day 2" hint-size="390px,844px">
+<div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 24px;background:#f2f2f7;min-height:100%">
+<div style="background:var(--ib-primary-500);color:#fff;border-radius:12px;padding:14px 16px">
+<div style="font-family:'Roboto Condensed',sans-serif;font-size:18px;text-transform:uppercase;letter-spacing:.5px">Jiu-Jitsu Con 2027</div>
+<div style="font-family:'Roboto Mono',monospace;font-size:13px;opacity:.85;margin-top:2px">{{ crewSummary }}</div>
+</div>
+<sc-for list="{{ crewItems }}" as="c" hint-placeholder-count="4">
+<div style="background:#fff;border-radius:12px;padding:14px 16px;box-shadow:var(--ib-shadow-small)">
+<div style="display:flex;align-items:flex-start;gap:8px">
+<div style="flex:1;min-width:0">
+<div style="font-family:'Roboto Condensed',sans-serif;font-size:19px;line-height:26px">{{ c.name }}</div>
+<div style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--ib-neutral-300);margin-top:2px">{{ c.win }}</div>
+<div style="font-size:13px;color:var(--ib-neutral-300)">{{ c.loc }}</div>
+</div>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Tag" size="small" variant="{{ c.color }}" hint-size="90px,22px">{{ c.label }}</x-import>
+</div>
+<div style="display:flex;align-items:center;gap:12px;margin-top:12px;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--ib-neutral-400)">
+<span><i class="fa-solid fa-boxes-stacked" style="color:var(--ib-neutral-200)"></i> {{ c.mat }}</span>
+<span><i class="fa-solid fa-users" style="color:var(--ib-neutral-200)"></i> {{ c.staff }}</span>
+</div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button onClick="{{ c.toggle }}" style="flex:1;min-height:48px;border:0;border-radius:8px;background:var(--ib-primary-500);color:#fff;font-family:'Roboto Condensed',sans-serif;font-size:15px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer" style-active="background:#00365f">{{ c.action }}</button>
+<button onClick="{{ c.open }}" style="min-height:48px;min-width:48px;border:1px solid var(--ib-border-color-default,#CCCCCC);border-radius:8px;background:#fff;color:var(--ib-primary-500);cursor:pointer" aria-label="Open floorplan"><i class="fa-solid fa-map"></i></button>
+</div>
+</div>
+</sc-for>
+<div style="font-size:12px;color:var(--ib-neutral-300);text-align:center;padding:4px 12px">Installed sectors go to the ops manager for verification.</div>
+</div>
+</x-import>
+<div style="flex:1;min-width:260px;max-width:420px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Panel" title="What changes on the phone" hint-size="100%,260px">
+<div style="display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+<div><strong>Today only.</strong> The list is filtered to the sectors with an install window today, in time order.</div>
+<div><strong>Two taps maximum.</strong> Mark installed, or open the plan. Everything else is read-only on the floor.</div>
+<div><strong>No verification.</strong> The crew's last step is Installed. The ops manager verifies from the console.</div>
+</div>
+</x-import>
+<x-import component-from-global-scope="BushidoDesignSystemIBJJF_389963.Message" variant="warning" title="Offline" hint-size="100%,90px">Plans and material lists stay cached on the device. Status changes sync when the hall network comes back.</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Ops manager&quot;,&quot;Setup crew&quot;],&quot;default&quot;:&quot;Ops manager&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Overview&quot;,&quot;Sectors&quot;,&quot;Crew phone&quot;],&quot;default&quot;:&quot;Overview&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;showAttention&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: this.props.startScreen === 'Sectors' ? 'branch' : (this.props.startScreen === 'Crew phone' ? 'crew' : 'overview'),
+    branch: 'sectors',
+    itemId: 'podium',
+    tab: 'floorplan',
+    status: 'all',
+    type: 'all',
+    q: '',
+    collapsed: false,
+    role: this.props.defaultRole === 'Setup crew' ? 'crew' : 'manager',
+    zoom: 1,
+    over: {}
+  };
+
+  branchMeta = [
+    { id: 'sectors', name: 'Sectors', icon: 'vector-square' },
+    { id: 'truss', name: 'Truss', icon: 'grip-lines' },
+    { id: 'truck', name: 'Truck unload', icon: 'truck' },
+    { id: 'staff', name: 'Staff', icon: 'users' },
+    { id: 'goodie', name: 'Goodie bag montagem', icon: 'bag-shopping' },
+    { id: 'sponsors', name: 'Sponsors', icon: 'handshake' }
+  ];
+
+  items = [
+    { id:'podium', name:'Podium', branch:'sectors', type:'Type 1', loc:'West Hall · Mat area A', day:'24 Aug', win:'08:00–12:00', staff:4, mat:[18,18], status:'verified', dims:'12 × 6 m',
+      subs:[{name:'World Master',status:'verified'},{name:'Jiu-Jitsu Con',status:'verified'},{name:'Jiu-Jitsu Con Kids',status:'installed'}] },
+    { id:'tshirt', name:'TShirt | Goodie bag Booth', branch:'sectors', type:'Type 1', loc:'West Hall · Concourse B', day:'24 Aug', win:'09:00–14:00', staff:6, mat:[22,26], status:'in_progress', dims:'10 × 4 m' },
+    { id:'entrance', name:'Entrance', branch:'sectors', type:'Type 1', loc:'West Hall · Main doors', day:'24 Aug', win:'07:00–11:00', staff:5, mat:[14,14], status:'installed', dims:'18 × 5 m',
+      subs:[{name:'Athletes',status:'installed',kids:['Master | Adult','Kids','BlackBelts']},{name:'Spectators',status:'installed'}] },
+    { id:'seminar', name:'Seminar Area', branch:'sectors', type:'Type 1', loc:'West Hall · Room 204', day:'25 Aug', win:'08:00–12:00', staff:3, mat:[9,16], status:'in_progress', dims:'14 × 9 m' },
+    { id:'store', name:'IBJJF Store', branch:'sectors', type:'Type 1', loc:'West Hall · Concourse A', day:'25 Aug', win:'10:00–16:00', staff:4, mat:[31,34], status:'in_progress', dims:'12 × 8 m' },
+    { id:'customer', name:'Customer Service', branch:'sectors', type:'Type 1', loc:'West Hall · Entrance left', day:'25 Aug', win:'08:00–10:00', staff:2, mat:[8,8], status:'verified', dims:'6 × 3 m' },
+    { id:'crown', name:'Crown Booth', branch:'sectors', type:'Type 1', loc:'West Hall · Center aisle', day:'25 Aug', win:'12:00–17:00', staff:3, mat:[0,12], status:'not_started', dims:'8 × 8 m' },
+    { id:'champ', name:'Championship', branch:'sectors', type:'Type 1', loc:'West Hall · Mats 1–12', day:'25 Aug', win:'08:00–18:00', staff:12, mat:[44,60], status:'in_progress', dims:'60 × 40 m',
+      subs:[{name:'World Master',status:'in_progress'},{name:'Jiu-Jitsu Con',status:'not_started'}] },
+    { id:'plaza', name:'Plaza', branch:'sectors', type:'Type 1', loc:'West Hall · North plaza', day:'26 Aug', win:'09:00–13:00', staff:4, mat:[0,20], status:'not_started', dims:'20 × 20 m' },
+    { id:'rooms', name:'Rooms & Halls', branch:'sectors', type:'Type 1', loc:'West Hall · Rooms 201–208', day:'25 Aug', win:'09:00–15:00', staff:3, mat:[12,18], status:'in_progress', dims:'8 rooms',
+      subs:[{name:'Nosso',status:'in_progress',kids:['Rules Course','Offices']},{name:'3rd Partie',status:'not_started',kids:['Summit']}] },
+    { id:'carpet', name:'Carpet', branch:'sectors', type:'Type 2', loc:'Full floor', day:'24 Aug', win:'06:00–10:00', staff:8, mat:[40,40], status:'verified', dims:'4 200 m²' },
+    { id:'power', name:'Power Drops', branch:'sectors', type:'Type 2', loc:'Full floor', day:'24 Aug', win:'06:00–12:00', staff:4, mat:[26,30], status:'installed', dims:'30 drops',
+      subs:[{name:'Extension Cord',status:'installed'}] },
+    { id:'internet', name:'Internet', branch:'sectors', type:'Type 2', loc:'Full floor', day:'24 Aug', win:'10:00–14:00', staff:2, mat:[11,12], status:'installed', dims:'12 drops' },
+    { id:'bleacher', name:'Bleacher', branch:'sectors', type:'Type 2', loc:'West Hall · East side', day:'25 Aug', win:'07:00–12:00', staff:6, mat:[0,8], status:'not_started', dims:'1 800 seats' },
+    { id:'pipe', name:'Pipe and Drape', branch:'sectors', type:'Type 2', loc:'Perimeter', day:'24 Aug', win:'12:00–18:00', staff:5, mat:[18,24], status:'in_progress', dims:'240 m run' },
+    { id:'led', name:'LED', branch:'sectors', type:'Type 2', loc:'Mat area + stage', day:'26 Aug', win:'08:00–14:00', staff:3, mat:[6,10], status:'in_progress', dims:'6 × 3 m wall' },
+    { id:'truss-signage', name:'Signage floorplan', branch:'truss', type:'Floorplan', loc:'Above mats 1–12', day:'24 Aug', win:'06:00–10:00', staff:6, mat:[12,12], status:'verified', dims:'12 hang points' },
+    { id:'truss-images', name:'Images', branch:'truss', type:'Images', loc:'Above mats 1–12', day:'24 Aug', win:'10:00–13:00', staff:4, mat:[8,14], status:'in_progress', dims:'14 banners' },
+    { id:'truss-inst', name:'Set up instructions', branch:'truss', type:'Instructions', loc:'Rigging crew', day:'24 Aug', win:'06:00–06:30', staff:2, mat:[4,4], status:'installed', dims:'—' },
+    { id:'truck-plan', name:'Unload floorplan', branch:'truck', type:'Floorplan', loc:'Dock 4–7', day:'24 Aug', win:'05:00–09:00', staff:10, mat:[6,6], status:'verified', dims:'4 trucks' },
+    { id:'staff-plan', name:'Plan check-in | check-out', branch:'staff', type:'Plan', loc:'Staff room 112', day:'24 Aug', win:'05:30–06:00', staff:2, mat:[3,4], status:'in_progress', dims:'3 shifts' },
+    { id:'staff-list', name:'Staff list', branch:'staff', type:'List', loc:'Staff room 112', day:'24 Aug', win:'05:30–06:00', staff:1, mat:[2,2], status:'verified', dims:'86 people' },
+    { id:'goodie-plan', name:'Floorplan tables | stations', branch:'goodie', type:'Floorplan', loc:'Room 208', day:'26 Aug', win:'08:00–10:00', staff:3, mat:[5,9], status:'in_progress', dims:'14 stations' },
+    { id:'goodie-mat', name:'Material list', branch:'goodie', type:'Material list', loc:'Room 208', day:'26 Aug', win:'08:00–10:00', staff:2, mat:[0,6], status:'not_started', dims:'6 000 bags' },
+    { id:'goodie-inst', name:'Instructions', branch:'goodie', type:'Instructions', loc:'Room 208', day:'26 Aug', win:'08:00–08:30', staff:1, mat:[2,3], status:'in_progress', dims:'—' },
+    { id:'sponsor-inst', name:'Instructions for sponsors', branch:'sponsors', type:'Instructions', loc:'Sent to 9 sponsors', day:'20 Aug', win:'sent', staff:1, mat:[9,9], status:'verified', dims:'9 sponsors' }
+  ];
+
+  statusMeta = {
+    not_started: { label: 'Not started', color: 'muted' },
+    in_progress: { label: 'In progress', color: 'warning' },
+    installed: { label: 'Installed', color: 'info' },
+    verified: { label: 'Verified', color: 'success' }
+  };
+
+  statusOf = (it) => this.state.over[it.id] || it.status;
+  go = (patch) => this.setState(patch);
+  toggleSidebar = () => this.setState(s => ({ collapsed: !s.collapsed }));
+  goOverview = () => this.setState({ screen: 'overview' });
+  goCrew = () => this.setState({ screen: 'crew' });
+  goBranch = (b) => this.setState({ screen: 'branch', branch: b, status: 'all', type: 'all' });
+  goSectors = () => this.goBranch('sectors');
+  goTruss = () => this.goBranch('truss');
+  goTruck = () => this.goBranch('truck');
+  goStaff = () => this.goBranch('staff');
+  goGoodie = () => this.goBranch('goodie');
+  goSponsors = () => this.goBranch('sponsors');
+  openItem = (it) => this.setState({ screen: 'item', branch: it.branch, itemId: it.id, tab: 'floorplan', zoom: 1 });
+  setRole = (v) => this.setState({ role: v });
+  setStatus = (v) => this.setState({ status: v });
+  setType = (v) => this.setState({ type: v });
+  setTab = (v) => this.setState({ tab: v });
+  zoomIn = () => this.setState(s => ({ zoom: Math.min(2.5, +(s.zoom + 0.25).toFixed(2)) }));
+  zoomOut = () => this.setState(s => ({ zoom: Math.max(0.5, +(s.zoom - 0.25).toFixed(2)) }));
+  zoomReset = () => this.setState({ zoom: 1 });
+  mark = (id, st) => this.setState(s => ({ over: Object.assign({}, s.over, { [id]: st }) }));
+
+  matsFor(it) {
+    const groups = [
+      ['Tables / chairs / stanchion', '6 ft table · folding chair · rope stanchion', 0.4],
+      ['Computer network', 'Switch · patch run · terminal', 0.25],
+      ['Sign banner', 'Printed banner · hanging kit', 0.2],
+      ['Power drops + extension cord', '20A drop · 50 ft cord', 0.15]
+    ];
+    const total = it.mat[1];
+    let left = it.mat[0], assigned = 0;
+    return groups.map((g, i) => {
+      const plan = i === groups.length - 1 ? Math.max(0, total - assigned) : Math.max(1, Math.round(total * g[2]));
+      assigned += plan;
+      const site = Math.max(0, Math.min(plan, left));
+      left -= site;
+      return { id: it.id + '-m' + i, item: g[0], spec: g[1], plan: plan, site: site, short: plan - site };
+    });
+  }
+
+  stepsFor(it) {
+    return [
+      'Walk the ' + it.name + ' footprint and confirm it against the floorplan before any material leaves the truck.',
+      'Check the material list in against the delivery note. Report shortfalls to the ops manager the same hour.',
+      'Build to the marks: structure first, then furniture, then dressing and sign banners.',
+      'Pull power and network last and cable-tray every run that crosses a walkway.',
+      'Photograph the finished sector and mark it installed. The ops manager verifies.'
+    ];
+  }
+
+  renderVals() {
+    const NS = window.BushidoDesignSystemIBJJF_389963 || {};
+    const Tag = NS.Tag;
+    const s = this.state;
+    const SM = this.statusMeta;
+    const tag = (variant, label, key) => Tag ? React.createElement(Tag, { size: 'small', variant: variant, key: key }, label) : label;
+    const statusTag = (it) => { const st = this.statusOf(it); return tag(SM[st].color, SM[st].label, it.id + '-st'); };
+    const active = s.screen === 'branch' ? s.branch : (s.screen === 'item' ? s.branch : null);
+    const cls = { overview: s.screen === 'overview' ? 'ib-sidebar-item--active' : '', crew: s.screen === 'crew' ? 'ib-sidebar-item--active' : '' };
+    this.branchMeta.forEach(b => { cls[b.id] = active === b.id ? 'ib-sidebar-item--active' : ''; });
+
+    const pct = (list) => list.length ? Math.round(100 * list.filter(i => this.statusOf(i) === 'verified').length / list.length) : 0;
+    const all = this.items;
+    const branches = this.branchMeta.map(b => {
+      const list = all.filter(i => i.branch === b.id);
+      const v = list.filter(i => this.statusOf(i) === 'verified').length;
+      const open = list.filter(i => this.statusOf(i) === 'not_started').length;
+      return Object.assign({}, b, {
+        pct: pct(list),
+        detail: v + ' of ' + list.length + ' verified',
+        next: open ? open + ' not started yet' : 'All started',
+        go: () => this.goBranch(b.id)
+      });
+    });
+    const counts = ['not_started', 'in_progress', 'installed', 'verified'].map(k => ({ label: SM[k].label, n: all.filter(i => this.statusOf(i) === k).length }));
+
+    const attention = all.filter(i => this.statusOf(i) === 'not_started' || i.mat[0] < i.mat[1])
+      .slice(0, 5)
+      .map(i => ({
+        name: i.name,
+        reason: this.statusOf(i) === 'not_started' ? 'Not started · ' + i.staff + ' crew assigned, ' + i.mat[1] + ' items to install' : (i.mat[1] - i.mat[0]) + ' material items still missing on site',
+        win: i.day + ' · ' + i.win,
+        go: () => this.openItem(i)
+      }));
+
+    const bm = this.branchMeta.find(b => b.id === s.branch) || this.branchMeta[0];
+    const inBranch = all.filter(i => i.branch === s.branch);
+    const bSub = bm.id === 'sectors'
+      ? inBranch.length + ' sectors · Type 1 zones and Type 2 infrastructure · West Hall'
+      : inBranch.length + ' items · ' + inBranch.filter(i => this.statusOf(i) === 'verified').length + ' verified';
+    const statusFilters = [{ k: 'all', label: 'All', color: 'primary' }].concat(
+      ['not_started', 'in_progress', 'installed', 'verified'].map(k => ({ k: k, label: SM[k].label, color: SM[k].color }))
+    ).map(f => ({
+      label: f.label, color: f.color, active: s.status === f.k,
+      n: f.k === 'all' ? inBranch.length : inBranch.filter(i => this.statusOf(i) === f.k).length,
+      go: () => this.setStatus(f.k)
+    }));
+    const typeFilters = [['all', 'All types'], ['Type 1', 'Type 1 · Zones'], ['Type 2', 'Type 2 · Infra']].map(t => ({
+      label: t[1], outlined: s.type !== t[0], go: () => this.setType(t[0])
+    }));
+    const needle = (s.q || '').trim().toLowerCase();
+    const rows = inBranch
+      .filter(i => s.status === 'all' || this.statusOf(i) === s.status)
+      .filter(i => s.type === 'all' || i.type === s.type)
+      .filter(i => !needle || (i.name + ' ' + i.loc + ' ' + i.type).toLowerCase().indexOf(needle) > -1);
+    const columns = [
+      { key: 'name', label: bm.id === 'sectors' ? 'Sector' : 'Item', sortable: true, render: (r) => React.createElement('div', { key: r.id + '-n' },
+          React.createElement('div', { style: { fontWeight: 500 } }, r.name),
+          React.createElement('div', { style: { fontSize: '12px', color: 'var(--ib-neutral-300)' } }, r.subs ? r.subs.length + ' sub-sectors · ' + r.dims : r.dims)) },
+      { key: 'type', label: bm.id === 'sectors' ? 'Type' : 'Kind', render: (r) => tag(r.type === 'Type 2' ? 'secondary' : 'primary', r.type, r.id + '-t') },
+      { key: 'loc', label: 'Location' },
+      { key: 'win', label: 'Install window', type: 'numeric', render: (r) => r.day + ' · ' + r.win },
+      { key: 'staff', label: 'Crew', type: 'numeric', align: 'right' },
+      { key: 'mat', label: 'Materials', type: 'numeric', align: 'right', render: (r) => r.mat[0] + ' / ' + r.mat[1] },
+      { key: 'status', label: 'Status', render: (r) => statusTag(r) }
+    ];
+
+    const crewList = all.filter(i => i.day === '25 Aug').slice().sort((a, b) => a.win.localeCompare(b.win));
+    const item = all.find(i => i.id === s.itemId) || all[0];
+    const iSt = this.statusOf(item);
+    const matRows = this.matsFor(item);
+    const drops = Math.max(2, Math.round(item.mat[1] / 5));
+    const tabs = [
+      { value: 'floorplan', label: 'Floorplan' },
+      { value: 'materials', label: 'Material list' },
+      { value: 'instructions', label: 'Instructions' },
+      { value: 'photos', label: 'Photos' },
+      { value: 'power', label: 'Power & network' }
+    ].concat(item.subs ? [{ value: 'subs', label: 'Sub-sectors' }] : []);
+    const tabIs = { floorplan: false, materials: false, instructions: false, photos: false, power: false, subs: false };
+    tabIs[tabs.some(t => t.value === s.tab) ? s.tab : 'floorplan'] = true;
+    const isCrewRole = s.role === 'crew';
+    const primaryAction = isCrewRole
+      ? { label: iSt === 'installed' || iSt === 'verified' ? 'Installed · awaiting ops' : 'Mark installed', icon: 'circle-check', variant: 'primary', disabled: iSt === 'installed' || iSt === 'verified', go: () => this.mark(item.id, 'installed') }
+      : { label: iSt === 'verified' ? 'Verified' : 'Verify sector', icon: 'clipboard-check', variant: 'success', disabled: iSt === 'verified' || iSt === 'not_started', go: () => this.mark(item.id, 'verified') };
+
+    return {
+      item: item,
+      typeVariant: item.type === 'Type 2' ? 'secondary' : 'primary',
+      statusVariant: SM[iSt].color,
+      statusLabel: SM[iSt].label,
+      backToBranch: () => this.goBranch(item.branch),
+      primaryAction: primaryAction,
+      meta: [
+        { label: 'Install window', value: item.day + ' · ' + item.win },
+        { label: 'Dimensions', value: item.dims },
+        { label: 'Crew assigned', value: item.staff + ' people' },
+        { label: 'Materials on site', value: item.mat[0] + ' / ' + item.mat[1] },
+        { label: 'Status', value: SM[iSt].label }
+      ],
+      tabs: tabs,
+      tab: tabIs.subs ? 'subs' : (tabs.find(t => tabIs[t.value]) || tabs[0]).value,
+      tabIs: tabIs,
+      setTab: this.setTab,
+      zoomIn: this.zoomIn, zoomOut: this.zoomOut, zoomReset: this.zoomReset,
+      zoomLabel: Math.round(s.zoom * 100) + '%',
+      planStyle: 'transform:scale(' + s.zoom + ');transform-origin:top left;width:900px;height:600px',
+      matColumns: [
+        { key: 'item', label: 'Item', sortable: true },
+        { key: 'spec', label: 'Spec' },
+        { key: 'plan', label: 'Planned', type: 'numeric', align: 'right' },
+        { key: 'site', label: 'On site', type: 'numeric', align: 'right' },
+        { key: 'short', label: 'Short', type: 'numeric', align: 'right', render: (r) => r.short ? tag('danger', String(r.short), r.id + '-sh') : '0' }
+      ],
+      matRows: matRows,
+      matSummary: item.mat[0] + ' of ' + item.mat[1] + ' items on site · ' + (item.mat[1] - item.mat[0]) + ' short',
+      steps: this.stepsFor(item),
+      powerRows: [
+        { label: 'Power drops', value: drops + ' × 20A' },
+        { label: 'Extension cords', value: (drops * 2) + ' × 50 ft' },
+        { label: 'Distro box', value: drops > 6 ? '2 boxes' : '1 box' },
+        { label: 'Ordered from venue', value: 'Yes · 12 Aug' }
+      ],
+      netRows: [
+        { label: 'Wired drops', value: String(Math.max(1, Math.round(drops / 2))) },
+        { label: 'Switches', value: drops > 6 ? '2 × 24 port' : '1 × 8 port' },
+        { label: 'SSID', value: 'IBJJF-OPS' },
+        { label: 'Terminals', value: String(Math.max(1, Math.round(item.staff / 2))) }
+      ],
+      subs: (item.subs || []).map((sb, i) => ({
+        name: sb.name, kids: sb.kids || [], color: SM[sb.status].color, label: SM[sb.status].label, key: item.id + '-s' + i
+      })),
+      crewSummary: crewList.filter(i => this.statusOf(i) === 'installed' || this.statusOf(i) === 'verified').length + ' of ' + crewList.length + ' done · 25 Aug',
+      crewItems: crewList.map(i => {
+        const st = this.statusOf(i);
+        return {
+          name: i.name, win: i.day + ' · ' + i.win, loc: i.loc,
+          mat: i.mat[0] + '/' + i.mat[1], staff: i.staff + ' crew',
+          color: SM[st].color, label: SM[st].label,
+          action: st === 'installed' || st === 'verified' ? 'Awaiting ops' : 'Mark installed',
+          toggle: () => this.mark(i.id, st === 'installed' || st === 'verified' ? 'in_progress' : 'installed'),
+          open: () => this.openItem(i)
+        };
+      }),
+      sbState: s.collapsed ? 'collapsed' : 'expanded',
+      cls: cls,
+      role: s.role,
+      roleOptions: [{ value: 'manager', label: 'Ops manager' }, { value: 'crew', label: 'Setup crew' }],
+      setRole: this.setRole,
+      toggleSidebar: this.toggleSidebar,
+      goOverview: this.goOverview, goSectors: this.goSectors, goTruss: this.goTruss, goTruck: this.goTruck,
+      goStaff: this.goStaff, goGoodie: this.goGoodie, goSponsors: this.goSponsors, goCrew: this.goCrew,
+      isOverview: s.screen === 'overview',
+      isBranch: s.screen === 'branch',
+      isItem: s.screen === 'item',
+      isCrew: s.screen === 'crew',
+      showAttention: this.props.showAttention !== false,
+      branches: branches,
+      overall: { pct: pct(all), detail: all.filter(i => this.statusOf(i) === 'verified').length + ' of ' + all.length + ' items signed off', counts: counts },
+      attention: attention,
+      statusTag: statusTag,
+      tagOf: tag,
+      branchName: bm.name,
+      branchSub: bSub,
+      isSectorsBranch: s.branch === 'sectors',
+      statusFilters: statusFilters,
+      typeFilters: typeFilters,
+      tableTitle: bm.name + ' · ' + rows.length + ' items',
+      q: s.q || '',
+      setQuery: (e) => this.setState({ q: e && e.target ? e.target.value : '' }),
+      clearQuery: () => this.setState({ q: '' }),
+      columns: columns,
+      rows: rows,
+      openRow: (r) => { const it = all.find(i => i.id === r.id); if (it) this.openItem(it); }
+    };
+  }
+}
+</script>
+</body>
+</html>

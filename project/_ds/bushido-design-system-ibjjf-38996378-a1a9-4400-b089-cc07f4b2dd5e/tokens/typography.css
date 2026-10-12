@@ -1,0 +1,59 @@
+/* Typography — verbatim from design-tokens/typography.scss */
+:root{
+  --ib-font-family-first:"Roboto Condensed","Roboto",sans-serif;
+  --ib-font-family-second:"Inter","Open Sans",sans-serif;
+  --ib-font-family-structural:"Roboto Condensed","Roboto",sans-serif;
+  --ib-font-family-content:"Inter","Open Sans",sans-serif;
+  --ib-font-family-numeric:"Roboto Mono","Roboto",sans-serif;
+  --ib-font-family-technical:"Roboto Mono","Roboto",sans-serif;
+  --ib-font-weight-light:300;/* @kind font */--ib-font-weight-regular:400;/* @kind font */--ib-font-weight-normal:400;/* @kind font */--ib-font-weight-medium:500;/* @kind font */--ib-font-weight-semibold:600;/* @kind font */--ib-font-weight-bold:700;/* @kind font */
+  --ib-font-size-10:8px;--ib-font-size-50:10px;--ib-font-size-150:11px;--ib-font-size-100:12px;--ib-font-size-200:14px;--ib-font-size-300:16px;--ib-font-size-400:18px;--ib-font-size-500:20px;--ib-font-size-600:24px;--ib-font-size-700:32px;--ib-font-size-800:40px;--ib-font-size-900:48px;
+  --ib-font-line-height-100:16px;--ib-font-line-height-200:16px;--ib-font-line-height-300:20px;--ib-font-line-height-400:24px;--ib-font-line-height-500:26px;--ib-font-line-height-600:30px;--ib-font-line-height-700:36px;--ib-font-line-height-800:44px;--ib-font-line-height-900:56px;
+  /* H1 — page title */
+  --ib-font-typo-h1-size:48px;--ib-font-typo-h1-line-height:56px;--ib-font-typo-h1-weight:var(--ib-font-weight-medium);--ib-font-typo-h1-font-family:var(--ib-font-family-structural);--ib-font-typo-h1-spacing:-0.5px;
+  /* H2 — section title */
+  --ib-font-typo-h2-size:36px;--ib-font-typo-h2-line-height:44px;--ib-font-typo-h2-weight:var(--ib-font-weight-medium);--ib-font-typo-h2-font-family:var(--ib-font-family-structural);--ib-font-typo-h2-spacing:-0.25px;
+  /* H3 — subsection title */
+  --ib-font-typo-h3-size:28px;--ib-font-typo-h3-line-height:36px;--ib-font-typo-h3-weight:var(--ib-font-weight-regular);--ib-font-typo-h3-font-family:var(--ib-font-family-structural);--ib-font-typo-h3-spacing:0px;
+  /* H4 — card title */
+  --ib-font-typo-h4-size:22px;--ib-font-typo-h4-line-height:30px;--ib-font-typo-h4-weight:var(--ib-font-weight-regular);--ib-font-typo-h4-font-family:var(--ib-font-family-structural);--ib-font-typo-h4-spacing:0px;
+  /* H5 — widget header */
+  --ib-font-typo-h5-size:18px;--ib-font-typo-h5-line-height:26px;--ib-font-typo-h5-weight:var(--ib-font-weight-regular);--ib-font-typo-h5-font-family:var(--ib-font-family-structural);--ib-font-typo-h5-spacing:0px;
+  /* H6 — small header */
+  --ib-font-typo-h6-size:16px;--ib-font-typo-h6-line-height:24px;--ib-font-typo-h6-weight:var(--ib-font-weight-regular);--ib-font-typo-h6-font-family:var(--ib-font-family-structural);--ib-font-typo-h6-spacing:0px;
+  --ib-font-typo-subtitle1-size:16px;--ib-font-typo-subtitle1-line-height:24px;--ib-font-typo-subtitle1-weight:var(--ib-font-weight-regular);--ib-font-typo-subtitle1-font-family:var(--ib-font-family-structural);--ib-font-typo-subtitle1-spacing:0px;
+  --ib-font-typo-subtitle2-size:14px;--ib-font-typo-subtitle2-line-height:20px;--ib-font-typo-subtitle2-weight:var(--ib-font-weight-regular);--ib-font-typo-subtitle2-font-family:var(--ib-font-family-structural);--ib-font-typo-subtitle2-spacing:0px;
+  --ib-font-typo-body-large-size:16px;--ib-font-typo-body-large-line-height:24px;--ib-font-typo-body-large-weight:var(--ib-font-weight-normal);--ib-font-typo-body-large-font-family:var(--ib-font-family-content);--ib-font-typo-body-large-spacing:0px;
+  --ib-font-typo-body-default-size:14px;--ib-font-typo-body-default-line-height:24px;--ib-font-typo-body-default-weight:var(--ib-font-weight-normal);--ib-font-typo-body-default-font-family:var(--ib-font-family-content);--ib-font-typo-body-default-spacing:0px;
+  --ib-font-typo-body-small-size:12px;--ib-font-typo-body-small-line-height:16px;--ib-font-typo-body-small-weight:var(--ib-font-weight-normal);--ib-font-typo-body-small-font-family:var(--ib-font-family-content);--ib-font-typo-body-small-spacing:0px;
+  --ib-font-typo-button-size:14px;--ib-font-typo-button-line-height:20px;--ib-font-typo-button-weight:var(--ib-font-weight-medium);--ib-font-typo-button-font-family:var(--ib-font-family-structural);--ib-font-typo-button-spacing:0.5px;
+  --ib-font-typo-input-label-size:11px;--ib-font-typo-input-label-line-height:16px;--ib-font-typo-input-label-weight:var(--ib-font-weight-regular);--ib-font-typo-input-label-font-family:var(--ib-font-family-content);--ib-font-typo-input-label-spacing:0.25px;
+  --ib-font-typo-caption-size:11px;--ib-font-typo-caption-line-height:16px;--ib-font-typo-caption-weight:var(--ib-font-weight-regular);--ib-font-typo-caption-font-family:var(--ib-font-family-content);--ib-font-typo-caption-spacing:0.25px;
+  --ib-font-typo-overline-size:11px;--ib-font-typo-overline-line-height:16px;--ib-font-typo-overline-weight:var(--ib-font-weight-regular);--ib-font-typo-overline-font-family:var(--ib-font-family-content);--ib-font-typo-overline-spacing:1px;
+  --ib-font-typo-numeric-size:14px;--ib-font-typo-numeric-line-height:24px;--ib-font-typo-numeric-weight:var(--ib-font-weight-regular);--ib-font-typo-numeric-font-family:var(--ib-font-family-numeric);--ib-font-typo-numeric-spacing:0px;
+  --ib-font-typo-numeric-small-size:12px;--ib-font-typo-numeric-small-line-height:16px;--ib-font-typo-numeric-small-weight:var(--ib-font-weight-regular);--ib-font-typo-numeric-small-font-family:var(--ib-font-family-numeric);--ib-font-typo-numeric-small-spacing:0px;
+  --ib-font-typo-numeric-table-size:14px;--ib-font-typo-numeric-table-line-height:20px;--ib-font-typo-numeric-table-weight:var(--ib-font-weight-regular);--ib-font-typo-numeric-table-font-family:var(--ib-font-family-numeric);--ib-font-typo-numeric-table-spacing:0px;
+  --ib-font-typo-code-size:12px;--ib-font-typo-code-line-height:18px;--ib-font-typo-code-weight:var(--ib-font-weight-regular);--ib-font-typo-code-font-family:var(--ib-font-family-technical);--ib-font-typo-code-spacing:0px;
+  --ib-font-typo-log-size:12px;--ib-font-typo-log-line-height:16px;--ib-font-typo-log-weight:var(--ib-font-weight-regular);--ib-font-typo-log-font-family:var(--ib-font-family-technical);--ib-font-typo-log-spacing:0px;
+  /* deprecated aliases */
+  --ib-font-family-title:var(--ib-font-family-first);--ib-font-family-description:var(--ib-font-family-second);--ib-font-family-heading:var(--ib-font-family-first);--ib-font-family-subtitle:var(--ib-font-family-second);--ib-font-family-body:var(--ib-font-family-second);--ib-font-family-button:var(--ib-font-family-first);
+}
+.typo-h1{font-size:var(--ib-font-typo-h1-size);line-height:var(--ib-font-typo-h1-line-height);font-weight:var(--ib-font-typo-h1-weight);font-family:var(--ib-font-typo-h1-font-family);letter-spacing:var(--ib-font-typo-h1-spacing)}
+.typo-h2{font-size:var(--ib-font-typo-h2-size);line-height:var(--ib-font-typo-h2-line-height);font-weight:var(--ib-font-typo-h2-weight);font-family:var(--ib-font-typo-h2-font-family);letter-spacing:var(--ib-font-typo-h2-spacing)}
+.typo-h3{font-size:var(--ib-font-typo-h3-size);line-height:var(--ib-font-typo-h3-line-height);font-weight:var(--ib-font-typo-h3-weight);font-family:var(--ib-font-typo-h3-font-family);letter-spacing:var(--ib-font-typo-h3-spacing)}
+.typo-h4{font-size:var(--ib-font-typo-h4-size);line-height:var(--ib-font-typo-h4-line-height);font-weight:var(--ib-font-typo-h4-weight);font-family:var(--ib-font-typo-h4-font-family);letter-spacing:var(--ib-font-typo-h4-spacing)}
+.typo-h5{font-size:var(--ib-font-typo-h5-size);line-height:var(--ib-font-typo-h5-line-height);font-weight:var(--ib-font-typo-h5-weight);font-family:var(--ib-font-typo-h5-font-family);letter-spacing:var(--ib-font-typo-h5-spacing)}
+.typo-h6{font-size:var(--ib-font-typo-h6-size);line-height:var(--ib-font-typo-h6-line-height);font-weight:var(--ib-font-typo-h6-weight);font-family:var(--ib-font-typo-h6-font-family);letter-spacing:var(--ib-font-typo-h6-spacing)}
+.typo-subtitle1{font-size:var(--ib-font-typo-subtitle1-size);line-height:var(--ib-font-typo-subtitle1-line-height);font-weight:var(--ib-font-typo-subtitle1-weight);font-family:var(--ib-font-typo-subtitle1-font-family);letter-spacing:var(--ib-font-typo-subtitle1-spacing)}
+.typo-subtitle2{font-size:var(--ib-font-typo-subtitle2-size);line-height:var(--ib-font-typo-subtitle2-line-height);font-weight:var(--ib-font-typo-subtitle2-weight);font-family:var(--ib-font-typo-subtitle2-font-family);letter-spacing:var(--ib-font-typo-subtitle2-spacing)}
+.typo-body-large{font-size:var(--ib-font-typo-body-large-size);line-height:var(--ib-font-typo-body-large-line-height);font-weight:var(--ib-font-typo-body-large-weight);font-family:var(--ib-font-typo-body-large-font-family);letter-spacing:var(--ib-font-typo-body-large-spacing)}
+.typo-body-default{font-size:var(--ib-font-typo-body-default-size);line-height:var(--ib-font-typo-body-default-line-height);font-weight:var(--ib-font-typo-body-default-weight);font-family:var(--ib-font-typo-body-default-font-family);letter-spacing:var(--ib-font-typo-body-default-spacing)}
+.typo-body-small{font-size:var(--ib-font-typo-body-small-size);line-height:var(--ib-font-typo-body-small-line-height);font-weight:var(--ib-font-typo-body-small-weight);font-family:var(--ib-font-typo-body-small-font-family);letter-spacing:var(--ib-font-typo-body-small-spacing)}
+.typo-button{font-size:var(--ib-font-typo-button-size);line-height:var(--ib-font-typo-button-line-height);font-weight:var(--ib-font-typo-button-weight);font-family:var(--ib-font-typo-button-font-family);letter-spacing:var(--ib-font-typo-button-spacing)}
+.typo-caption{font-size:var(--ib-font-typo-caption-size);line-height:var(--ib-font-typo-caption-line-height);font-weight:var(--ib-font-typo-caption-weight);font-family:var(--ib-font-typo-caption-font-family);letter-spacing:var(--ib-font-typo-caption-spacing)}
+.typo-overline{font-size:var(--ib-font-typo-overline-size);line-height:var(--ib-font-typo-overline-line-height);font-weight:var(--ib-font-typo-overline-weight);font-family:var(--ib-font-typo-overline-font-family);letter-spacing:var(--ib-font-typo-overline-spacing);text-transform:uppercase}
+.typo-numeric{font-size:var(--ib-font-typo-numeric-size);line-height:var(--ib-font-typo-numeric-line-height);font-weight:var(--ib-font-typo-numeric-weight);font-family:var(--ib-font-typo-numeric-font-family)}
+.typo-numeric-table{font-size:var(--ib-font-typo-numeric-table-size);line-height:var(--ib-font-typo-numeric-table-line-height);font-weight:var(--ib-font-typo-numeric-table-weight);font-family:var(--ib-font-typo-numeric-table-font-family)}
+.typo-numeric-small{font-size:var(--ib-font-typo-numeric-small-size);line-height:var(--ib-font-typo-numeric-small-line-height);font-weight:var(--ib-font-typo-numeric-small-weight);font-family:var(--ib-font-typo-numeric-small-font-family)}
+.typo-code{font-size:var(--ib-font-typo-code-size);line-height:var(--ib-font-typo-code-line-height);font-weight:var(--ib-font-typo-code-weight);font-family:var(--ib-font-typo-code-font-family)}
+.typo-log{font-size:var(--ib-font-typo-log-size);line-height:var(--ib-font-typo-log-line-height);font-weight:var(--ib-font-typo-log-weight);font-family:var(--ib-font-typo-log-font-family)}

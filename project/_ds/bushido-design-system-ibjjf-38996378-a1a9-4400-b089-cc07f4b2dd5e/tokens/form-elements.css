@@ -1,0 +1,33 @@
+/* Form elements — verbatim from design-tokens/form-elements.css */
+:root{
+  --ib-input-height-small:32px;--ib-input-height-medium:42px;--ib-input-height-large:48px;
+  --ib-input-background-color:var(--ib-white);--ib-input-background-color-disabled:var(--ib-surface-200);--ib-input-background-color-readonly:var(--ib-surface-100);
+  --ib-input-border-color:var(--ib-neutral-100);--ib-input-border-color-hover:var(--ib-primary-500);--ib-input-border-color-focus:var(--ib-primary-500);--ib-input-border-color-disabled:var(--ib-neutral-100);
+  --ib-input-border-width:1px;/* @kind other */--ib-input-border-radius:var(--ib-border-radius-normal);
+  --ib-input-color:var(--ib-neutral-500);--ib-input-color-disabled:var(--ib-neutral-200);--ib-input-placeholder-color:var(--ib-neutral-200);
+  --ib-input-focus-ring-color:color-mix(in srgb,var(--ib-primary-500) 20%,transparent);--ib-input-focus-ring-width:2px;/* @kind other */--ib-input-focus-ring-shadow:0 0 0 var(--ib-input-focus-ring-width) var(--ib-input-focus-ring-color);
+  --ib-input-label-font-size:var(--ib-font-size-200);--ib-input-label-font-weight:var(--ib-font-weight-semibold);/* @kind other */
+  --ib-input-default-color:var(--ib-primary-500);--ib-input-help-text-font-size:var(--ib-font-size-100);--ib-input-default-hint-color:var(--ib-primary-500);
+  --ib-button-border-radius:var(--ib-border-radius-medium);
+  --ib-button-padding-small:8px 16px;--ib-button-padding-normal:12px 32px;--ib-button-padding-medium:16px 40px;--ib-button-padding-large:20px 50px;
+  --ib-button-font-size-small:var(--ib-font-size-100);--ib-button-font-size-normal:var(--ib-font-typo-button-size);--ib-button-font-size-medium:var(--ib-font-size-300);--ib-button-font-size-large:var(--ib-font-size-400);
+  --ib-button-gap:var(--ib-spacing-02);--ib-button-group-gap:var(--ib-spacing-02);
+  --ib-toggle-size-small:16px;--ib-toggle-size-normal:20px;--ib-toggle-size-medium:24px;--ib-toggle-size-large:30px;
+  --ib-toggle-icon-size-small:10px;--ib-toggle-icon-size-normal:14px;--ib-toggle-icon-size-medium:16px;--ib-toggle-icon-size-large:20px;
+  --ib-radio-dot-size-small:8px;--ib-radio-dot-size-normal:10px;--ib-radio-dot-size-medium:12px;--ib-radio-dot-size-large:14px;
+  --ib-switch-track-width-small:28px;--ib-switch-track-width-normal:36px;--ib-switch-track-width-medium:44px;--ib-switch-track-width-large:52px;
+  --ib-switch-track-height-small:16px;--ib-switch-track-height-normal:20px;--ib-switch-track-height-medium:24px;--ib-switch-track-height-large:28px;
+  --ib-switch-thumb-size-small:12px;--ib-switch-thumb-size-normal:16px;--ib-switch-thumb-size-medium:20px;--ib-switch-thumb-size-large:22px;
+  --ib-toggle-label-font-size-small:var(--ib-font-size-100,0.75rem);--ib-toggle-label-font-size-normal:var(--ib-font-size-200,0.875rem);--ib-toggle-label-font-size-medium:0.9375rem;--ib-toggle-label-font-size-large:var(--ib-font-size-300,1rem);
+  --ib-button-group-divider-darkening:20%;/* @kind other */
+  --ib-disabled-element-border-color:var(--ib-neutral-100);
+  --ib-listbox-padding:var(--ib-spacing-01);
+  --ib-listbox-item-padding:var(--ib-spacing-02) var(--ib-spacing-03);--ib-listbox-item-gap:var(--ib-spacing-02);--ib-listbox-item-border-radius:var(--ib-border-radius-small);
+  --ib-listbox-item-text-color:var(--ib-neutral-700,#374151);--ib-listbox-item-bg:transparent;--ib-listbox-item-hover-bg:var(--ib-neutral-100,#f3f4f6);--ib-listbox-item-hover-text:var(--ib-neutral-900,#111827);
+  --ib-listbox-item-active-bg:var(--ib-primary-100,#e0e7ff);--ib-listbox-item-active-text:var(--ib-primary-700,#3730a3);--ib-listbox-item-disabled-text:var(--ib-neutral-300,#d1d5db);--ib-listbox-item-disabled-bg:transparent;
+  --ib-listbox-group-label-padding:var(--ib-spacing-01) var(--ib-spacing-03);--ib-listbox-group-label-font-size:var(--ib-font-size-xs,0.75rem);--ib-listbox-group-label-font-weight:var(--ib-font-weight-semibold);
+  --ib-listbox-group-label-color:var(--ib-neutral-400,#9ca3af);--ib-listbox-group-label-text-transform:uppercase;/* @kind other */--ib-listbox-group-label-letter-spacing:0.05em;/* @kind other */
+  --ib-listbox-group-divider-color:var(--ib-neutral-200,#e5e7eb);--ib-listbox-group-divider-margin:var(--ib-spacing-01,4px);
+  --ib-tooltip-background-color:linear-gradient(180deg,var(--ib-white) 0%,var(--ib-neutral-100) 50%);--ib-tooltip-border-color:var(--ib-neutral-100);--ib-tooltip-border-radius:var(--ib-border-radius-pill);
+  --ib-tooltip-padding:0.25rem 0.5rem;--ib-tooltip-font-size:var(--ib-font-size-100);--ib-tooltip-arrow-size:8px;--ib-tooltip-shadow:0px 4px 8px 0px rgba(0,0,0,0.15);
+}

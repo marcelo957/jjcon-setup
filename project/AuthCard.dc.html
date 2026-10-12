@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="{{ wrapStyle }}">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="font:var(--ib-text-overline);letter-spacing:1px;text-transform:uppercase;color:var(--text-secondary)">IBJJF</span>
+<span style="font:var(--ib-text-h5);color:var(--brand-primary)">JJCON SetUp</span>
+</div>
+<sc-if value="{{ hasIcon }}" hint-placeholder-val="{{ false }}">
+<span style="width:56px;height:56px;border-radius:50%;background:var(--feedback-info-background);color:var(--brand-primary);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="JJ.Icon" fa="{{ a.icon }}" size="{{ 24 }}" hint-size="24px,24px"></x-import></span>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<sc-if value="{{ hasEyebrow }}" hint-placeholder-val="{{ false }}"><span style="font:var(--ib-text-overline);letter-spacing:1px;text-transform:uppercase;color:var(--brand-primary)">{{ a.eyebrow }}</span></sc-if>
+<h1 style="font:var(--ib-text-h4);margin:0;color:var(--text-primary);text-wrap:pretty">{{ a.title }}</h1>
+<p style="font:var(--ib-text-body-default);margin:0;color:var(--text-secondary);text-wrap:pretty">{{ a.sub }}</p>
+</div>
+<sc-if value="{{ alertDanger }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;background:var(--feedback-danger-background);border:1px solid var(--feedback-danger-text);color:var(--text-primary);font:var(--ib-text-body-small)">
+<x-import component-from-global-scope="JJ.Icon" fa="{{ alertIcon }}" size="{{ 16 }}" css="color:var(--feedback-danger-text);margin-top:2px" hint-size="16px,16px"></x-import><span style="flex:1;min-width:0;text-wrap:pretty">{{ alertText }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ alertNeutral }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;background:var(--color-neutral-surface-100);border:1px solid var(--border-default);color:var(--text-primary);font:var(--ib-text-body-small)">
+<x-import component-from-global-scope="JJ.Icon" fa="{{ alertIcon }}" size="{{ 16 }}" css="color:var(--text-secondary);margin-top:2px" hint-size="16px,16px"></x-import><span style="flex:1;min-width:0;text-wrap:pretty"><strong style="display:block;font:var(--ib-text-subtitle-2);margin-bottom:2px">{{ alertTitle }}</strong>{{ alertText }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ hasFields }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="2">
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:var(--ib-text-subtitle-2);color:var(--text-primary)">{{ f.label }}</span>
+<input type="{{ f.type }}" defaultValue="{{ f.value }}" placeholder="{{ f.placeholder }}" readOnly="{{ f.locked }}" autoComplete="{{ f.auto }}" style="{{ f.style }}">
+<sc-if value="{{ f.hasHint }}" hint-placeholder-val="{{ false }}"><span style="font:var(--ib-text-body-small);color:var(--text-secondary)">{{ f.hint }}</span></sc-if>
+</label>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ hasKeep }}" hint-placeholder-val="{{ false }}">
+<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;min-height:24px">
+<input type="checkbox" defaultChecked="{{ true }}" style="width:20px;height:20px;margin:1px 0 0;flex:0 0 auto">
+<span style="font:var(--ib-text-body-default);color:var(--text-primary)">Keep me signed in on this device<span style="display:block;font:var(--ib-text-body-small);color:var(--text-secondary)">For 30 days. Untick on a shared laptop.</span></span>
+</label>
+</sc-if>
+<sc-if value="{{ hasPrimary }}" hint-placeholder-val="{{ true }}">
+<a href="{{ a.buttonHref }}" style="{{ btnPrimary }}" style-hover="background:var(--action-primary-hover);color:var(--color-neutral-white);text-decoration:none">{{ a.button }}</a>
+</sc-if>
+<sc-if value="{{ hasSecondary }}" hint-placeholder-val="{{ false }}">
+<a href="{{ a.buttonHref }}" style="{{ btnSecondary }}" style-hover="border-color:var(--brand-primary);color:var(--brand-primary);text-decoration:none">{{ a.button }}</a>
+</sc-if>
+<sc-if value="{{ hasLink }}" hint-placeholder-val="{{ false }}">
+<a href="{{ a.linkHref }}" style="align-self:center;display:flex;align-items:center;min-height:44px;font:var(--ib-text-button-default);color:var(--brand-primary)">{{ a.link }}</a>
+</sc-if>
+<sc-if value="{{ hasNote }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;padding-top:14px;border-top:1px solid var(--border-subtle);font:var(--ib-text-body-small);color:var(--text-secondary);text-wrap:pretty">{{ a.note }}</p>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:620},&quot;a&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.a || {};
+    const phone = !!a.phone, h = phone ? 48 : 44;
+    const al = a.alert || {};
+    const inp = (f) => `width:100%;box-sizing:border-box;min-height:${h}px;padding:0 14px;border-radius:8px;font:var(--ib-text-body-default);font-size:16px;color:var(--text-primary);`
+      + (f.error ? 'border:2px solid var(--feedback-danger-text);' : 'border:1px solid var(--border-default);')
+      + (f.locked ? 'background:var(--background-disabled);color:var(--text-secondary);' : 'background:var(--color-neutral-white);');
+    const btn = `display:flex;align-items:center;justify-content:center;min-height:${h}px;border-radius:8px;font:var(--ib-text-button-default);text-decoration:none;`;
+    return {
+      a,
+      wrapStyle: phone ? 'width:100%;display:flex;flex-direction:column;gap:20px' : 'width:400px;box-sizing:border-box;background:var(--color-neutral-white);border-radius:12px;box-shadow:var(--ib-elevation-2);padding:32px;display:flex;flex-direction:column;gap:20px',
+      hasIcon: !!a.icon, hasEyebrow: !!a.eyebrow,
+      alertDanger: al.kind === 'danger', alertNeutral: al.kind === 'neutral', alertIcon: al.icon || 'circle-info', alertText: al.text || '', alertTitle: al.title || '',
+      hasFields: !!(a.fields && a.fields.length),
+      fields: (a.fields || []).map(f => ({ ...f, placeholder: f.placeholder || '', locked: !!f.locked, hasHint: !!f.hint, style: inp(f),
+        auto: f.type === 'password' ? 'current-password' : f.type === 'email' ? 'email' : 'name' })),
+      hasKeep: !!a.keep,
+      hasPrimary: !!a.button && !a.buttonSecondary, hasSecondary: !!a.button && !!a.buttonSecondary,
+      btnPrimary: btn + 'background:var(--brand-primary);color:var(--color-neutral-white)',
+      btnSecondary: btn + 'background:var(--color-neutral-white);border:1px solid var(--border-default);color:var(--text-primary)',
+      hasLink: !!a.link, hasNote: !!a.note
+    };
+  }
+}
+
+</script>
+</body>
+</html>

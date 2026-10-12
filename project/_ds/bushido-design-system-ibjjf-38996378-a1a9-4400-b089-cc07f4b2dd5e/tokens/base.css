@@ -1,0 +1,6 @@
+/* Base document defaults + link colors */
+body{font-family:var(--ib-font-family-content);font-size:var(--ib-font-typo-body-default-size);line-height:var(--ib-font-typo-body-default-line-height);color:var(--ib-neutral-500);background:var(--ib-white)}
+h1,h2,h3,h4,h5,h6{font-family:var(--ib-font-family-structural);margin:0}
+a{color:var(--ib-primary-500);text-decoration:none}
+a:hover{color:var(--ib-primary-400);text-decoration:underline}
+.invisible{visibility:hidden !important}

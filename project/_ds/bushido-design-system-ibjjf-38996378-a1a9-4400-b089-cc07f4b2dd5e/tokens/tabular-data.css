@@ -1,0 +1,15 @@
+/* Tabular data — verbatim from design-tokens/tabular-data.css */
+:root{
+  --ib-tabular-row-bg-odd:var(--ib-white);--ib-tabular-row-bg-even:var(--ib-surface-100);
+  --ib-tabular-header-bg:var(--ib-surface-300);--ib-tabular-header-border-color:var(--ib-neutral-100);--ib-tabular-header-border-width:2px;/* @kind other */--ib-tabular-header-font-weight:var(--ib-font-weight-bold);/* @kind other */--ib-tabular-header-font-size:var(--ib-font-size-100);
+  --ib-tabular-body-font-size:var(--ib-font-size-200);
+  --ib-tabular-cell-padding-block:var(--ib-spacing-03);--ib-tabular-cell-padding-inline:var(--ib-spacing-04);
+  --ib-tabular-hover-highlight-bg:var(--ib-primary-500);--ib-tabular-hover-highlight-text:var(--ib-white);--ib-tabular-hover-highlight-label:rgba(255,255,255,0.6);--ib-tabular-hover-subtle-bg:#e5e5e5;
+  --ib-tabular-active-bg:var(--ib-primary-100);--ib-tabular-selected-bg:var(--ib-primary-100);
+  --ib-tabular-row-border-color:var(--ib-surface-500);--ib-tabular-border-color:var(--ib-neutral-100);--ib-tabular-border-width:1px;/* @kind other */--ib-tabular-border-radius:var(--ib-border-radius-normal,6px);
+  --ib-tabular-numeric-font-family:var(--ib-font-family-numeric);/* @kind other */
+  --ib-tabular-sticky-shadow:4px 0 8px rgba(0,0,0,0.08);
+  --ib-tabular-responsive-breakpoint:600px;/* @kind other */
+  --ib-tabular-disabled-opacity:var(--ib-opacity-disabled,0.5);/* @kind other */
+  --ib-tabular-transition-duration:var(--ib-transition-medium);/* @kind other */--ib-tabular-transition-timing:var(--ib-transition-timing-ease-in-out);/* @kind other */
+}

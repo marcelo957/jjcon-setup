@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/bushido-v2/styles.css">
+<script src="_ds/bushido-v2/_ds_bundle.js"></script>
+<script src="./bushido-v2-adapters.js"></script>
+</helmet>
+<div ref="{{ rootRef }}" style="position:relative;width:100%;font-family:Inter,sans-serif">
+<button ref="{{ btnRef }}" type="button" onClick="{{ toggle }}" disabled="{{ disabled }}" aria-haspopup="listbox" aria-expanded="{{ expanded }}" title="{{ title }}" style="{{ trigStyle }}">
+<sc-if value="{{ showUnIcon }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="JJ.Icon" fa="user-slash" size="{{ 11 }}" css="color:var(--feedback-warning-accent)" hint-size="11px,11px"></x-import></sc-if>
+<sc-if value="{{ showActIcon }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="JJ.Icon" fa="user-pen" size="{{ 11 }}" css="color:var(--color-neutral-gray-300)" hint-size="11px,11px"></x-import></sc-if>
+<sc-if value="{{ showAvatar }}" hint-placeholder-val="{{ true }}"><span style="flex:0 0 22px;height:22px;border-radius:50%;background:var(--color-neutral-surface-500);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-family:'Roboto Condensed',sans-serif;font-size:10px">{{ initials }}</span></sc-if>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">{{ label }}</span>
+<sc-if value="{{ inactive }}" hint-placeholder-val="{{ false }}"><span style="font:var(--ib-text-overline);letter-spacing:1px;text-transform:uppercase;flex:0 0 auto;padding:0 6px;border-radius:999px;background:var(--border-subtle);color:var(--text-secondary)">Inactive</span></sc-if>
+<x-import component-from-global-scope="JJ.Icon" fa="chevron-down" size="{{ 10 }}" css="flex:0 0 auto;color:var(--color-neutral-gray-300)" hint-size="10px,10px"></x-import>
+</button>
+
+<sc-if value="{{ open }}" hint-placeholder-val="{{ false }}">
+<div ref="{{ popRef }}" role="dialog" aria-label="Choose a person" style="{{ popStyle }}">
+<div style="padding:8px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:8px;min-height:34px;padding:0 10px;border:1px solid var(--border-divider);border-radius:8px;background:var(--color-neutral-white)">
+<x-import component-from-global-scope="JJ.Icon" fa="magnifying-glass" size="{{ 12 }}" css="color:var(--icon-tertiary)" hint-size="12px,12px"></x-import>
+<input ref="{{ searchRef }}" value="{{ q }}" onChange="{{ setQ }}" onKeyDown="{{ onSearchKey }}" placeholder="Search active people" aria-label="Search people" style="flex:1;min-width:0;border:0;outline:none;background:transparent;font-family:Inter,sans-serif;font-size:14px;color:var(--text-primary)">
+</div>
+</div>
+
+<div role="listbox" style="max-height:236px;overflow-y:auto;padding:4px 0">
+<sc-if value="{{ showUnOpt }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ pickUn }}" style="{{ unStyle }}" style-hover="background:var(--color-neutral-surface-100)">
+<span style="flex:0 0 28px;height:28px;border-radius:50%;border:1px dashed var(--feedback-warning-accent);color:var(--feedback-warning-accent);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="JJ.Icon" fa="user-slash" size="{{ 11 }}" hint-size="11px,11px"></x-import></span>
+<span style="flex:1;min-width:0">
+<span style="display:block;font-size:14px;color:var(--text-primary)">Unassigned</span>
+<span style="display:block;font-size:12px;color:var(--color-neutral-gray-300)">No owner. Listed on Team until someone takes it.</span>
+</span>
+<sc-if value="{{ unSelected }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="JJ.Icon" fa="check" size="{{ 12 }}" css="color:var(--brand-primary)" hint-size="12px,12px"></x-import></sc-if>
+</button>
+</sc-if>
+<sc-for list="{{ opts }}" as="o" hint-placeholder-count="4">
+<button type="button" role="option" aria-selected="{{ o.sel }}" onClick="{{ o.pick }}" style="{{ o.style }}" style-hover="background:var(--color-neutral-surface-100)">
+<span style="flex:0 0 28px;height:28px;border-radius:50%;background:var(--color-neutral-surface-500);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-family:'Roboto Condensed',sans-serif;font-size:12px">{{ o.initials }}</span>
+<span style="flex:1;min-width:0">
+<span style="display:block;font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.name }}</span>
+<span style="display:block;font-size:12px;color:{{ o.roleColor }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.role }}</span>
+</span>
+<sc-if value="{{ o.selected }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="JJ.Icon" fa="check" size="{{ 12 }}" css="color:var(--brand-primary)" hint-size="12px,12px"></x-import></sc-if>
+</button>
+</sc-for>
+<sc-if value="{{ noMatch }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 12px;font-size:13px;line-height:19px;color:var(--color-neutral-gray-300)">{{ noMatchText }}</div>
+</sc-if>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding:6px;background:var(--color-neutral-surface-50)">
+<sc-if value="{{ notAdding }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ startAdd }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:36px;padding:0 8px;border:0;border-radius:4px;background:none;color:var(--brand-primary);font-family:Inter,sans-serif;font-size:14px;cursor:pointer;text-align:left" style-hover="background:var(--feedback-info-background)"><x-import component-from-global-scope="JJ.Icon" fa="user-plus" size="{{ 12 }}" hint-size="12px,12px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ addLabel }}</span></button>
+</sc-if>
+<sc-if value="{{ adding }}" hint-placeholder-val="{{ false }}">
+<div style="padding:4px">
+<span style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">New person's name</span>
+<div style="display:flex;gap:6px">
+<input ref="{{ nameRef }}" value="{{ newName }}" onChange="{{ setNewName }}" onKeyDown="{{ onNameKey }}" placeholder="Full name or nickname" aria-label="New person's name" style="flex:1;min-width:0;min-height:34px;padding:0 10px;border:1px solid var(--brand-primary);border-radius:8px;background:var(--color-neutral-white);font-family:Inter,sans-serif;font-size:14px;color:var(--text-primary);outline:none">
+<button type="button" onClick="{{ doAdd }}" disabled="{{ cantAdd }}" style="{{ addBtnStyle }}">Add</button>
+</div>
+<sc-if value="{{ hasDup }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:flex-start;gap:8px;margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--feedback-warning-background);font-size:12px;line-height:17px;color:var(--text-primary)">
+<x-import component-from-global-scope="JJ.Icon" fa="triangle-exclamation" size="{{ 11 }}" css="color:var(--feedback-warning-accent);margin-top:3px" hint-size="11px,11px"></x-import>
+<span style="flex:1;min-width:0">{{ dupText }}
+<sc-if value="{{ dupCanUse }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ useDup }}" style="display:block;margin-top:4px;border:0;background:none;padding:0;font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:var(--brand-primary);cursor:pointer;text-decoration:underline">Use {{ dupName }}</button></sc-if>
+</span>
+</div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+<span style="flex:1;font-size:12px;line-height:16px;color:var(--color-neutral-gray-300)">Assigned straight away. Role and email can wait for the People page.</span>
+<button type="button" onClick="{{ cancelAdd }}" style="border:0;background:none;padding:0 2px;font-family:Inter,sans-serif;font-size:12px;color:var(--text-secondary);cursor:pointer">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:420},&quot;value&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;p-tanaka&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;R. Tanaka&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;people&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[{&quot;id&quot;:&quot;p-tanaka&quot;,&quot;name&quot;:&quot;R. Tanaka&quot;,&quot;role&quot;:&quot;Operations manager&quot;,&quot;active&quot;:true},{&quot;id&quot;:&quot;p-alvarez&quot;,&quot;name&quot;:&quot;M. Alvarez&quot;,&quot;role&quot;:&quot;Logistics coordinator&quot;,&quot;active&quot;:true}],&quot;tsType&quot;:&quot;{id:string,name:string,role?:string,active?:boolean}[]&quot;},&quot;onPick&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;onAdd&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(name:string)=&gt;void&quot;},&quot;action&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;actionLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Reassign to…&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;disabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;allowUnassigned&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;exclude&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sm&quot;,&quot;md&quot;],&quot;default&quot;:&quot;sm&quot;,&quot;tsType&quot;:&quot;'sm'|'md'&quot;},&quot;inactive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { open: false, q: '', adding: false, newName: '', top: 0, left: 0, w: 280, up: false, dy: 0, dx: 0 };
+  rootRef = React.createRef(); btnRef = React.createRef(); popRef = React.createRef();
+  searchRef = React.createRef(); nameRef = React.createRef();
+
+  componentDidMount() {
+    this._down = (e) => { if (this.state.open && this.rootRef.current && !this.rootRef.current.contains(e.target)) this.close(); };
+    this._scroll = (e) => {
+      if (!this.state.open) return;
+      if (e && e.target && this.popRef.current && this.popRef.current.contains(e.target)) return;
+      this.close();
+    };
+    document.addEventListener('mousedown', this._down);
+    window.addEventListener('scroll', this._scroll, true);
+    window.addEventListener('resize', this._scroll);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this._down);
+    window.removeEventListener('scroll', this._scroll, true);
+    window.removeEventListener('resize', this._scroll);
+  }
+
+  componentDidUpdate(pp, ps) {
+    if (this.state.open && !ps.open) {
+      // A filtered/transformed ancestor (e.g. a modal backdrop) can re-anchor position:fixed; correct by the measured offset.
+      const el = this.popRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const wantTop = this.state.up ? null : this.state.top;
+        const dy = wantTop == null ? 0 : Math.round(wantTop - r.top);
+        const dx = Math.round(this.state.left - r.left);
+        if (dx || dy) this.setState({ dx, dy });
+      }
+      if (this.searchRef.current) this.searchRef.current.focus();
+    }
+    if (this.state.adding && !ps.adding && this.nameRef.current) this.nameRef.current.focus();
+  }
+
+  close = () => this.setState({ open: false, q: '', adding: false, newName: '', dx: 0, dy: 0 });
+
+  toggle = () => {
+    if (this.props.disabled) return;
+    if (this.state.open) { this.close(); return; }
+    const r = this.btnRef.current.getBoundingClientRect();
+    const w = Math.max(r.width, 280);
+    const H = 380;
+    const up = r.bottom + H > window.innerHeight && r.top > H;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+    this.setState({ open: true, top: up ? r.top : r.bottom + 4, bottom: window.innerHeight - r.top + 4, left, w, up, dx: 0, dy: 0 });
+  };
+
+  pick = (id) => { if (this.props.onPick) this.props.onPick(id); this.close(); };
+
+  norm(t) { return (t || '').toLowerCase().replace(/[^a-z\u00c0-\u024f\s]/g, ' ').split(/\s+/).filter(Boolean); }
+
+  findDup(name, people) {
+    const nn = this.norm(name);
+    if (!nn.length) return null;
+    const last = nn[nn.length - 1];
+    return people.find(o => {
+      const on = this.norm(o.name);
+      if (!on.length) return false;
+      if (on.join(' ') === nn.join(' ')) return true;
+      if (on[on.length - 1] === last && last.length > 2) return true;
+      return nn.length === 1 && on.some(t => t.length > 2 && t === nn[0]);
+    }) || null;
+  }
+
+  doAdd = () => {
+    const name = (this.state.newName || '').trim();
+    if (!name || !this.props.onAdd) return;
+    this.props.onAdd(name);
+    this.close();
+  };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const people = p.people || [];
+    const active = people.filter(o => o.active !== false && o.id !== p.exclude);
+    const q = s.q.trim().toLowerCase();
+    const initials = (n) => {
+      const w = (n || '').replace(/[.'’]/g, '').split(/\s+/).filter(Boolean);
+      return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || '').slice(0, 2)).toUpperCase();
+    };
+    const opts = active
+      .filter(o => !q || o.name.toLowerCase().includes(q) || (o.role || '').toLowerCase().includes(q))
+      .map(o => {
+        const sel = !p.action && o.id === p.value;
+        return {
+          id: o.id, name: o.name, role: o.role || 'Role not set', roleColor: o.role ? 'var(--color-neutral-gray-300)' : 'var(--color-neutral-gray-300)',
+          initials: initials(o.name), selected: sel, sel: sel ? 'true' : 'false',
+          pick: () => this.pick(o.id),
+          style: `display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:4px 12px;border:0;background:${sel ? 'var(--feedback-info-background)' : 'var(--color-neutral-white)'};font-family:Inter,sans-serif;text-align:left;cursor:pointer`
+        };
+      });
+    const allowUn = p.allowUnassigned !== false;
+    const showUnOpt = allowUn && (!q || 'unassigned'.includes(q));
+    const isUn = !p.action && !p.value;
+    const h = p.size === 'md' ? 40 : 34;
+    const dis = !!p.disabled;
+    const cur = people.find(o => o.id === p.value);
+    const label = p.action ? (p.actionLabel || 'Reassign to…') : (isUn ? (p.unLabel || 'Unassigned') : (p.label || (cur ? cur.name : p.value)));
+    const border = s.open ? '1px solid var(--brand-primary)' : isUn ? '1px dashed var(--feedback-warning-accent)' : '1px solid var(--border-divider)';
+    const bg = dis ? 'var(--border-subtle)' : isUn ? 'var(--feedback-warning-background)' : 'var(--color-neutral-white)';
+    const dup = s.adding ? this.findDup(s.newName, people) : null;
+    const typed = s.q.trim();
+    const pos = s.up
+      ? `bottom:${(s.bottom || 0) - s.dy}px`
+      : `top:${s.top + s.dy}px`;
+    return {
+      rootRef: this.rootRef, btnRef: this.btnRef, popRef: this.popRef, searchRef: this.searchRef, nameRef: this.nameRef,
+      toggle: this.toggle, disabled: dis, expanded: s.open ? 'true' : 'false',
+      title: p.action ? label : `Responsible: ${label}`,
+      trigStyle: `display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;min-height:${h}px;padding:0 10px;border:${border};border-radius:8px;background:${bg};font-family:Inter,sans-serif;font-size:${p.size === 'md' ? 14 : 13}px;font-weight:${isUn ? 600 : 400};color:${dis ? 'var(--color-neutral-gray-300)' : 'var(--text-primary)'};cursor:${dis ? 'default' : 'pointer'}`,
+      showUnIcon: isUn, showActIcon: !!p.action, showAvatar: !p.action && !isUn,
+      initials: cur ? initials(cur.name) : initials(label),
+      label, inactive: !!(cur && cur.active === false) || !!p.inactive,
+      open: s.open,
+      popStyle: `position:fixed;${pos};left:${s.left + s.dx}px;width:${s.w}px;z-index:1400;background:var(--color-neutral-white);border:1px solid var(--border-divider);border-radius:8px;box-shadow:var(--ib-elevation-3);overflow:hidden;text-align:left`,
+      q: s.q, setQ: (e) => this.setState({ q: e.target.value }),
+      onSearchKey: (e) => {
+        if (e.key === 'Escape') this.close();
+        if (e.key === 'Enter') { if (opts.length === 1) this.pick(opts[0].id); else if (!opts.length && typed) this.setState({ adding: true, newName: typed }); }
+      },
+      showUnOpt, unSelected: isUn,
+      pickUn: () => this.pick(''),
+      unStyle: `display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:4px 12px;border:0;border-bottom:1px solid var(--border-subtle);background:${isUn ? 'var(--feedback-warning-background)' : 'var(--color-neutral-white)'};font-family:Inter,sans-serif;text-align:left;cursor:pointer`,
+      opts, noMatch: opts.length === 0 && !showUnOpt,
+      noMatchText: typed ? `No active person matches “${typed}”. Add them below if they are new.` : 'Nobody else is active.',
+      notAdding: !s.adding, adding: s.adding,
+      addLabel: typed && !opts.length ? `Add “${typed}” as a new person` : 'Add person',
+      startAdd: () => this.setState({ adding: true, newName: typed }),
+      cancelAdd: () => this.setState({ adding: false, newName: '' }),
+      newName: s.newName, setNewName: (e) => this.setState({ newName: e.target.value }),
+      onNameKey: (e) => { if (e.key === 'Enter') this.doAdd(); if (e.key === 'Escape') this.setState({ adding: false, newName: '' }); },
+      doAdd: this.doAdd, cantAdd: !s.newName.trim(),
+      addBtnStyle: `min-height:34px;padding:0 14px;border:0;border-radius:8px;background:${s.newName.trim() ? 'var(--brand-primary)' : 'var(--border-divider)'};color:var(--color-neutral-white);font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:${s.newName.trim() ? 'pointer' : 'default'}`,
+      hasDup: !!dup, dupName: dup ? dup.name : '',
+      dupCanUse: !!dup && dup.active !== false && dup.id !== p.exclude,
+      dupText: !dup ? '' : dup.active === false
+        ? `${dup.name} is already on the list but inactive. Reactivate them on the People page instead of adding a second record.`
+        : `${dup.name} is already on the list${dup.role ? ` (${dup.role})` : ''}. Adding again creates a second person.`,
+      useDup: () => dup && this.pick(dup.id)
+    };
+  }
+}
+</script>
+</body>
+</html>

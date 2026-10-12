@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/bushido-v2/styles.css">
+<script src="_ds/bushido-v2/_ds_bundle.js"></script>
+<script src="./bushido-v2-adapters.js"></script>
+<style>
+body{margin:0;background:var(--color-neutral-surface-300);font:var(--ib-text-body-default);color:var(--text-primary)}
+a{color:var(--brand-primary);text-decoration:none}
+a:hover{color:var(--action-primary-hover);text-decoration:underline}
+input[type=checkbox]{accent-color:var(--brand-primary)}
+</style>
+</helmet>
+
+<section data-screen-label="Sign in" style="padding:48px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:4px;max-width:900px">
+<span style="font:var(--ib-text-overline);letter-spacing:1px;text-transform:uppercase;color:var(--text-secondary)">JJCON SetUp · access</span>
+<h1 style="font:var(--ib-text-h3);margin:0">Sign in, password reset and invitations</h1>
+<p style="font:var(--ib-text-body-large);color:var(--text-secondary);margin:0;text-wrap:pretty">There is no public sign-up. An admin invites each person from the People page; the invitation email is the only way to create a login. <a href="JJCon Ops.dc.html">Open the app</a></p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<h2 style="font:var(--ib-text-h5);margin:0">1 · Sign in</h2>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+<sc-for list="{{ signIn }}" as="a" hint-placeholder-count="3">
+<div id="{{ a.id }}" style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:var(--ib-text-button-small);padding:2px 10px;border-radius:12px;background:var(--brand-primary);color:var(--color-neutral-white)">{{ a.id }}</span><span style="font:var(--ib-text-subtitle-2)">{{ a.caption }}</span></div>
+<div style="width:560px;min-height:780px;box-sizing:border-box;background:var(--background-page);border-radius:12px;box-shadow:var(--ib-elevation-1);display:flex;align-items:center;justify-content:center;padding:32px">
+<dc-import name="AuthCard" a="{{ a }}" hint-size="400px,520px"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<h2 style="font:var(--ib-text-h5);margin:0">2 · Forgot password</h2>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+<sc-for list="{{ reset }}" as="a" hint-placeholder-count="3">
+<div id="{{ a.id }}" style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:var(--ib-text-button-small);padding:2px 10px;border-radius:12px;background:var(--brand-primary);color:var(--color-neutral-white)">{{ a.id }}</span><span style="font:var(--ib-text-subtitle-2)">{{ a.caption }}</span></div>
+<div style="width:560px;min-height:780px;box-sizing:border-box;background:var(--background-page);border-radius:12px;box-shadow:var(--ib-elevation-1);display:flex;align-items:center;justify-content:center;padding:32px">
+<dc-import name="AuthCard" a="{{ a }}" hint-size="400px,520px"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<h2 style="font:var(--ib-text-h5);margin:0">3 · Invitation link</h2>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+<sc-for list="{{ invite }}" as="a" hint-placeholder-count="3">
+<div id="{{ a.id }}" style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:var(--ib-text-button-small);padding:2px 10px;border-radius:12px;background:var(--brand-primary);color:var(--color-neutral-white)">{{ a.id }}</span><span style="font:var(--ib-text-subtitle-2)">{{ a.caption }}</span></div>
+<div style="width:560px;min-height:780px;box-sizing:border-box;background:var(--background-page);border-radius:12px;box-shadow:var(--ib-elevation-1);display:flex;align-items:center;justify-content:center;padding:32px">
+<dc-import name="AuthCard" a="{{ a }}" hint-size="400px,520px"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<h2 style="font:var(--ib-text-h5);margin:0">4 · On a phone</h2>
+<p style="margin:0;font:var(--ib-text-body-default);color:var(--text-secondary);max-width:760px;text-wrap:pretty">Most crew open their invitation from a phone. Fields and buttons are 48px tall, the email field opens the email keyboard, and "Keep me signed in" is on by default so nobody re-enters a password between sectors.</p>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+<sc-for list="{{ phone }}" as="a" hint-placeholder-count="3">
+<div id="{{ a.id }}" style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:var(--ib-text-button-small);padding:2px 10px;border-radius:12px;background:var(--brand-primary);color:var(--color-neutral-white)">{{ a.id }}</span><span style="font:var(--ib-text-subtitle-2)">{{ a.caption }}</span></div>
+<div style="width:390px;height:800px;box-sizing:border-box;border:10px solid var(--color-neutral-black);border-radius:48px;background:var(--color-neutral-white);overflow:hidden;display:flex;flex-direction:column">
+<div style="flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:var(--ib-text-button-small);color:var(--text-primary)"><span>9:41</span><span style="width:96px;height:26px;border-radius:14px;background:var(--color-neutral-black)"></span><span>5G</span></div>
+<div style="flex:1;overflow:hidden;padding:24px 20px;display:flex;flex-direction:column">
+<dc-import name="AuthCard" a="{{ a }}" hint-size="100%,560px"></dc-import>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div id="5a" data-screen-label="Permissions" style="display:flex;flex-direction:column;gap:12px;max-width:1180px">
+<h2 style="font:var(--ib-text-h5);margin:0">5 · Roles and permissions</h2>
+<p style="margin:0;font:var(--ib-text-body-default);color:var(--text-secondary);text-wrap:pretty">Anything a role can't do is left out of the page entirely: no greyed-out Edit buttons, no locked menu items, no empty Settings group. Being assignable and being able to sign in are separate: everyone on the People list can own work, but only people with an accepted invitation can sign in.</p>
+<div style="background:var(--color-neutral-white);border-radius:12px;box-shadow:var(--ib-elevation-1);overflow-x:auto">
+<table style="width:100%;border-collapse:collapse;min-width:820px">
+<thead>
+<tr style="border-bottom:1px solid var(--border-divider);background:var(--color-neutral-surface-50)">
+<th style="text-align:left;padding:12px 16px;font:var(--ib-text-subtitle-2);color:var(--text-secondary)">Capability</th>
+<th style="text-align:left;padding:12px 16px;font:var(--ib-text-subtitle-2);color:var(--text-primary);width:170px">Admin</th>
+<th style="text-align:left;padding:12px 16px;font:var(--ib-text-subtitle-2);color:var(--text-primary);width:170px">Editor</th>
+<th style="text-align:left;padding:12px 16px;font:var(--ib-text-subtitle-2);color:var(--text-primary);width:170px">Crew</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{ perms }}" as="p" hint-placeholder-count="9">
+<tr style="border-bottom:1px solid var(--border-subtle)">
+<td style="padding:10px 16px;font:var(--ib-text-body-default);color:var(--text-primary)">{{ p.what }}</td>
+<sc-for list="{{ p.cells }}" as="c" hint-placeholder-count="3">
+<td style="padding:10px 16px">
+<span style="display:inline-flex;align-items:center;gap:8px;font:var(--ib-text-body-small);color:{{ c.color }}"><x-import component-from-global-scope="JJ.Icon" fa="{{ c.icon }}" size="{{ 14 }}" hint-size="14px,14px"></x-import>{{ c.label }}</span>
+</td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(270px,100%),1fr));gap:16px;margin-top:8px">
+<sc-for list="{{ states }}" as="st" hint-placeholder-count="4">
+<div style="background:var(--color-neutral-white);border-radius:12px;box-shadow:var(--ib-elevation-1);padding:16px;display:flex;flex-direction:column;gap:8px">
+<span style="{{ st.chip }}"><x-import component-from-global-scope="JJ.Icon" fa="{{ st.icon }}" size="{{ 11 }}" hint-size="11px,11px"></x-import>{{ st.label }}</span>
+<span style="font:var(--ib-text-body-small);color:var(--text-secondary);text-wrap:pretty">{{ st.text }}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:16px;margin-top:8px">
+<div style="background:var(--color-neutral-white);border-radius:12px;box-shadow:var(--ib-elevation-1);padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+<span style="font:var(--ib-text-subtitle-1)">Sessions</span>
+<span style="font:var(--ib-text-body-default);color:var(--text-secondary);text-wrap:pretty">"Keep me signed in" lasts 30 days per device and is on by default. Unticked, the session ends when the browser closes. The sidebar always shows who is signed in, with Sign out underneath. Admins can sign a person out of every device from their People record.</span>
+</div>
+<div style="background:var(--color-neutral-white);border-radius:12px;box-shadow:var(--ib-elevation-1);padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+<span style="font:var(--ib-text-subtitle-1)">Deactivating</span>
+<span style="font:var(--ib-text-body-default);color:var(--text-secondary);text-wrap:pretty">Removes the login and hides the person from assignment dropdowns. Their record, task history and name on printed packets stay. Open work must be reassigned first. Reactivating restores their earlier role; they sign in with their old password.</span>
+</div>
+</div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const app = 'JJCon Ops.dc.html';
+    const pw = (label, extra) => ({ label, type: 'password', value: '', placeholder: '', ...extra });
+    const signIn = [
+      { id: '1a', caption: 'Sign in', title: 'Sign in', sub: 'Jiu-Jitsu Con 2027 set-up',
+        fields: [{ label: 'Email', type: 'email', value: '', placeholder: 'name@ibjjf.com' }, pw('Password')],
+        keep: true, button: 'Sign in', buttonHref: app, link: 'Forgot password?', linkHref: '#2a',
+        note: 'No account? Ask the office to invite you. Logins are created by invitation only.' },
+      { id: '1b', caption: 'Wrong password', title: 'Sign in', sub: 'Jiu-Jitsu Con 2027 set-up',
+        alert: { kind: 'danger', icon: 'circle-exclamation', text: 'That email and password don’t match. Check caps lock, or reset your password.' },
+        fields: [{ label: 'Email', type: 'email', value: 'jackson@ibjjf.com' }, pw('Password', { value: '••••••••', error: true })],
+        keep: true, button: 'Sign in', buttonHref: app, link: 'Forgot password?', linkHref: '#2a' },
+      { id: '1c', caption: 'Deactivated account', title: 'Sign in', sub: 'Jiu-Jitsu Con 2027 set-up',
+        alert: { kind: 'neutral', icon: 'user-slash', title: 'This account is deactivated', text: 'Your login was turned off on 02 Aug 2027. Your past work is kept. If you’re working this event, ask Marcelo in the office to reactivate you.' },
+        fields: [{ label: 'Email', type: 'email', value: 'p.nakamura@ibjjf.com' }, pw('Password', { value: '••••••••••' })],
+        keep: true, button: 'Sign in', buttonHref: '#1c', link: 'Use a different account', linkHref: '#1a' }
+    ];
+    const reset = [
+      { id: '2a', caption: 'Request a reset link', title: 'Reset your password', sub: 'Enter the email your invitation was sent to. We’ll email you a link to set a new password.',
+        fields: [{ label: 'Email', type: 'email', value: '', placeholder: 'name@ibjjf.com' }],
+        button: 'Send reset link', buttonHref: '#2b', link: 'Back to sign in', linkHref: '#1a' },
+      { id: '2b', caption: 'Link sent', icon: 'envelope', title: 'Check your email', sub: 'If cardoso@ibjjf.com has a login, a reset link is on its way. The link works for 1 hour.',
+        link: 'Back to sign in', linkHref: '#1a', note: 'Nothing after 5 minutes? Check your spam folder, or ask the office to resend your invitation.' },
+      { id: '2c', caption: 'Set a new password', title: 'Set a new password', sub: 'For cardoso@ibjjf.com',
+        fields: [pw('New password', { hint: 'At least 10 characters.' }), pw('Confirm new password')],
+        keep: true, button: 'Save and sign in', buttonHref: app }
+    ];
+    const invite = [
+      { id: '3a', caption: 'Accept invitation', eyebrow: 'Invitation', title: 'Marcelo invited you to JJCON SetUp', sub: 'You’ll join as Editor for the Jiu-Jitsu Con 2027 set-up. The sectors and tasks already assigned to you will be waiting.',
+        fields: [{ label: 'Name', type: 'text', value: 'Gordo', hint: 'This is how your name appears on sectors, tasks and print packets.' }, { label: 'Email', type: 'email', value: 'aleal@ibjjf.com', locked: true }, pw('Choose a password', { hint: 'At least 10 characters.' })],
+        keep: true, button: 'Create account and sign in', buttonHref: app },
+      { id: '3b', caption: 'Expired invitation', icon: 'clock', title: 'This invitation has expired', sub: 'Invitations work for 7 days. This one was sent by Marcelo on 04 Aug 2027.',
+        button: 'Email Marcelo for a new link', buttonHref: 'mailto:marcelo@ibjjf.com?subject=JJCON%20SetUp%20invitation', buttonSecondary: true,
+        note: 'A new invitation keeps everything already assigned to you.' },
+      { id: '3c', caption: 'Invitation already used', icon: 'circle-check', title: 'This invitation has already been used', sub: 'The account for aleal@ibjjf.com is already set up. Sign in with the password you chose.',
+        button: 'Go to sign in', buttonHref: '#1a', link: 'Forgot password?', linkHref: '#2a' }
+    ];
+    const phone = [
+      { ...signIn[0], id: '4a', caption: 'Sign in on a phone', phone: true },
+      { ...invite[0], id: '4b', caption: 'Invitation on a phone', phone: true, title: 'Marcelo invited you', sub: 'You’ll join as Crew for the Jiu-Jitsu Con 2027 set-up.',
+        fields: [{ label: 'Name', type: 'text', value: "D'Andre" }, { label: 'Email', type: 'email', value: 'jackson@ibjjf.com', locked: true }, pw('Choose a password', { hint: 'At least 10 characters.' })] },
+      { ...signIn[1], id: '4c', caption: 'Wrong password on a phone', phone: true }
+    ];
+    const Y = (label) => ({ icon: 'check', label: label || 'Yes', color: 'var(--text-primary)' });
+    const N = { icon: 'minus', label: 'Hidden', color: 'var(--color-neutral-gray-300)' };
+    const perms = [
+      ['View dashboard, sectors, tasks, team and print packets', Y(), Y(), Y()],
+      ['Check off material items and instruction steps', Y(), Y(), Y()],
+      ['Mark a task done', Y('Any task'), Y('Own tasks'), Y('Own tasks')],
+      ['Change a task deadline', Y('Any task'), Y('Own tasks'), N],
+      ['Upload PDFs, edit material lists, instructions and prep status', Y('All sectors'), Y('Sectors they lead'), N],
+      ['Reassign tasks, bulk reassign', Y(), N, N],
+      ['Create, edit structure, archive and delete sectors', Y(), N, N],
+      ['People page: add, invite, deactivate, change roles', Y(), N, N]
+    ].map(([what, ...cells]) => ({ what, cells }));
+    const chip = (bg, bd, fg) => `display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;background:${bg};border:${bd};color:${fg};font:var(--ib-text-body-small)`;
+    const states = [
+      { label: 'Can sign in', icon: 'circle-check', chip: chip('var(--feedback-success-background)', '1px solid var(--feedback-success-border)', 'var(--text-primary)'), text: 'Accepted an invitation. Has a role and a password.' },
+      { label: 'Invited', icon: 'clock', chip: chip('var(--feedback-warning-background)', '1px dashed var(--feedback-warning-accent)', 'var(--text-primary)'), text: 'Invitation sent, not accepted yet. Already assignable. Admins can resend or revoke.' },
+      { label: 'No login', icon: 'minus', chip: chip('var(--color-neutral-white)', '1px solid var(--border-default)', 'var(--text-secondary)'), text: 'Added as a name only. Assignable, but cannot sign in until invited.' },
+      { label: 'Login removed', icon: 'user-slash', chip: chip('var(--background-disabled)', '1px solid transparent', 'var(--text-secondary)'), text: 'Deactivated. Not assignable, cannot sign in. History kept.' }
+    ];
+    return { signIn, reset, invite, phone, perms, states };
+  }
+}
+
+</script>
+</body>
+</html>

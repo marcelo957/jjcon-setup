@@ -1,0 +1,55 @@
+/* Bushido Text Styles — 24 official Figma Text Styles (styles/text-styles.json, package 2026.09.21-r2).
+   Each style is exposed as a CSS custom-property shorthand (--ib-text-*) plus a utility class (.ib-text-*). */
+:root{
+--font-heading:"Roboto Condensed",-apple-system,"Segoe UI",Arial,sans-serif;
+--font-body:"Inter",-apple-system,"Segoe UI",Arial,sans-serif;
+--font-mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+--ib-text-h1:700 48px/56px var(--font-heading);--ib-text-h1-ls:-0.5px;
+--ib-text-h2:600 36px/44px var(--font-heading);--ib-text-h2-ls:-0.25px;
+--ib-text-h3:500 28px/36px var(--font-heading);--ib-text-h3-ls:0;
+--ib-text-h4:700 22px/30px var(--font-heading);--ib-text-h4-ls:0.0025em;
+--ib-text-h5:500 18px/26px var(--font-heading);--ib-text-h5-ls:0;
+--ib-text-h6:500 16px/24px var(--font-heading);--ib-text-h6-ls:0.0015em;
+--ib-text-subtitle-1:500 16px/24px var(--font-heading);
+--ib-text-subtitle-2:500 14px/20px var(--font-heading);
+--ib-text-body-large:400 16px/24px var(--font-body);
+--ib-text-body-default:400 14px/20px var(--font-body);
+--ib-text-body-medium:600 14px/20px var(--font-body);
+--ib-text-body-bold:700 14px/20px var(--font-body);
+--ib-text-body-small:400 12px/16px var(--font-body);
+--ib-text-body-label:400 12px/20px var(--font-body);
+--ib-text-caption:400 12px/16px var(--font-body);--ib-text-caption-ls:0.25px;
+--ib-text-overline:600 11px/16px var(--font-body);--ib-text-overline-ls:1px;
+--ib-text-button-small:500 12px/16px var(--font-heading);--ib-text-button-small-ls:0.5px;
+--ib-text-button-default:500 14px/20px var(--font-heading);
+--ib-text-button-large:500 16px/24px var(--font-heading);
+--ib-text-numeric-default:500 14px/24px var(--font-mono);
+--ib-text-numeric-table:400 14px/20px var(--font-mono);
+--ib-text-numeric-small:400 12px/16px var(--font-mono);
+--ib-text-code:400 13px/18px var(--font-mono);
+--ib-text-logs:400 12px/16px var(--font-mono);
+}
+.ib-text-h1{font:var(--ib-text-h1);letter-spacing:-0.5px}
+.ib-text-h2{font:var(--ib-text-h2);letter-spacing:-0.25px}
+.ib-text-h3{font:var(--ib-text-h3)}
+.ib-text-h4{font:var(--ib-text-h4);letter-spacing:0.0025em}
+.ib-text-h5{font:var(--ib-text-h5)}
+.ib-text-h6{font:var(--ib-text-h6);letter-spacing:0.0015em}
+.ib-text-subtitle-1{font:var(--ib-text-subtitle-1)}
+.ib-text-subtitle-2{font:var(--ib-text-subtitle-2)}
+.ib-text-body-large{font:var(--ib-text-body-large)}
+.ib-text-body-default{font:var(--ib-text-body-default)}
+.ib-text-body-medium{font:var(--ib-text-body-medium)}
+.ib-text-body-bold{font:var(--ib-text-body-bold)}
+.ib-text-body-small{font:var(--ib-text-body-small)}
+.ib-text-body-label{font:var(--ib-text-body-label)}
+.ib-text-caption{font:var(--ib-text-caption);letter-spacing:0.25px}
+.ib-text-overline{font:var(--ib-text-overline);letter-spacing:1px}
+.ib-text-button-small{font:var(--ib-text-button-small);letter-spacing:0.5px}
+.ib-text-button-default{font:var(--ib-text-button-default)}
+.ib-text-button-large{font:var(--ib-text-button-large)}
+.ib-text-numeric-default{font:var(--ib-text-numeric-default)}
+.ib-text-numeric-table{font:var(--ib-text-numeric-table)}
+.ib-text-numeric-small{font:var(--ib-text-numeric-small)}
+.ib-text-code{font:var(--ib-text-code)}
+.ib-text-logs{font:var(--ib-text-logs)}

@@ -1,0 +1,44 @@
+/* Domain color palette — verbatim from design-tokens/color-palette.css */
+:root{
+  --ib-color-primary:var(--ib-primary-500);--ib-color-info:var(--ib-info-500);--ib-color-success:var(--ib-success-500);--ib-color-warning:var(--ib-warning-500);--ib-color-danger:var(--ib-danger-500);--ib-color-neutral:var(--ib-neutral-500);
+  --ib-color-black:var(--ib-black);--ib-color-white:var(--ib-white);
+  --ib-color-gold:var(--gold-medal);--ib-color-silver:var(--silver-medal);--ib-color-bronze:var(--bronze-medal);--ib-color-muted:var(--ib-neutral-200);
+  /* named blues */
+  --ib-color-sky:#0369a1;--ib-color-azure:#1d4ed8;--ib-color-cobalt:#4338ca;--ib-color-navy:#1e3a8a;--ib-color-ocean:#0e7490;--ib-color-steel:#475569;--ib-color-sapphire:#1e40af;
+  /* named greens */
+  --ib-color-lime:#4d7c0f;--ib-color-emerald:#047857;--ib-color-mint:#0d9488;--ib-color-olive:#4a5520;--ib-color-forest:#064e3b;--ib-color-sage:#365314;--ib-color-jade:#115e59;
+  /* named pinks & roses */
+  --ib-color-pink:#be185d;--ib-color-rose:#be123c;--ib-color-blush:#9f1239;--ib-color-coral:#c2410c;--ib-color-salmon:#be123c;--ib-color-magenta:#a21caf;--ib-color-fuchsia:#a21caf;
+  /* named purples & violets */
+  --ib-color-purple:#7e22ce;--ib-color-violet:#6d28d9;--ib-color-indigo:#4338ca;--ib-color-plum:#6b21a8;--ib-color-lavender:#5b21b6;--ib-color-grape:#581c87;--ib-color-orchid:#86198f;
+  /* named oranges & yellows */
+  --ib-color-amber:#b45309;--ib-color-tangerine:#c2410c;--ib-color-peach:#9a3412;--ib-color-mustard:#854d0e;--ib-color-honey:#a16207;
+  /* named reds & browns */
+  --ib-color-crimson:#b91c1c;--ib-color-maroon:#7f1d1d;--ib-color-rust:#9a3412;--ib-color-tan:#5c3d2e;--ib-color-coffee:#4a3728;
+  /* named neutrals */
+  --ib-color-slate:#475569;--ib-color-stone:#57534e;--ib-color-zinc:#52525b;--ib-color-charcoal:#262626;
+  --ib-color-sky-100:#f0f9ff;--ib-color-sky-300:#7dd3fc;--ib-color-sky-500:#0ea5e9;--ib-color-sky-700:#0369a1;--ib-color-sky-900:#0c4a6e;
+  --ib-color-azure-100:#dbeafe;--ib-color-azure-300:#93c5fd;--ib-color-azure-500:#3b82f6;--ib-color-azure-700:#1d4ed8;--ib-color-azure-900:#1e3a8a;
+  --ib-color-indigo-100:#e0e7ff;--ib-color-indigo-300:#a5b4fc;--ib-color-indigo-500:#6366f1;--ib-color-indigo-700:#4338ca;--ib-color-indigo-900:#312e81;
+  --ib-color-cyan-100:#cffafe;--ib-color-cyan-300:#67e8f9;--ib-color-cyan-500:#06b6d4;--ib-color-cyan-700:#0e7490;--ib-color-cyan-900:#164e63;
+  --ib-color-teal-100:#ccfbf1;--ib-color-teal-300:#5eead4;--ib-color-teal-500:#14b8a6;--ib-color-teal-700:#0f766e;--ib-color-teal-900:#134e4a;
+  --ib-color-emerald-100:#d1fae5;--ib-color-emerald-300:#6ee7b7;--ib-color-emerald-500:#10b981;--ib-color-emerald-700:#047857;--ib-color-emerald-900:#064e3b;
+  --ib-color-green-100:#dcfce7;--ib-color-green-300:#86efac;--ib-color-green-500:#22c55e;--ib-color-green-700:#15803d;--ib-color-green-900:#14532d;
+  --ib-color-lime-100:#ecfccb;--ib-color-lime-300:#bef264;--ib-color-lime-500:#84cc16;--ib-color-lime-700:#4d7c0f;--ib-color-lime-900:#365314;
+  --ib-color-olive-100:#f4f5e9;--ib-color-olive-300:#c5c99e;--ib-color-olive-500:#808836;--ib-color-olive-700:#5a6020;--ib-color-olive-900:#3d4619;
+  --ib-color-pink-100:#fce7f3;--ib-color-pink-300:#f9a8d4;--ib-color-pink-500:#ec4899;--ib-color-pink-700:#be185d;--ib-color-pink-900:#831843;
+  --ib-color-rose-100:#ffe4e6;--ib-color-rose-300:#fda4af;--ib-color-rose-500:#f43f5e;--ib-color-rose-700:#be123c;--ib-color-rose-900:#881337;
+  --ib-color-fuchsia-100:#fae8ff;--ib-color-fuchsia-300:#f0abfc;--ib-color-fuchsia-500:#d946ef;--ib-color-fuchsia-700:#a21caf;--ib-color-fuchsia-900:#701a75;
+  --ib-color-purple-100:#f3e8ff;--ib-color-purple-300:#d8b4fe;--ib-color-purple-500:#a855f7;--ib-color-purple-700:#7e22ce;--ib-color-purple-900:#581c87;
+  --ib-color-violet-100:#ede9fe;--ib-color-violet-300:#c4b5fd;--ib-color-violet-500:#8b5cf6;--ib-color-violet-700:#6d28d9;--ib-color-violet-900:#4c1d95;
+  --ib-color-amber-100:#fef3c7;--ib-color-amber-300:#fcd34d;--ib-color-amber-500:#f59e0b;--ib-color-amber-700:#b45309;--ib-color-amber-900:#78350f;
+  --ib-color-orange-100:#ffedd5;--ib-color-orange-300:#fdba74;--ib-color-orange-500:#f97316;--ib-color-orange-700:#c2410c;--ib-color-orange-900:#7c2d12;
+  --ib-color-red-100:#fee2e2;--ib-color-red-300:#fca5a5;--ib-color-red-500:#ef4444;--ib-color-red-700:#b91c1c;--ib-color-red-900:#7f1d1d;
+  --ib-color-brown-100:#f9f5f0;--ib-color-brown-300:#d4c4b5;--ib-color-brown-500:#8b6a4f;--ib-color-brown-700:#5c4333;--ib-color-brown-900:#3d2b1f;
+  --ib-color-slate-100:#f1f5f9;--ib-color-slate-300:#cbd5e1;--ib-color-slate-500:#64748b;--ib-color-slate-700:#334155;--ib-color-slate-900:#0f172a;
+  --ib-color-stone-100:#f5f5f4;--ib-color-stone-300:#d6d3d1;--ib-color-stone-500:#78716c;--ib-color-stone-700:#44403c;--ib-color-stone-900:#1c1917;
+  /* BJJ belts */
+  --ib-color-white-belt:var(--white-belt);--ib-color-grey-belt:var(--grey-belt);--ib-color-yellow-belt:var(--yellow-belt);--ib-color-orange-belt:var(--orange-belt);--ib-color-green-belt:var(--green-belt);--ib-color-blue-belt:var(--blue-belt);--ib-color-purple-belt:var(--purple-belt);--ib-color-brown-belt:var(--brown-belt);--ib-color-black-belt:var(--black-belt);--ib-color-red-belt:var(--red-belt);
+  /* Gender */
+  --ib-color-male:var(--male-gender);--ib-color-female:var(--female-gender);
+}
