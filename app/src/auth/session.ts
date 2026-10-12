@@ -1,16 +1,17 @@
-import type { Person, Session } from './types';
+import type { Role, Session } from './types';
 
 const KEY = 'jjcon.session';
 export const KEEP_SIGNED_IN_DAYS = 30;
 
-export function createSession(person: Person & { email: string }, keep: boolean, now = new Date()): Session {
+export function createSession(person: { id: string; name: string; email: string; role: Role }, keep: boolean, now = new Date()): Session {
   return {
     personId: person.id,
     name: person.name,
     email: person.email,
     role: person.role,
     keep,
-    expiresAt: keep ? new Date(now.getTime() + KEEP_SIGNED_IN_DAYS * 86_400_000).toISOString() : null
+    expiresAt: keep ? new Date(now.getTime() + KEEP_SIGNED_IN_DAYS * 86_400_000).toISOString() : null,
+    issuedAt: now.toISOString()
   };
 }
 

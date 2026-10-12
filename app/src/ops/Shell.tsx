@@ -53,6 +53,11 @@ export function Shell() {
               <NavItem to="/team" label="Team" icon="IconFilledUsers" match={(p) => p.startsWith('/team')} />
               <NavItem to="/sectors" label="Sectors" icon="IconFilledVectorSquare" match={(p) => p.startsWith('/sectors')} />
             </NavGroup>
+            {me.canManagePeople && (
+              <NavGroup label="Settings">
+                <NavItem to="/people" label={`People · ${data.people.filter((p) => p.active).length}`} icon="IconFilledAddressBook" match={(p) => p.startsWith('/people')} />
+              </NavGroup>
+            )}
             <div className="ops-nav__foot">
               <div className="ops-nav__countdown">
                 Load-in {LOAD_IN_LABEL}<br />

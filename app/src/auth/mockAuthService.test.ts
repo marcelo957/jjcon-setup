@@ -44,12 +44,12 @@ describe('MockAuthService', () => {
   it('issues a reset link only for active logins and uses it once', async () => {
     const s = svc();
     expect(await s.requestPasswordReset('nobody@ibjjf.com')).toEqual({});
-    const { devLink } = await s.requestPasswordReset('cardoso@ibjjf.com');
+    const { devLink } = await s.requestPasswordReset('diego@ibjjf.com');
     const token = devLink!.split('/').pop()!;
-    expect(await s.lookupReset(token)).toEqual({ status: 'valid', email: 'cardoso@ibjjf.com' });
+    expect(await s.lookupReset(token)).toEqual({ status: 'valid', email: 'diego@ibjjf.com' });
     expect((await s.resetPassword(token, 'a-new-password', true)).ok).toBe(true);
     expect((await s.lookupReset(token)).status).toBe('used');
-    expect((await s.signIn('cardoso@ibjjf.com', 'a-new-password', true)).ok).toBe(true);
+    expect((await s.signIn('diego@ibjjf.com', 'a-new-password', true)).ok).toBe(true);
   });
 
   it('expires reset links after an hour', async () => {

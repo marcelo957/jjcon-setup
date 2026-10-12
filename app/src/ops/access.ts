@@ -15,6 +15,7 @@ export function useMe() {
     canCheckOff: can(role, 'checkOff'),
     canMarkTask: (who: string) => can(role, 'markTaskDone', { isOwnTask: who === session.personId }),
     canSetDeadline: (who: string) => can(role, 'changeDeadline', { isOwnTask: who === session.personId }),
-    canReassign: can(role, 'reassignTasks')
+    canReassign: can(role, 'reassignTasks'),
+    canManagePeople: can(role, 'managePeople')
   };
 }
