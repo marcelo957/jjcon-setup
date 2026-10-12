@@ -1,8 +1,8 @@
-/* Bushido v2 tokens, copied from project/_ds/bushido-v2 (package 2026.09.21-r2).
-   fig-assets.css is left out: it only styles navigation bitmaps these screens don't use. */
+/* Bushido v2 tokens, copied from project/_ds/bushido-v2 (package 2026.09.21-r2). */
 @import './tokens/fonts.css';
 @import './tokens/fig-tokens.css';
 @import './tokens/semantic.css';
 @import './tokens/typography.css';
 @import './tokens/effects.css';
 @import './tokens/base.css';
+@import './components/navigation/fig-assets.css';
