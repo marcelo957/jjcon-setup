@@ -26,8 +26,8 @@ describe('sign in', () => {
     await user.type(screen.getByLabelText('Email'), 'marcelo@ibjjf.com');
     await user.type(screen.getByLabelText('Password'), DEMO_PASSWORDS.admin);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByText('Marcelo')).toBeInTheDocument();
-    expect(screen.getByText(/Session ends \d{2} \w{3} \d{4}/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Prep dashboard' })).toBeInTheDocument();
+    expect(screen.getByText(/Signed in on this device until \d{2} \w{3} \d{4}/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
@@ -79,7 +79,7 @@ describe('password reset', () => {
     await user.clear(screen.getByLabelText('Confirm new password'));
     await user.type(screen.getByLabelText('Confirm new password'), 'brand-new-pass');
     await user.click(screen.getByRole('button', { name: 'Save and sign in' }));
-    expect(await screen.findByRole('heading', { name: 'You’re signed in' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Prep dashboard' })).toBeInTheDocument();
   });
 
   it('handles an unknown reset link', async () => {
@@ -97,7 +97,8 @@ describe('invitation', () => {
     expect(screen.getByLabelText('Email')).toHaveAttribute('readonly');
     await user.type(screen.getByLabelText('Choose a password'), 'gordo-password');
     await user.click(screen.getByRole('button', { name: 'Create account and sign in' }));
-    expect(await screen.findByText(/Editor · aleal@ibjjf.com/)).toBeInTheDocument();
+    expect(await screen.findByText('aleal@ibjjf.com')).toBeInTheDocument();
+    expect(screen.getByText('Editor')).toBeInTheDocument();
   });
 
   it('shows the expired state with a mailto to the inviter', async () => {

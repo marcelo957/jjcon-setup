@@ -6,6 +6,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { authService } from './auth/service';
 import './styles/bushido/index.css';
 import './styles/app.css';
+import './ops/ops.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
