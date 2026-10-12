@@ -19,6 +19,8 @@ const TeamPage = lazy(() => import('./ops/screens/TeamPage').then((m) => ({ defa
 const PeoplePage = lazy(() => import('./ops/people/PeoplePage').then((m) => ({ default: m.PeoplePage })));
 const PersonPage = lazy(() => import('./ops/people/PersonPage').then((m) => ({ default: m.PersonPage })));
 const AdminOnly = lazy(() => import('./ops/AdminOnly').then((m) => ({ default: m.AdminOnly })));
+const FieldView = lazy(() => import('./ops/field/FieldView').then((m) => ({ default: m.FieldView })));
+const PrintPage = lazy(() => import('./ops/print/PrintPage').then((m) => ({ default: m.PrintPage })));
 const SectorForm = lazy(() => import('./ops/screens/SectorForm').then((m) => ({ default: m.SectorForm })));
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -47,6 +49,9 @@ export function AppRoutes() {
         <Route path="/sectors/new" element={<SectorForm mode="create" />} />
         <Route path="/sectors/:id" element={<SectorPage />} />
         <Route path="/sectors/:id/edit" element={<SectorForm mode="edit" />} />
+        <Route path="/print" element={<PrintPage />} />
+        <Route path="/field" element={<FieldView />} />
+        <Route path="/field/:id" element={<FieldView />} />
       </Route>
       <Route path="*" element={<Navigate to="/prep" replace />} />
     </Routes>

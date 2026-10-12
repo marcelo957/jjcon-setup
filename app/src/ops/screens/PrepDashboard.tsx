@@ -9,7 +9,7 @@ import { GROUPS, isReady, PREP, PREP_ORDER } from '../data/meta';
 import { activeSectors, isBlocked, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { PrepStatus, Sector } from '../data/types';
-import { BuildTag, Modal, PageHead, PrepChip, Segments } from '../ui/bits';
+import { BuildTag, IconBtn, Modal, PageHead, PrepChip, Segments } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 
 type Expand = `${string}|fp` | `${string}|other` | null;
@@ -44,7 +44,11 @@ export function PrepDashboard() {
         overline="Office · content preparation"
         title="Prep dashboard"
         lead={`${EVENT_NAME} · ${VENUE}. Every sector needs a floorplan, a material list and setup instructions before load-in.`}
-        actions={me.canManageSectors && <Button icon="plus" onClick={() => navigate('/sectors/new')}>Add sector</Button>}
+        actions={<>
+          <Button variant="neutral" outlined icon="mobile-screen-button" onClick={() => navigate('/field')}>Field view</Button>
+          <Button variant="neutral" outlined icon="print" onClick={() => navigate('/print')}>Print packets</Button>
+          {me.canManageSectors && <Button icon="plus" onClick={() => navigate('/sectors/new')}>Add sector</Button>}
+        </>}
       />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -57,7 +61,7 @@ export function PrepDashboard() {
 
       <div className="card" style={{ overflow: 'hidden' }}>
         <div className="table-wrap">
-          <table className="data-table" style={{ minWidth: 1270 }}>
+          <table className="data-table" style={{ minWidth: 1370 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border-divider)' }}>
                 <th style={{ width: 40, padding: '10px 16px' }}>
@@ -70,6 +74,7 @@ export function PrepDashboard() {
                 <th style={{ width: 150 }}>Material list</th>
                 <th style={{ width: 150 }}>Instructions</th>
                 <th style={{ width: 170 }}>Other items</th>
+                <th style={{ width: 100, padding: '10px 16px', textAlign: 'right' }}>Packet</th>
               </tr>
             </thead>
             <tbody>
@@ -80,7 +85,7 @@ export function PrepDashboard() {
                   <Fragment key={g.id}>
                     <tr style={{ background: 'var(--color-neutral-surface-300)', borderBottom: '1px solid var(--border-subtle)' }}>
                       <td />
-                      <td colSpan={6} className="overline--secondary" style={{ font: 'var(--ib-text-overline)', letterSpacing: 1, textTransform: 'uppercase', padding: '6px 16px', color: 'var(--text-secondary)' }}>
+                      <td colSpan={7} className="overline--secondary" style={{ font: 'var(--ib-text-overline)', letterSpacing: 1, textTransform: 'uppercase', padding: '6px 16px', color: 'var(--text-secondary)' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Icon fa={g.icon} size={11} style={{ color: 'var(--icon-tertiary)' }} />{g.name}
                           <span className="mono muted" style={{ fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>{rows.length}</span>
@@ -97,7 +102,7 @@ export function PrepDashboard() {
                 );
               })}
               {!visible.length && (
-                <tr><td colSpan={7}>
+                <tr><td colSpan={8}>
                   <div className="empty">
                     <Icon fa="magnifying-glass" size={40} style={{ color: 'var(--border-divider)' }} />
                     <div className="empty__title">No sectors match</div>
@@ -108,19 +113,20 @@ export function PrepDashboard() {
             </tbody>
           </table>
         </div>
-        {me.canManageSectors && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '12px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--color-neutral-surface-50)' }}>
-            <span className="muted" style={{ fontSize: 13 }}>{chosen.length ? `${chosen.length} selected` : 'Select sectors for a bulk action'}</span>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '12px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--color-neutral-surface-50)' }}>
+          <span className="muted" style={{ fontSize: 13 }}>{chosen.length ? `${chosen.length} selected` : 'Select sectors for a bulk action'}</span>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
+            {me.canManageSectors && <>
               <div style={{ width: 160 }}>
                 <PersonPicker people={data.people} action actionLabel="Assign owner" disabled={!chosen.length}
                   onPick={(id) => { chosen.forEach((s) => opsStore().saveSector(s.id, (x) => { x.ownerId = id; })); }}
                   onAdd={(name) => { const id = opsStore().addPerson(name); chosen.forEach((s) => opsStore().saveSector(s.id, (x) => { x.ownerId = id; })); }} />
               </div>
               <Button size="small" outlined variant="neutral" icon="circle-check" disabled={!chosen.length} onClick={() => setConfirmReady(true)}>Mark ready</Button>
-            </div>
+            </>}
+            <Button size="small" icon="print" disabled={!chosen.length} onClick={() => navigate(`/print?sel=${chosen.map((s) => s.id).join(',')}&sector=${chosen[0].id}`)}>Print packets</Button>
           </div>
-        )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', marginTop: 14, padding: '12px 16px', background: 'var(--color-neutral-white)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
@@ -216,6 +222,12 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
                 title={`${other.ready} of ${other.total} other items ready — click to open the list`} />
             : <span className="na-dash" style={{ width: 100, textAlign: 'left' }} title="This sector has no other blocks">—</span>}
         </td>
+        <td style={{ padding: '3px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'inline-flex', gap: 4 }}>
+            <IconBtn fa="mobile-screen-button" label={`Open ${s.name} in field view`} onClick={() => navigate(`/field/${s.id}`)} />
+            <IconBtn fa="print" label={`Preview the ${s.name} print packet`} onClick={() => navigate(`/print?sector=${s.id}`)} />
+          </span>
+        </td>
       </tr>
       {fpOpen && (
         <ExpandRow title={`Required floorplans · ${s.name}`}
@@ -253,7 +265,7 @@ function ExpandRow({ title, items }: { title: string; items: { key: string; name
   return (
     <tr style={{ background: 'var(--color-neutral-surface-100)', borderBottom: '1px solid var(--border-subtle)' }}>
       <td />
-      <td colSpan={6} style={{ padding: '10px 16px 14px' }}>
+      <td colSpan={7} style={{ padding: '10px 16px 14px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="overline overline--secondary">{title}</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

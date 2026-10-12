@@ -205,6 +205,14 @@ export class OpsStore {
     }, false);
   }
 
+  /** A batch of packets went to the printer: each one now matches its sector's content. */
+  markPrinted(ids: string[]) {
+    const at = this.now().toISOString();
+    const next = structuredClone(this.data);
+    next.sectors.forEach((s) => { if (ids.includes(s.id)) s.packetPrintedAt = at; });
+    this.commit(next);
+  }
+
   /** Task decisions: not content, so they never mark a packet out of date. */
   private editTasks(keys: string[], by: string, fn: (t: TaskState, sectorId: string, slot: string) => void) {
     const next = structuredClone(this.data);

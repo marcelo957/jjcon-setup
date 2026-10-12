@@ -129,6 +129,8 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
           )}
         </div>
         <div className="page-head__actions" style={{ flex: '0 0 auto', marginLeft: 'auto' }}>
+          {!editing && !s.archived && <Button variant="neutral" outlined icon="mobile-screen-button" onClick={() => navigate(`/field/${s.id}`)}>Field view</Button>}
+          {!editing && !s.archived && <Button variant="neutral" outlined icon="print" onClick={() => navigate(`/print?sector=${s.id}`)}>Print packet</Button>}
           {!editing && canEdit && <Button icon="pen" onClick={startEdit}>Edit</Button>}
           {editing && <>
             <Button ghost onClick={stopEdit}>Cancel</Button>

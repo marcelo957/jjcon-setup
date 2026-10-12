@@ -6,7 +6,7 @@ import type { FileRef } from '../data/types';
 import { readFile } from '../files/fileStore';
 import { closePdf, openPdf } from '../files/pdf';
 
-function usePdf(file: FileRef | undefined) {
+export function usePdf(file: FileRef | undefined) {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,9 @@ function usePdf(file: FileRef | undefined) {
 }
 
 /** Renders one page into a canvas at `scale` CSS pixels per PDF point, sharp on high-density screens. */
-function PageCanvas({ doc, page, scale, onSize }: { doc: PDFDocumentProxy; page: number; scale: number; onSize?: (w: number, h: number) => void }) {
+function PageCanvas({ doc, page, scale, onSize, onDone, minDpr = 1 }: {
+  doc: PDFDocumentProxy; page: number; scale: number; onSize?: (w: number, h: number) => void; onDone?: () => void; minDpr?: number;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let task: RenderTask | null = null;
@@ -38,7 +40,7 @@ function PageCanvas({ doc, page, scale, onSize }: { doc: PDFDocumentProxy; page:
       if (!live || !ref.current) return;
       const base = p.getViewport({ scale: 1 });
       onSize?.(base.width, base.height);
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.max(minDpr, window.devicePixelRatio || 1);
       const vp = p.getViewport({ scale: scale * dpr });
       const c = ref.current;
       c.width = Math.floor(vp.width);
@@ -46,7 +48,7 @@ function PageCanvas({ doc, page, scale, onSize }: { doc: PDFDocumentProxy; page:
       c.style.width = `${Math.floor(base.width * scale)}px`;
       c.style.height = `${Math.floor(base.height * scale)}px`;
       task = p.render({ canvas: c, viewport: vp });
-      task.promise.catch(() => {});
+      task.promise.then(() => { if (live) onDone?.(); }, () => {});
     });
     return () => { live = false; task?.cancel(); };
   }, [doc, page, scale]);
@@ -139,6 +141,90 @@ export function PdfThumb({ file }: { file?: FileRef }) {
           <Icon fa="file-pdf" size={22} />
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The phone's floorplan: a fixed-height pane the lead scrolls and pinches, with large
+ * zoom and page buttons. Opens fitted to the pane's width.
+ */
+export function PhonePdf({ file }: { file: FileRef }) {
+  const { doc, error } = usePdf(file);
+  const [page, setPage] = useState(1);
+  const [zoom, setZoom] = useState<number | null>(null);
+  const [w, setW] = useState(0);
+  const [pageSize, setPageSize] = useState({ w: 880, h: 660 });
+  const boxRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setW(el.clientWidth));
+    ro.observe(el);
+    setW(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => { setPage(1); setZoom(null); }, [file.id]);
+  const fit = w ? Math.max(0.2, (w - 24) / pageSize.w) : 0.38;
+  const scale = zoom ?? fit;
+  const pages = doc?.numPages ?? file.pages;
+  const big = { width: 44, height: 44, border: '1px solid var(--border-divider)', borderRadius: 8, background: 'var(--color-neutral-white)', color: 'var(--text-primary)', cursor: 'pointer' } as const;
+  return (
+    <div className="field-card" style={{ overflow: 'hidden', padding: 0 }}>
+      <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-neutral-gray-300)' }}>
+          <Icon fa="file-pdf" size={14} style={{ color: 'var(--feedback-danger-text)' }} />
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name} · {sizeLabel(file.size)} · {dateLabel(file.uploadedAt)}</span>
+        </div>
+        {pages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <button type="button" style={big} aria-label="Previous page" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon fa="angle-left" size={14} /></button>
+            <span className="mono" style={{ flex: 1, textAlign: 'center', fontSize: 15 }}>Page {Math.min(page, pages)} of {pages}</span>
+            <button type="button" style={big} aria-label="Next page" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}><Icon fa="angle-right" size={14} /></button>
+          </div>
+        )}
+      </div>
+      <div ref={boxRef} style={{ height: 340, overflow: 'auto', background: 'var(--color-neutral-surface-300)', touchAction: 'pan-x pan-y pinch-zoom' }}>
+        {error && <div className="notice" style={{ margin: 12 }}><div className="notice__title">Can't show this PDF</div><div className="notice__text">{error}</div></div>}
+        {!error && !doc && <div className="muted" style={{ padding: 12, fontSize: 14 }}>Loading the floorplan…</div>}
+        {doc && (
+          <div style={{ width: 'max-content', padding: 12 }}>
+            <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} onSize={(pw, ph) => { if (pw !== pageSize.w || ph !== pageSize.h) setPageSize({ w: pw, h: ph }); }} />
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderTop: '1px solid var(--border-subtle)' }}>
+        <button type="button" style={big} aria-label="Zoom out" onClick={() => setZoom(Math.max(0.2, +(scale - 0.2).toFixed(2)))}><Icon fa="minus" size={14} /></button>
+        <span className="mono" style={{ fontSize: 15, minWidth: 56, textAlign: 'center' }} aria-live="polite">{Math.round(scale * 100)}%</span>
+        <button type="button" style={big} aria-label="Zoom in" onClick={() => setZoom(Math.min(3, +(scale + 0.2).toFixed(2)))}><Icon fa="plus" size={14} /></button>
+        <button type="button" onClick={() => setZoom(null)} style={{ ...big, width: 'auto', padding: '0 12px', color: 'var(--brand-primary)', fontFamily: 'Inter, sans-serif', fontSize: 14 }}>Fit</button>
+        <span className="muted" style={{ fontSize: 13, marginLeft: 'auto', textAlign: 'right' }}>Pinch to zoom</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One PDF page fitted inside a fixed box, for the print packet. Rendered at print resolution;
+ * `onReady` fires once the page is drawn (or can't be), so printing waits for it.
+ */
+export function PdfPageFit({ file, page, width, height, onReady }: { file: FileRef; page: number; width: number; height: number; onReady?: () => void }) {
+  const { doc, error } = usePdf(file);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const reported = useRef(false);
+  const ready = () => { if (!reported.current) { reported.current = true; onReady?.(); } };
+  useEffect(() => { if (error) ready(); }, [error]);
+  // Measure first, so the page is drawn once at its final scale.
+  useEffect(() => {
+    if (!doc) return;
+    let live = true;
+    doc.getPage(Math.min(page, doc.numPages)).then((p) => { const v = p.getViewport({ scale: 1 }); if (live) setSize({ w: v.width, h: v.height }); }, ready);
+    return () => { live = false; };
+  }, [doc, page]);
+  return (
+    <div style={{ width, height, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#fff' }}>
+      {error && <span style={{ fontSize: 14 }}>This PDF could not be opened. Print it from the sector page instead.</span>}
+      {doc && size && <PageCanvas doc={doc} page={Math.min(page, doc.numPages)} scale={Math.min(width / size.w, height / size.h)} minDpr={2} onDone={ready} />}
     </div>
   );
 }

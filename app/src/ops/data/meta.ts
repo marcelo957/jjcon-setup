@@ -9,11 +9,12 @@ export const PREP: Record<PrepStatus, { label: string; icon: string; note: strin
 export const PREP_ORDER: PrepStatus[] = ['none', 'draft', 'ready', 'approved'];
 export const isReady = (s: PrepStatus) => s === 'ready' || s === 'approved';
 
-export const BUILD: Record<BuildStatus, { label: string; icon: string }> = {
-  none: { label: 'Not started', icon: 'circle-dot' },
-  progress: { label: 'In progress', icon: 'person-digging' },
-  complete: { label: 'Complete', icon: 'circle-check' }
+export const BUILD: Record<BuildStatus, { label: string; icon: string; accent: string; note: string }> = {
+  none: { label: 'Not started', icon: 'circle-dot', accent: 'var(--border-divider)', note: 'crate unopened' },
+  progress: { label: 'In progress', icon: 'person-digging', accent: 'var(--accent-gold)', note: 'crew on site' },
+  complete: { label: 'Complete', icon: 'circle-check', accent: 'var(--feedback-success-text)', note: 'lead signed off' }
 };
+export const BUILD_ORDER: BuildStatus[] = ['none', 'progress', 'complete'];
 
 export const GROUPS: { id: GroupId; name: string; icon: string }[] = [
   { id: 'ibjjf', name: 'IBJJF Sectors', icon: 'vector-square' },
