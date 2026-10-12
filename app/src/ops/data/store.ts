@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
-import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, PlanKey, Sector } from './types';
+import { addDays, splitKey } from './tasks';
+import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, PlanKey, Sector, TaskState } from './types';
 
 /**
  * The console's data, kept in the browser until there is a real API. Every screen reads it
@@ -9,7 +10,7 @@ import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, PlanKey, Sector 
  * replacing this class, not the screens.
  */
 
-const KEY = 'jjcon.ops.v1';
+const KEY = 'jjcon.ops.v2';
 
 /** Everything the create/edit sector form controls. */
 export interface SectorStructure {
@@ -150,6 +151,48 @@ export class OpsStore {
       const st = s.blocks[block].steps.find((x) => x.id === stepId);
       if (st) st.done = !st.done;
     }, false);
+  }
+
+  /** Task decisions: not content, so they never mark a packet out of date. */
+  private editTasks(keys: string[], by: string, fn: (t: TaskState, sectorId: string, slot: string) => void) {
+    const next = structuredClone(this.data);
+    keys.forEach((key) => {
+      const [sid, slot] = splitKey(key);
+      const s = next.sectors.find((x) => x.id === sid);
+      if (!s) return;
+      s.tasks = s.tasks ?? {};
+      s.tasks[slot] = s.tasks[slot] ?? {};
+      fn(s.tasks[slot], sid, slot);
+    });
+    next.tasksUpdated = { at: this.now().toISOString(), by };
+    this.commit(next);
+  }
+
+  setTaskDone(keys: string[], done: boolean, by: string) {
+    this.editTasks(keys, by, (t) => {
+      t.done = done;
+      if (done) { t.doneBy = by; t.doneAt = this.now().toISOString(); } else { delete t.doneBy; delete t.doneAt; }
+    });
+  }
+
+  setTaskWho(keys: string[], who: string, by: string) {
+    this.editTasks(keys, by, (t) => { t.who = who; });
+  }
+
+  setTaskDue(keys: string[], due: string, by: string) {
+    this.editTasks(keys, by, (t) => { t.due = due; });
+  }
+
+  /** Move each task's current deadline by `days`. `current` gives the deadline shown now. */
+  shiftTaskDue(keys: string[], days: number, by: string, current: (key: string) => string) {
+    this.editTasks(keys, by, (t, sid, slot) => { t.due = addDays(current(`${sid}:${slot}`), days); });
+  }
+
+  setTaskNote(key: string, text: string, by: string) {
+    this.editTasks([key], by, (t) => {
+      if (text.trim()) t.note = { text: text.trim(), by, at: this.now().toISOString() };
+      else delete t.note;
+    });
   }
 
   /** Attach an uploaded PDF to a plan. A new file sets the plan back to draft unless it was approved. */

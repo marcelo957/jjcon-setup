@@ -1,5 +1,7 @@
 import { BLOCK_DEFAULTS, PLAN_KEYS } from './meta';
-import type { BlockKey, Blocks, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, PrepStatus, Sector } from './types';
+import { sortSectors } from './selectors';
+import { addDays, sectorItems, toIsoDay } from './tasks';
+import type { BlockKey, Blocks, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, PrepStatus, Sector, TaskState } from './types';
 
 /**
  * Demo data from project/JJCon Ops.dc.html: the Jiu-Jitsu Con 2027 sectors, their plans, material
@@ -181,6 +183,36 @@ const ARCHIVED: Record<string, [number, string, string]> = {
   crates: [4, 'p-marcelo', 'Venue is handling crate return this year']
 };
 
+// Task overrides from the design: unassigned items, a reassigned plan, and delay notes [days ago, by].
+const TASK_WHO: Record<string, string> = { 'ent-mak:C': '', 'pod-wm:netMat': '', 'champ-wm:D': '', 'truss:C': 'p-gordo' };
+const TASK_NOTES: Record<string, [string, number, string]> = {
+  'store:netMat': ['Waiting on the till vendor for the network spec. Promised by Monday.', 3, 'p-marcelo'],
+  'ent-mak:B': ['Scanner count went from 4 to 6. The plan is being redrawn.', 2, 'p-gordo'],
+  'bleachers:info': ['Bleacher supplier moved delivery to the 22nd.', 4, 'p-dandre']
+};
+
+/**
+ * Deadlines from the design, which was dated 13 Aug 2027: each item is due its lead time before
+ * the build day, nudged a couple of days per sector. Shifted so 13 Aug lands on today, which keeps
+ * the overdue and due-soon states in the demo.
+ */
+function seedTasks(sectors: Sector[], now: Date) {
+  const today = toIsoDay(now);
+  sortSectors(sectors.filter((s) => !s.archived)).forEach((s, xi) => {
+    const jitter = (xi % 5) - 2;
+    const buildDay = Number(s.day.slice(8, 10));
+    s.tasks = {};
+    sectorItems(s).forEach((it) => {
+      const k = `${s.id}:${it.slot}`;
+      const t: TaskState = { due: addDays(today, buildDay - it.offset + jitter - 13) };
+      if (TASK_WHO[k] !== undefined) t.who = TASK_WHO[k];
+      const n = TASK_NOTES[k];
+      if (n) t.note = { text: n[0], by: n[2], at: new Date(now.getTime() - n[1] * 86_400_000).toISOString() };
+      s.tasks![it.slot] = t;
+    });
+  });
+}
+
 export function seedData(now = new Date()): OpsData {
   const DAY = 86_400_000;
   const ago = (d: number) => new Date(now.getTime() - d * DAY).toISOString();
@@ -190,10 +222,7 @@ export function seedData(now = new Date()): OpsData {
 
   const tick = (count: number | 'all' | undefined, i: number) => count === 'all' || (count !== undefined && i < count);
 
-  return {
-    version: 1,
-    people: SEED_PEOPLE.map((p) => ({ ...p })),
-    sectors: SECTORS.map(([id, group, name, ownerId, leadId, location, day, from, to, build, m, i]) => {
+  const sectors: Sector[] = SECTORS.map(([id, group, name, ownerId, leadId, location, day, from, to, build, m, i]) => {
       const on = { mainMat: false, netMat: false, instr: false, info: false, install: false, link: false, ...BLOCK_DEFAULTS[group], ...BLOCKS_BY[id] };
       const st = (k: BlockKey): PrepStatus => STATUS_BY[id]?.[k] ?? (k === 'instr' || k === 'install' ? i : k === 'link' ? 'approved' : m);
 
@@ -256,8 +285,12 @@ export function seedData(now = new Date()): OpsData {
       const arch = ARCHIVED[id];
       if (arch) sector.archived = { at: ago(arch[0]), by: arch[1], reason: arch[2] };
       return sector;
-    })
-  };
+    });
+  seedTasks(sectors, now);
+  // The last 09:00 before now: the time the office's weekly snapshot was taken.
+  const nine = new Date(now); nine.setHours(9, 0, 0, 0);
+  if (nine > now) nine.setDate(nine.getDate() - 1);
+  return { version: 1, people: SEED_PEOPLE.map((p) => ({ ...p })), sectors, tasksUpdated: { at: nine.toISOString(), by: 'p-marcelo' } };
 }
 
 /**

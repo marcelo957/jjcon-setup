@@ -77,6 +77,19 @@ export interface CustomBlock {
   foot?: string;
 }
 
+/** What has been decided about one task: each required plan and each enabled block is a task. */
+export interface TaskState {
+  /** ISO date. Unset: the build day minus the item's lead time. */
+  due?: string;
+  /** Person id, or '' for unassigned. Unset: the sector's owner (lead for instructions and installation). */
+  who?: string;
+  /** Unset: done once the item is ready or approved. */
+  done?: boolean;
+  doneBy?: string;
+  doneAt?: string;
+  note?: { text: string; by: string; at: string };
+}
+
 export interface Sector {
   id: string;
   name: string;
@@ -99,10 +112,14 @@ export interface Sector {
   xref?: { sectorId: string; text: string; tail: string };
   packetPrintedAt?: string;
   contentChangedAt?: string;
+  /** Keyed by plan key, block key or custom block id. */
+  tasks?: Record<string, TaskState>;
 }
 
 export interface OpsData {
   version: 1;
   people: Person[];
   sectors: Sector[];
+  /** When task assignments last changed, shown on the Team page so a meeting knows it is current. */
+  tasksUpdated?: { at: string; by: string };
 }

@@ -14,6 +14,8 @@ const Shell = lazy(() => import('./ops/Shell').then((m) => ({ default: m.Shell }
 const PrepDashboard = lazy(() => import('./ops/screens/PrepDashboard').then((m) => ({ default: m.PrepDashboard })));
 const SectorIndex = lazy(() => import('./ops/screens/SectorIndex').then((m) => ({ default: m.SectorIndex })));
 const SectorPage = lazy(() => import('./ops/screens/SectorPage').then((m) => ({ default: m.SectorPage })));
+const TasksPage = lazy(() => import('./ops/screens/TasksPage').then((m) => ({ default: m.TasksPage })));
+const TeamPage = lazy(() => import('./ops/screens/TeamPage').then((m) => ({ default: m.TeamPage })));
 const SectorForm = lazy(() => import('./ops/screens/SectorForm').then((m) => ({ default: m.SectorForm })));
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -34,6 +36,8 @@ export function AppRoutes() {
       <Route path="/access/roles" element={<RolesReference />} />
       <Route element={<RequireAuth><Shell /></RequireAuth>}>
         <Route path="/prep" element={<PrepDashboard />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/team" element={<TeamPage />} />
         <Route path="/sectors" element={<SectorIndex />} />
         <Route path="/sectors/new" element={<SectorForm mode="create" />} />
         <Route path="/sectors/:id" element={<SectorPage />} />

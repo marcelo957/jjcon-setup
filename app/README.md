@@ -4,9 +4,9 @@ React + Vite + TypeScript build of the Claude Design export in `../project`:
 
 - **Access** (`project/JJCon Access.dc.html`): sign in, password reset, invitations and the
   Admin / Editor / Crew permission model.
-- **Console** (`project/JJCon Ops.dc.html`), built in phases. Phase 1 is here: the app shell,
-  Prep dashboard, Sectors index, sector page and the create/edit sector form. Tasks, Team,
-  People, Field view and Print packets follow.
+- **Console** (`project/JJCon Ops.dc.html`), built in phases. Done: the app shell, Prep
+  dashboard, Sectors index, sector page, create/edit sector form, Tasks, and Team with
+  presentation mode. People, Field view and Print packets follow.
 
 Styled with Bushido v2: tokens and fonts in `src/styles/bushido/`, and the console uses the
 design system's own React components from `src/vendor/bushido/_ds_bundle.js` (wrapped in
@@ -30,6 +30,8 @@ npm run build
 | `/access/roles` | 5 roles and permissions reference |
 | `/access` | index of all of the above with demo accounts |
 | `/prep` | Prep dashboard: readiness matrix, floorplan and other-item rollups, bulk owner and mark-ready |
+| `/tasks` | Every required item as one list: status, deadline, responsible; filters in the URL (`?person=`, `?sector=`, `?type=`, `?status=`, `?late=1`) |
+| `/team` | One card per person, most behind first, with notes and Present mode (arrow keys, Esc); `?person=`, `?overdue=1` |
 | `/sectors` | Sectors index, Active and Archived tabs, archive / restore / delete |
 | `/sectors/new`, `/sectors/:id/edit` | Create / edit form: plans, built-in blocks, custom blocks |
 | `/sectors/:id` | Sector page; `?plan=G` picks a floorplan, `?edit=1` opens edit mode, `#material` etc. scroll to a card |
@@ -59,7 +61,10 @@ unticked, it lives in sessionStorage and ends with the browser.
 
 `src/ops/data/store.ts` keeps people and sectors in localStorage, seeded from the design's data
 (`seed.ts`). Every screen reads it with `useOps()` and changes it only through `OpsStore`
-methods, so a real API replaces that one class. Uploaded PDFs go to IndexedDB
+methods, so a real API replaces that one class. Tasks are not stored separately: every required plan and enabled block on an active sector is a
+task (`src/ops/data/tasks.ts`), and the sector keeps only what was decided about it (deadline,
+responsible, done, delay note). Demo deadlines are placed around today so overdue and due-soon
+items show. Uploaded PDFs go to IndexedDB
 (`src/ops/files/fileStore.ts`); the demo plans point at `sample:` ids that are drawn on demand
 as real PDFs (`samplePdf.ts`). PDFs render with pdf.js (legacy build, for older phone browsers),
 canvas only: no annotation layer, no document scripts.
