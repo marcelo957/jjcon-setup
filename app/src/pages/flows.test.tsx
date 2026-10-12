@@ -65,11 +65,11 @@ describe('sign in', () => {
 describe('password reset', () => {
   it('requests a link, follows it and sets a new password', async () => {
     const user = renderAt('/forgot-password');
-    await user.type(screen.getByLabelText('Email'), 'cardoso@ibjjf.com');
+    await user.type(screen.getByLabelText('Email'), 'diego@ibjjf.com');
     await user.click(screen.getByRole('button', { name: 'Send reset link' }));
     expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Open the reset link' }));
-    expect(await screen.findByText('For cardoso@ibjjf.com')).toBeInTheDocument();
+    expect(await screen.findByText('For diego@ibjjf.com')).toBeInTheDocument();
     await user.type(screen.getByLabelText('New password'), 'short');
     await user.type(screen.getByLabelText('Confirm new password'), 'different');
     await user.click(screen.getByRole('button', { name: 'Save and sign in' }));
@@ -112,7 +112,7 @@ describe('invitation', () => {
   it('shows the already-used state', async () => {
     renderAt(`/invite/${DEMO_TOKENS.inviteUsed}`);
     expect(await screen.findByRole('heading', { name: 'This invitation has already been used' })).toBeInTheDocument();
-    expect(screen.getByText(/The account for cardoso@ibjjf.com is already set up/)).toBeInTheDocument();
+    expect(screen.getByText(/The account for diego@ibjjf.com is already set up/)).toBeInTheDocument();
   });
 });
 

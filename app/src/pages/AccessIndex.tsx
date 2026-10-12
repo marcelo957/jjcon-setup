@@ -20,7 +20,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     rows: [
       { id: '2a', caption: 'Request a reset link', to: '/forgot-password' },
       { id: '2b', caption: 'Link sent', to: '/forgot-password', how: 'submit any email' },
-      { id: '2c', caption: 'Set a new password', to: `/reset-password/${DEMO_TOKENS.reset}`, how: 'for cardoso@ibjjf.com' }
+      { id: '2c', caption: 'Set a new password', to: `/reset-password/${DEMO_TOKENS.reset}`, how: 'for diego@ibjjf.com' }
     ]
   },
   {

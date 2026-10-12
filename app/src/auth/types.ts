@@ -3,17 +3,6 @@ export type Role = 'admin' | 'editor' | 'crew';
 /** Login state shown on the People page. Being assignable and being able to sign in are separate. */
 export type LoginState = 'active' | 'invited' | 'none' | 'deactivated';
 
-export interface Person {
-  id: string;
-  name: string;
-  /** A person added as a name only has no email and no login. */
-  email?: string;
-  role: Role;
-  login: LoginState;
-  deactivatedAt?: string;
-  deactivatedBy?: string;
-}
-
 export interface Session {
   personId: string;
   name: string;
@@ -23,6 +12,8 @@ export interface Session {
   keep: boolean;
   /** ISO time the session ends, or null when it ends with the browser. */
   expiresAt: string | null;
+  /** When the session started. "Sign out of all devices" ends sessions issued before it. */
+  issuedAt?: string;
 }
 
 export interface Invitation {
@@ -55,7 +46,29 @@ export type ResetLookup =
   | { status: 'valid'; email: string }
   | { status: 'expired' | 'used' | 'not-found' };
 
+/** What the People page shows about someone's login. */
+export interface AccessInfo {
+  personId: string;
+  role: Role;
+  login: 'active' | 'invited' | 'none';
+  lastSignInAt?: string;
+  invitation?: { sentAt: string; sentBy: string; expiresAt: string; expired: boolean };
+}
+
+/** Admin actions on logins. A real backend checks the caller is an admin; the mock trusts the UI. */
+export interface AccessAdmin {
+  listAccess(): Promise<AccessInfo[]>;
+  /** Sends (or re-sends) an invitation. The person must already be on the People list with an email. */
+  invite(personId: string, role: Role, invitedBy: string): Promise<{ devLink?: string }>;
+  revokeInvite(personId: string): Promise<void>;
+  setRole(personId: string, role: Role): Promise<void>;
+  signOutEverywhere(personId: string): Promise<void>;
+}
+
 export interface AuthService {
+  /** The session as it stands now: role and name refreshed, or null once it was signed out, deactivated or removed. */
+  checkSession(session: Session): Promise<Session | null>;
+  access: AccessAdmin;
   signIn(email: string, password: string, keep: boolean): Promise<SignInResult>;
   /** Always resolves the same way whether or not the email has a login, so it can't be used to probe accounts. */
   requestPasswordReset(email: string): Promise<{ devLink?: string }>;

@@ -5,8 +5,9 @@ React + Vite + TypeScript build of the Claude Design export in `../project`:
 - **Access** (`project/JJCon Access.dc.html`): sign in, password reset, invitations and the
   Admin / Editor / Crew permission model.
 - **Console** (`project/JJCon Ops.dc.html`), built in phases. Done: the app shell, Prep
-  dashboard, Sectors index, sector page, create/edit sector form, Tasks, and Team with
-  presentation mode. People, Field view and Print packets follow.
+  dashboard, Sectors index, sector page, create/edit sector form, Tasks, Team with
+  presentation mode, and People (invite, app roles, deactivate with reassignment). Field view
+  and Print packets follow.
 
 Styled with Bushido v2: tokens and fonts in `src/styles/bushido/`, and the console uses the
 design system's own React components from `src/vendor/bushido/_ds_bundle.js` (wrapped in
@@ -34,6 +35,8 @@ npm run build
 | `/team` | One card per person, most behind first, with notes and Present mode (arrow keys, Esc); `?person=`, `?overdue=1` |
 | `/sectors` | Sectors index, Active and Archived tabs, archive / restore / delete |
 | `/sectors/new`, `/sectors/:id/edit` | Create / edit form: plans, built-in blocks, custom blocks |
+| `/people` | Admin only: everyone on the list with job title, email, app role and login state; add, invite, resend, revoke |
+| `/people/:id` | Admin only: person record, live-edited details, login and access actions, current work, deactivate / reactivate / delete |
 | `/sectors/:id` | Sector page; `?plan=G` picks a floorplan, `?edit=1` opens edit mode, `#material` etc. scroll to a card |
 
 The phone layouts (4a–4c) are the same routes under 480px wide: no card, white page, 48px controls.
@@ -41,8 +44,12 @@ The phone layouts (4a–4c) are the same routes under 480px wide: no card, white
 ## Auth backend
 
 Screens only talk to the `AuthService` interface (`src/auth/types.ts`). `src/auth/service.ts`
-currently wires in `MockAuthService`, which keeps demo people, invitations and reset tokens in
-localStorage; replace it with an HTTP implementation when the API exists. In mock mode the
+currently wires in `MockAuthService`, which keeps login accounts (role, password, sign-in
+times), invitations and reset tokens in localStorage (`jjcon.mockdb.v2`); replace it with an HTTP
+implementation when the API exists. Names, emails and active/inactive come from the console's
+People list (`opsDirectory`), so one person is one record: deactivating someone in People blocks
+their sign-in, and the app checks the session again whenever the tab regains focus. Admin
+actions (invite, change role, revoke, sign out of all devices) go through `AuthService.access`. In mock mode the
 "Check your email" screen shows the reset link that a real backend would email.
 
 Demo accounts (reset them from `/access`):
@@ -50,9 +57,12 @@ Demo accounts (reset them from `/access`):
 | Email | Password | State |
 | --- | --- | --- |
 | marcelo@ibjjf.com | jjcon-admin-2027 | Admin |
-| diego@ibjjf.com, cardoso@ibjjf.com | jjcon-editor-2027 | Editor |
+| diego@ibjjf.com | jjcon-editor-2027 | Editor |
 | jackson@ibjjf.com (D'Andre) | jjcon-crew-2027 | Crew |
 | p.nakamura@ibjjf.com | jjcon-crew-2027 | Deactivated |
+
+Diego also has the demo reset link (2c) and the already-used invitation (3c); Rafa has the
+expired invitation (3b).
 
 Sessions: "Keep me signed in" (on by default) stores the session in localStorage for 30 days;
 unticked, it lives in sessionStorage and ends with the browser.

@@ -17,9 +17,15 @@ export type CustomKind = 'pdf' | 'checklist' | 'text' | 'link' | 'gallery';
 export interface Person {
   id: string;
   name: string;
+  /** Job title. */
   role: string;
   email: string;
+  /** Inactive people are hidden from every assignment field; their record and history stay. */
   active: boolean;
+  deactivatedAt?: string;
+  deactivatedBy?: string;
+  /** Set when added by name only from an assignment field. */
+  addedInlineAt?: string;
 }
 
 /** An uploaded PDF. The bytes live in the file store under `id`. */

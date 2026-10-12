@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
 import { addDays, splitKey } from './tasks';
-import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, PlanKey, Sector, TaskState } from './types';
+import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Sector, TaskState } from './types';
 
 /**
  * The console's data, kept in the browser until there is a real API. Every screen reads it
@@ -87,11 +87,63 @@ export class OpsStore {
 
   /** Inline "Add person" from an assignment field: a name only, filled in later on the People page. */
   addPerson(name: string): string {
+    return this.createPerson({ name, role: '', email: '', active: true }, true);
+  }
+
+  createPerson(p: { name: string; role: string; email: string; active: boolean }, inline = false): string {
     const id = `p-${Math.random().toString(36).slice(2, 8)}`;
     const next = structuredClone(this.data);
-    next.people.push({ id, name: name.trim(), role: '', email: '', active: true });
+    next.people.push({ id, name: p.name.trim(), role: p.role.trim(), email: p.email.trim(), active: p.active, ...(inline ? { addedInlineAt: this.now().toISOString() } : {}) });
     this.commit(next);
     return id;
+  }
+
+  /** One record per person: a rename shows on every sector, task, card and packet at once. */
+  updatePerson(id: string, patch: Partial<Pick<Person, 'name' | 'role' | 'email'>>) {
+    const next = structuredClone(this.data);
+    const p = next.people.find((x) => x.id === id);
+    if (!p) return;
+    Object.assign(p, patch);
+    this.commit(next);
+  }
+
+  /**
+   * Deactivate after giving all open work a new owner. Done items keep the person who did them,
+   * so history still reads right.
+   */
+  deactivatePerson(id: string, by: string, moves: { sectors: { sectorId: string; field: 'leadId' | 'ownerId'; to: string }[]; tasks: { key: string; to: string }[] }, doneKeys: string[]) {
+    const next = structuredClone(this.data);
+    const pin = (key: string, who: string) => {
+      const [sid, slot] = splitKey(key);
+      const s = next.sectors.find((x) => x.id === sid);
+      if (!s) return;
+      s.tasks = s.tasks ?? {};
+      s.tasks[slot] = { ...s.tasks[slot], who };
+    };
+    doneKeys.forEach((k) => pin(k, id));
+    moves.sectors.forEach((m) => { const s = next.sectors.find((x) => x.id === m.sectorId); if (s) s[m.field] = m.to; });
+    moves.tasks.forEach((m) => pin(m.key, m.to));
+    const p = next.people.find((x) => x.id === id);
+    if (p) Object.assign(p, { active: false, deactivatedAt: this.now().toISOString(), deactivatedBy: by });
+    next.tasksUpdated = { at: this.now().toISOString(), by };
+    this.commit(next);
+  }
+
+  reactivatePerson(id: string) {
+    const next = structuredClone(this.data);
+    const p = next.people.find((x) => x.id === id);
+    if (!p) return;
+    p.active = true;
+    delete p.deactivatedAt;
+    delete p.deactivatedBy;
+    this.commit(next);
+  }
+
+  /** Only for someone never assigned anything; the People page checks that first. */
+  deletePerson(id: string) {
+    const next = structuredClone(this.data);
+    next.people = next.people.filter((p) => p.id !== id);
+    this.commit(next);
   }
 
   createSector(f: SectorStructure): string {

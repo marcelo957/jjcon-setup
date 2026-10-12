@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { clearSession, loadSession, saveSession } from './session';
 import type { AuthService, Session } from './types';
 
@@ -24,6 +24,27 @@ export function AuthProvider({ service, children }: { service: AuthService; chil
     clearSession();
     setSession(null);
   }, []);
+
+  // Re-check the session when the app opens and whenever the tab comes back: a role change
+  // applies on the next page, and deactivation or "sign out of all devices" ends it.
+  const sessionKey = session ? `${session.personId}|${session.issuedAt}` : '';
+  useEffect(() => {
+    if (!session) return;
+    let live = true;
+    const check = () => {
+      const current = loadSession();
+      if (!current) return;
+      service.checkSession(current).then((next) => {
+        if (!live) return;
+        if (!next) { clearSession(); setSession(null); }
+        else if (next !== current) { saveSession(next); setSession(next); }
+      });
+    };
+    check();
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { live = false; document.removeEventListener('visibilitychange', onVisible); };
+  }, [service, sessionKey]);
 
   const value = useMemo(() => ({ service, session, startSession, signOut }), [service, session, startSession, signOut]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
