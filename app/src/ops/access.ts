@@ -12,6 +12,9 @@ export function useMe() {
     session, signOut, id: session.personId, role,
     canManageSectors: can(role, 'manageSectors'),
     canEditSector: (s: Sector) => can(role, 'editSectorContent', { leadsSector: leads(s) }),
-    canCheckOff: can(role, 'checkOff')
+    canCheckOff: can(role, 'checkOff'),
+    canMarkTask: (who: string) => can(role, 'markTaskDone', { isOwnTask: who === session.personId }),
+    canSetDeadline: (who: string) => can(role, 'changeDeadline', { isOwnTask: who === session.personId }),
+    canReassign: can(role, 'reassignTasks')
   };
 }

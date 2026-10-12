@@ -49,6 +49,8 @@ export function Shell() {
           <nav className="ops-nav" aria-label="JJCON SetUp">
             <NavGroup label="Set up">
               <NavItem to="/prep" label={`Prep dashboard · ${activeSectors(data).length}`} icon="IconFilledTh" match={(p) => p.startsWith('/prep')} />
+              <NavItem to="/tasks" label="Tasks" icon="IconFilledTasks" match={(p) => p.startsWith('/tasks')} />
+              <NavItem to="/team" label="Team" icon="IconFilledUsers" match={(p) => p.startsWith('/team')} />
               <NavItem to="/sectors" label="Sectors" icon="IconFilledVectorSquare" match={(p) => p.startsWith('/sectors')} />
             </NavGroup>
             <div className="ops-nav__foot">

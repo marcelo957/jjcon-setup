@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    css: false
+    css: false,
+    // The first console render in each file evaluates the 1.9 MB Bushido bundle.
+    testTimeout: 20_000
   }
 });
