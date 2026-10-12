@@ -6,8 +6,8 @@ React + Vite + TypeScript build of the Claude Design export in `../project`:
   Admin / Editor / Crew permission model.
 - **Console** (`project/JJCon Ops.dc.html`), built in phases. Done: the app shell, Prep
   dashboard, Sectors index, sector page, create/edit sector form, Tasks, Team with
-  presentation mode, and People (invite, app roles, deactivate with reassignment). Field view
-  and Print packets follow.
+  presentation mode, People (invite, app roles, deactivate with reassignment), Field view and
+  Print packets.
 
 Styled with Bushido v2: tokens and fonts in `src/styles/bushido/`, and the console uses the
 design system's own React components from `src/vendor/bushido/_ds_bundle.js` (wrapped in
@@ -37,6 +37,8 @@ npm run build
 | `/sectors/new`, `/sectors/:id/edit` | Create / edit form: plans, built-in blocks, custom blocks |
 | `/people` | Admin only: everyone on the list with job title, email, app role and login state; add, invite, resend, revoke |
 | `/people/:id` | Admin only: person record, live-edited details, login and access actions, current work, deactivate / reactivate / delete |
+| `/field`, `/field/:id` | Field view: the phone layout for a sector lead. My sectors (`?all=1` for every sector, `?q=`), then one sector per screen with Floorplan / Materials / Information / Instructions tabs (`?tab=`, `?plan=`) |
+| `/print` | Print packets: batch list, Letter preview (`?sector=`), selection in `?sel=a,b`; prints in black and white through the browser |
 | `/sectors/:id` | Sector page; `?plan=G` picks a floorplan, `?edit=1` opens edit mode, `#material` etc. scroll to a card |
 
 The phone layouts (4a–4c) are the same routes under 480px wide: no card, white page, 48px controls.
@@ -81,6 +83,13 @@ canvas only: no annotation layer, no document scripts.
 
 The console loads lazily after sign-in. The Bushido bundle is 1.9 MB unminified (about 165 KB
 gzipped) and cannot be tree-shaken.
+
+Field view and print packets (`src/ops/data/packet.ts`) show only released content: a block
+reaches the floor and the packet once it is ready or approved and holds something. Anything else
+shows the owner's notice instead (on paper, with blank lines to record what arrives). Check-offs
+on the phone and the sector page are the same list. Printing lays every chosen packet out in a
+print-only layer, waits for the PDF sheets to draw, opens the browser's print dialog, then asks
+whether the packets printed before recording them as current.
 
 Permissions: `can(role, capability, ctx)` in `src/auth/permissions.ts` reads the same table the
 roles reference page renders. Use it to leave actions out of the page entirely rather than

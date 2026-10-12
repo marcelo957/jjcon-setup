@@ -52,6 +52,10 @@ export function Shell() {
               <NavItem to="/tasks" label="Tasks" icon="IconFilledTasks" match={(p) => p.startsWith('/tasks')} />
               <NavItem to="/team" label="Team" icon="IconFilledUsers" match={(p) => p.startsWith('/team')} />
               <NavItem to="/sectors" label="Sectors" icon="IconFilledVectorSquare" match={(p) => p.startsWith('/sectors')} />
+              <NavItem to="/print" label="Print packets" icon="IconFilledPrint" match={(p) => p.startsWith('/print')} />
+            </NavGroup>
+            <NavGroup label="On site">
+              <NavItem to="/field" label="Field view" icon="IconFilledMobileAlt" match={(p) => p.startsWith('/field')} />
             </NavGroup>
             {me.canManagePeople && (
               <NavGroup label="Settings">

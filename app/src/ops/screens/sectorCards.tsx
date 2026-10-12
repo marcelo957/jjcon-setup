@@ -7,6 +7,7 @@ import { dateLabel, materialGroups, plansOf, sizeLabel } from '../data/selectors
 import type { CustomBlock, FileRef, MatRow, PlanKey, PrepStatus, Sector, Step } from '../data/types';
 import { storePdf } from '../files/fileStore';
 import { countPages } from '../files/pdf';
+import { blockNotice } from '../data/packet';
 import { PrepChip } from '../ui/bits';
 import { PdfThumb, PdfViewer } from '../ui/PdfViewer';
 
@@ -46,13 +47,6 @@ export function Notice({ title, text, big, icon, action }: { title: string; text
       {action && <div style={{ marginTop: 14 }}>{action}</div>}
     </div>
   );
-}
-
-function blockNotice(status: PrepStatus, kind: string, owner: string, estimate?: string) {
-  const cap = kind[0].toUpperCase() + kind.slice(1);
-  if (status === 'none') return { title: `No ${kind} yet`, text: `Owner ${owner} has not started this block. Nothing to work from on the floor.` };
-  if (status === 'draft') return { title: `${cap} in draft`, text: `${owner} is still writing this block${estimate ? `, ${estimate}` : ''}. It is not released for the floor or for print.` };
-  return { title: `${cap} missing`, text: `Marked ready but no content is attached. Contact ${owner}.` };
 }
 
 const DraftNote = () => (
