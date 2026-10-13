@@ -11,7 +11,7 @@ import './ops/ops.css';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider service={authService}>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

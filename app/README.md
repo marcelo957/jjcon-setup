@@ -20,6 +20,13 @@ npm test
 npm run build
 ```
 
+## Deploy
+
+`.github/workflows/deploy.yml` tests, builds and publishes the app to GitHub Pages
+(https://marcelo957.github.io/jjcon-setup/) on every push to `main`. One-time setup: in the repo's
+Settings → Pages, set the source to GitHub Actions. The site is static: demo data and sign-ins live
+in each visitor's browser, so nothing one person does is seen by anyone else.
+
 ## Routes
 
 | Route | Design states |
