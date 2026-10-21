@@ -7,11 +7,11 @@ import { EVENT_NAME, VENUE } from '../../config';
 import { useMe } from '../access';
 import { blockState, isFinal } from '../data/content';
 import { GROUPS } from '../data/meta';
-import { taskKey, taskRows, toIsoDay } from '../data/tasks';
-import { activeSectors, dateLabel, isBlocked, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
+import { taskKey, taskRows, toIsoDay, attention } from '../data/tasks';
+import { activeSectors, dateLabel, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { Sector } from '../data/types';
-import { BuildTag, ContentChip, IconBtn, PageHead, Segments, UploadChip } from '../ui/bits';
+import { AttentionBar, BuildTag, ContentChip, IconBtn, PageHead, Segments, UploadChip } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 
 type Expand = `${string}|fp` | `${string}|other` | null;
@@ -23,20 +23,35 @@ export function PrepDashboard() {
   const [q, setQ] = useState('');
   const [owner, setOwner] = useState('all');
   const [incomplete, setIncomplete] = useState(false);
+  const [focus, setFocus] = useState<'late' | 'week' | null>(null);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [expand, setExpand] = useState<Expand>(null);
 
   const active = activeSectors(data);
   // Whether each item is past its deadline with nothing there, from the same rows Tasks shows.
   const today = toIsoDay(new Date());
-  const tasks = new Map(taskRows(data, today).map((r) => [r.key, r]));
+  const rows = taskRows(data, today);
+  const tasks = new Map(rows.map((r) => [r.key, r]));
   const lateOf = (sid: string, slot: string) => !!tasks.get(taskKey(sid, slot))?.late;
+  const att = attention(rows);
+  // Per sector: how many items are late, and how many are due in the next 7 days.
+  const urgency = new Map<string, { late: number; week: number; total: number }>();
+  rows.forEach((r) => {
+    const u = urgency.get(r.sectorId) ?? { late: 0, week: 0, total: 0 };
+    u.total++;
+    if (r.late) u.late++;
+    if (r.week) u.week++;
+    urgency.set(r.sectorId, u);
+  });
+  const urg = (id: string) => urgency.get(id) ?? { late: 0, week: 0, total: 0 };
   const people = sortPeople(data.people.filter((p) => p.active));
   const needle = q.trim().toLowerCase();
   const visible = active.filter((s) =>
     (!needle || s.name.toLowerCase().includes(needle) || personName(data.people, s.ownerId).toLowerCase().includes(needle))
     && (owner === 'all' || s.ownerId === (owner === '__un' ? '' : owner))
-    && (!incomplete || !isComplete(s)));
+    && (!incomplete || !isComplete(s))
+    && (focus !== 'late' || urg(s.id).late > 0)
+    && (focus !== 'week' || urg(s.id).week > 0));
 
   const chosen = active.filter((s) => sel[s.id]);
   const allSelected = visible.length > 0 && visible.every((s) => sel[s.id]);
@@ -54,6 +69,17 @@ export function PrepDashboard() {
           {me.canManageSectors && <Button icon="plus" onClick={() => navigate('/sectors/new')}>Add sector</Button>}
         </>}
       />
+
+      <AttentionBar late={att.late} week={att.week} done={att.done} total={att.total}
+        lateOn={focus === 'late'} weekOn={focus === 'week'}
+        onLate={() => setFocus(focus === 'late' ? null : 'late')} onWeek={() => setFocus(focus === 'week' ? null : 'week')} />
+      {focus && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '-4px 0 12px', fontSize: 13 }}>
+          <span>Showing sectors with something {focus === 'late' ? 'late' : 'due in the next 7 days'}.</span>
+          <button type="button" className="link-btn" onClick={() => navigate(focus === 'late' ? '/tasks?late=1' : '/tasks?week=1')}>See the items in Tasks</button>
+          <button type="button" className="link-btn" onClick={() => setFocus(null)}>Show all sectors</button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
         <SearchInput placeholder="Search sectors" value={q} onChange={setQ} width={240} />
@@ -99,7 +125,7 @@ export function PrepDashboard() {
                     {rows.map((s) => (
                       <SectorRow key={s.id} s={s} people={data.people} selected={!!sel[s.id]}
                         onSelect={() => setSel((v) => ({ ...v, [s.id]: !v[s.id] }))}
-                        expand={expand} setExpand={setExpand} open={open} lateOf={(slot) => lateOf(s.id, slot)}
+                        expand={expand} setExpand={setExpand} open={open} lateOf={(slot) => lateOf(s.id, slot)} urgency={urg(s.id)}
                         canEdit={me.canEditSector(s)} />
                     ))}
                   </Fragment>
@@ -145,10 +171,11 @@ export function PrepDashboard() {
   );
 }
 
-function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, canEdit, lateOf }: {
+function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, canEdit, lateOf, urgency }: {
   s: Sector; people: Parameters<typeof personName>[0]; selected: boolean; onSelect: () => void;
   expand: Expand; setExpand: (e: Expand) => void; open: (s: Sector, hash?: string) => void; canEdit: boolean;
   lateOf: (slot: string) => boolean;
+  urgency: { late: number; week: number; total: number };
 }) {
   const navigate = useNavigate();
   const fp = planRoll(s);
@@ -166,12 +193,13 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
 
   return (
     <>
-      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+      <tr className={urgency.late ? 'row--late' : urgency.total && isComplete(s) ? 'row--done' : urgency.week ? 'row--soon' : undefined} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <td style={{ padding: '3px 16px' }}><input type="checkbox" checked={selected} onChange={onSelect} aria-label={`Select ${s.name}`} /></td>
         <td style={{ padding: '3px 16px' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap' }}>
             <button type="button" className="name-btn" onClick={() => open(s)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: '0 1 auto' }}>{s.name}</button>
-            {isBlocked(s) && <span className="flag-blocked"><Icon fa="circle-exclamation" size={10} />Blocked</span>}
+            {urgency.late > 0 && <span className="flag-blocked" title="Items past their deadline with nothing in place"><Icon fa="triangle-exclamation" size={10} />{urgency.late} late</span>}
+            {!urgency.late && urgency.week > 0 && <span className="flag-soon" title="Items still missing and due in the next 7 days"><Icon fa="clock" size={10} />{urgency.week} due this week</span>}
             <BuildTag status={s.build} style={{ marginLeft: 'auto' }} />
           </span>
         </td>

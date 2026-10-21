@@ -6,12 +6,12 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath } from '../data/tasks';
-import { ContentChip, PageHead, UploadChip } from '../ui/bits';
+import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath, attention, byUrgency } from '../data/tasks';
+import { AttentionBar, ContentChip, PageHead, UploadChip } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 import type { Person } from '../data/types';
 
-type SortKey = 'natural' | 'sector' | 'item' | 'status' | 'due' | 'who';
+type SortKey = 'urgency' | 'natural' | 'sector' | 'item' | 'status' | 'due' | 'who';
 
 /** "Who owes what, and when?": every item the active sectors require, as one list. */
 export function TasksPage() {
@@ -19,7 +19,7 @@ export function TasksPage() {
   const me = useMe();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'natural', dir: 1 });
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'urgency', dir: 1 });
   const [sel, setSel] = useState<Record<string, boolean>>({});
 
   const status = (params.get('status') ?? 'all') as 'all' | 'done' | 'open';
@@ -27,6 +27,7 @@ export function TasksPage() {
   const sectorId = params.get('sector') ?? 'all';
   const type = (params.get('type') ?? 'all') as TaskType | 'all';
   const late = params.get('late') === '1';
+  const week = params.get('week') === '1';
   const setParam = (k: string, v: string | null) => setParams((p) => { if (v === null) p.delete(k); else p.set(k, v); return p; }, { replace: true });
   const clearFilters = () => setParams({}, { replace: true });
 
@@ -36,13 +37,18 @@ export function TasksPage() {
   const people = sortPeople(data.people.filter((p) => p.active));
   const pn = (id: string) => personName(data.people, id);
 
-  let list = all.filter((r) =>
+  // Person, sector and type set the scope; the deadline bar counts within it.
+  const scoped = all.filter((r) =>
     (person === 'all' || r.who === (person === '__un' ? '' : person))
     && (sectorId === 'all' || r.sectorId === sectorId)
-    && (type === 'all' || r.type === type)
-    && (status === 'all' || (status === 'done' ? r.done : !r.done))
-    && (!late || r.late));
+    && (type === 'all' || r.type === type));
+  const att = attention(scoped);
+  let list = scoped.filter((r) =>
+    (status === 'all' || (status === 'done' ? r.done : !r.done))
+    && (!late || r.late)
+    && (!week || r.week));
   const cmp: Record<SortKey, (a: TaskRow, b: TaskRow) => number> = {
+    urgency: byUrgency,
     natural: () => 0,
     sector: (a, b) => a.sector.localeCompare(b.sector),
     item: (a, b) => a.item.localeCompare(b.item),
@@ -58,6 +64,7 @@ export function TasksPage() {
   if (sectorId !== 'all') chips.push({ label: `Sector · ${sectors.find((s) => s.id === sectorId)?.name ?? 'Unknown'}`, clear: () => setParam('sector', null) });
   if (type !== 'all') chips.push({ label: `Item · ${TASK_TYPES.find((t) => t.id === type)?.label}`, clear: () => setParam('type', null) });
   if (late) chips.push({ label: 'Late only', clear: () => setParam('late', null) });
+  if (week) chips.push({ label: 'Due in the next 7 days', clear: () => setParam('week', null) });
 
   const chosen = list.filter((r) => sel[r.key]);
   const keys = chosen.map((r) => r.key);
@@ -100,6 +107,12 @@ export function TasksPage() {
         </>}
       />
 
+      <AttentionBar late={att.late} week={att.week} done={att.done} total={att.total}
+        scope={person === me.id ? ' of yours' : ''}
+        lateOn={late} weekOn={week}
+        onLate={() => setParams((p) => { if (late) p.delete('late'); else { p.set('late', '1'); p.delete('week'); p.delete('status'); } return p; }, { replace: true })}
+        onWeek={() => setParams((p) => { if (week) p.delete('week'); else { p.set('week', '1'); p.delete('late'); p.delete('status'); } return p; }, { replace: true })} />
+
       <div className="card" style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 12, overflow: 'hidden' }}>
         {summary.map((c) => (
           <div key={c.t} style={{ flex: '1 1 0', minWidth: 150, boxSizing: 'border-box', padding: '14px 20px', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column' }}>
@@ -138,6 +151,7 @@ export function TasksPage() {
         <Select label="Item type" value={type} width={180} onChange={(v) => setParam('type', v === 'all' ? null : v)}
           options={[{ value: 'all', label: 'All item types' }, ...TASK_TYPES.map((t) => ({ value: t.id, label: t.label }))]} />
         <Button size="small" variant="danger" outlined={!late} icon="circle-exclamation" onClick={() => setParam('late', late ? null : '1')}>Late only</Button>
+        <Button size="small" variant="neutral" outlined={sort.key !== 'urgency'} icon="triangle-exclamation" onClick={() => setSort({ key: 'urgency', dir: 1 })}>Most urgent first</Button>
         <Button size="small" variant="neutral" outlined={sort.key !== 'natural'} icon="list-ol" onClick={() => setSort({ key: 'natural', dir: 1 })}>Sector order</Button>
         <span className="mono muted" style={{ fontSize: 13, marginLeft: 'auto' }}>{list.length} of {all.length} items</span>
       </div>
@@ -233,7 +247,8 @@ function Row({ r, selected, onSelect, me, people, navigate }: {
   const note = dueNote(r);
   const open = (hash = '') => navigate(`/sectors/${r.sectorId}${hash}`);
   return (
-    <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: selected ? 'var(--color-neutral-surface-100)' : 'var(--color-neutral-white)' }}>
+    <tr className={r.late ? 'row--late' : r.done ? 'row--done' : r.soon ? 'row--soon' : undefined}
+      style={{ borderBottom: '1px solid var(--border-subtle)', background: selected ? 'var(--color-neutral-surface-100)' : 'var(--color-neutral-white)' }}>
       {me.canReassign && <td style={{ padding: '6px 16px' }}><input type="checkbox" checked={selected} onChange={onSelect} aria-label={`Select ${r.sector}, ${r.item}`} /></td>}
       <td style={{ padding: '6px 16px' }}><button type="button" className="name-btn" style={{ fontSize: 16, whiteSpace: 'nowrap' }} onClick={() => open()}>{r.sector}</button></td>
       <td style={{ padding: '6px 16px' }}><button type="button" className="link-btn" style={{ fontSize: 14, color: 'var(--text-primary)', whiteSpace: 'nowrap' }} onClick={() => open(r.hash)}>{r.item}</button></td>

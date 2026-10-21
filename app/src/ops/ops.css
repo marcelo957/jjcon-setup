@@ -63,7 +63,8 @@ button.chip:hover { box-shadow: var(--ib-elevation-1); }
 .roll__label { font-family: 'Roboto Mono', monospace; font-size: 13px; }
 .na-dash { display: inline-block; width: 118px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 14px; color: var(--border-divider); }
 
-.flag-blocked { font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; color: var(--feedback-danger-text); }
+.flag-blocked { font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; color: #fff; background: var(--feedback-danger-text); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.flag-soon { font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; color: var(--text-primary); background: var(--feedback-warning-background); padding: 1px 6px; border-radius: 4px; }
 .flag-nopdf { font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; color: var(--feedback-danger-text); }
 .unassigned { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border: 1px dashed var(--feedback-warning-accent); border-radius: 999px; background: var(--feedback-warning-background); color: var(--text-primary); font-size: 12px; font-weight: 600; }
 .badge { font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
@@ -198,3 +199,24 @@ button.chip:hover { box-shadow: var(--ib-elevation-1); }
 /* A written block's facts: what it holds and who edited it, or empty and when it's due. */
 .block-status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 10px; font-size: 13px; color: var(--text-secondary); }
 .final-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--color-neutral-surface-300); color: var(--text-primary); font-size: 12px; }
+
+/* Deadline bar: late is loud, coming up is amber, everything in place is a quiet footnote. */
+.attn { display: flex; align-items: stretch; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.attn__block { display: flex; align-items: center; gap: 14px; flex: 0 1 auto; min-width: 240px; padding: 12px 18px; border-radius: 12px; border: 2px solid transparent; text-align: left; font-family: Inter, sans-serif; cursor: default; }
+button.attn__block { cursor: pointer; }
+button.attn__block:hover { box-shadow: var(--ib-elevation-2); }
+.attn__block[aria-pressed='true'] { outline: 3px solid var(--brand-primary); outline-offset: 2px; }
+.attn__block--late { background: var(--feedback-danger-text); color: #fff; }
+.attn__block--week { background: var(--feedback-warning-background); border-color: var(--feedback-warning-accent); color: var(--text-primary); }
+.attn__block--clear { background: var(--feedback-success-background); border-color: var(--feedback-success-border); color: var(--text-primary); }
+.attn__n { font: 600 40px/44px 'Roboto Mono', monospace; }
+.attn__text { display: flex; flex-direction: column; }
+.attn__label { font: 500 18px/22px 'Roboto Condensed', sans-serif; }
+.attn__sub { font-size: 13px; opacity: .85; }
+.attn__done { align-self: center; margin-left: auto; font-size: 13px; color: var(--color-neutral-gray-300); }
+
+/* Rows in deadline lists: late shouts, due soon is marked, in place recedes. */
+.row--late { background: var(--feedback-danger-background) !important; box-shadow: inset 4px 0 0 var(--feedback-danger-text); }
+.row--soon { box-shadow: inset 4px 0 0 var(--feedback-warning-accent); }
+.row--done { opacity: .5; }
+.row--done:hover { opacity: .85; }
