@@ -6,14 +6,14 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, initials, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, plural, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath } from '../data/tasks';
+import { dueNote, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath } from '../data/tasks';
 import type { OpsData, Person } from '../data/types';
-import { PageHead } from '../ui/bits';
+import { AttentionBar, PageHead } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 
 const LIMIT = 6;
 const PRESENT_LIMIT = 8;
-const isWeek = (r: TaskRow) => !r.late && r.daysLeft >= 0 && r.daysLeft <= 6;
+const isWeek = (r: TaskRow) => r.week;
 const when = (r: TaskRow) => { const n = dueNote(r, 6); return n ? n[0].toUpperCase() + n.slice(1) : ''; };
 
 interface Bucket { id: string; items: TaskRow[]; overdue: number; week: number }
@@ -92,17 +92,10 @@ export function TeamPage() {
           <Icon fa="arrow-left" size={11} />Back to People
         </button>
       )}
-      <div className="mono" style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-        {totOver} overdue · {totWeek} due this week · {open.length} outstanding
-      </div>
-
-      {totOver === 0 && (
-        <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', marginBottom: 12, borderRadius: 8, background: 'var(--feedback-success-background)' }}>
-          <Icon fa="circle-check" size={18} style={{ color: 'var(--feedback-success-text)' }} />
-          <span style={{ fontSize: 14 }}><strong style={{ fontWeight: 600 }}>Nobody is overdue.</strong>{' '}
-            {overdue ? `Nothing is past its deadline${tail}. Turn off Overdue only to see what is coming up.` : `${plural(open.length, 'item')} outstanding${tail}, none past its deadline.`}
-          </span>
-        </div>
+      <AttentionBar late={totOver} week={totWeek} scope={tail} lateOn={overdue}
+        onLate={() => setParam('overdue', overdue ? null : '1')} />
+      {totOver === 0 && overdue && (
+        <p className="muted" style={{ margin: '-4px 0 12px', fontSize: 13 }}>Nothing is past its deadline{tail}. Turn off Overdue only to see what is coming up.</p>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(380px, 100%), 1fr))', gap: 16, alignItems: 'start' }}>
@@ -147,7 +140,7 @@ function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, ope
   const clear = clearCopy(b, name, tail, overdueOnly);
   const keys = b.items.map((r) => r.key);
   return (
-    <section aria-label={name} style={{ background: 'var(--color-neutral-white)', borderRadius: 12, boxShadow: 'var(--ib-elevation-1)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, border: isUn ? '1px dashed var(--icon-tertiary)' : '1px solid transparent' }}>
+    <section aria-label={name} style={{ background: 'var(--color-neutral-white)', borderRadius: 12, boxShadow: b.overdue ? 'inset 0 4px 0 var(--feedback-danger-text), var(--ib-elevation-1)' : 'var(--ib-elevation-1)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, border: isUn ? '1px dashed var(--icon-tertiary)' : '1px solid transparent' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {isUn
           ? <span style={{ flex: '0 0 40px', height: 40, borderRadius: '50%', border: '1px dashed var(--icon-tertiary)', color: 'var(--color-neutral-gray-300)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon fa="user-slash" size={14} /></span>
@@ -222,7 +215,8 @@ function TeamItem({ r, me, people, open, toggle, close }: {
     </>
   );
   return (
-    <li style={{ borderTop: '1px solid var(--border-subtle)', ...(open ? { background: 'var(--color-neutral-surface-200)', margin: '0 -16px', padding: '0 16px' } : {}) }}>
+    <li className={r.late ? 'row--late' : r.week ? 'row--soon' : undefined}
+      style={{ borderTop: '1px solid var(--border-subtle)', margin: '0 -16px', padding: '0 16px', ...(open ? { background: 'var(--color-neutral-surface-200)' } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0' }}>
         {canWork ? (
           <button type="button" onClick={() => navigate(workPath)} title={workLabel} aria-label={`${workLabel}: ${r.sector}, ${r.item}`} className="team-done">

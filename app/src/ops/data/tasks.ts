@@ -49,6 +49,8 @@ export interface TaskRow {
   late: boolean;
   lateDays: number;
   soon: boolean;
+  /** Missing and due within the next 7 days (today included): what's coming up. */
+  week: boolean;
   daysLeft: number;
   note?: TaskState['note'];
 }
@@ -110,7 +112,7 @@ export function taskRows(d: OpsData, today: string): TaskRow[] {
         summary: it.kind === 'content' ? it.state.summary : '',
         final: it.kind === 'content' ? it.state.meta.final : undefined,
         doneBy: stamp?.by ?? '', doneAt: stamp?.at ?? '',
-        due, who, late: !done && left < 0, lateDays: -left, soon: !done && left >= 0 && left <= SOON_DAYS, daysLeft: left,
+        due, who, late: !done && left < 0, lateDays: -left, soon: !done && left >= 0 && left <= SOON_DAYS, week: !done && left >= 0 && left <= 6, daysLeft: left,
         note: t.note
       });
     });
@@ -123,6 +125,20 @@ export const writePath = (r: TaskRow) => `/sectors/${r.sectorId}?edit=1${r.hash}
 
 /** The sector page in edit mode, at the item's upload. */
 export const uploadPath = (r: TaskRow) => `/sectors/${r.sectorId}?${r.planKey ? `plan=${r.planKey}&` : ''}edit=1${r.planKey ? '#block-plans' : r.hash}`;
+
+/**
+ * Most urgent first: late (longest overdue first), then what's still missing by deadline, then
+ * what's in place. The order every deadline view opens in.
+ */
+export function byUrgency(a: TaskRow, b: TaskRow): number {
+  const rank = (r: TaskRow) => (r.late ? 0 : r.done ? 2 : 1);
+  return rank(a) - rank(b) || (a.late && b.late ? b.lateDays - a.lateDays : 0) || (a.due < b.due ? -1 : a.due > b.due ? 1 : 0) || a.ord - b.ord;
+}
+
+/** Late, due this week, and in place, over a set of rows. */
+export function attention(rows: TaskRow[]) {
+  return { late: rows.filter((r) => r.late).length, week: rows.filter((r) => r.week).length, done: rows.filter((r) => r.done).length, total: rows.length };
+}
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 /** "4 days late", "due today", "due in 2 days", or '' when not close. */

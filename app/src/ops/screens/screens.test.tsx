@@ -7,6 +7,7 @@ import { MockAuthService } from '../../auth/mockAuthService';
 import { saveSession } from '../../auth/session';
 import type { Role } from '../../auth/types';
 import { opsStore } from '../data/store';
+import { taskRows, toIsoDay } from '../data/tasks';
 
 const PEOPLE: Record<Role, { personId: string; name: string; email: string }> = {
   admin: { personId: 'p-marcelo', name: 'Marcelo', email: 'marcelo@ibjjf.com' },
@@ -34,10 +35,23 @@ describe('Prep dashboard', () => {
     expect(screen.getByText('25 of 25 sectors shown')).toBeInTheDocument();
     expect(screen.queryByText('Empty Crate Return')).not.toBeInTheDocument();
     const row = screen.getByRole('button', { name: 'Podium World Master' }).closest('tr')!;
-    expect(within(row).getByText('Blocked')).toBeInTheDocument();
+    const late = taskRows(opsStore().get(), toIsoDay(new Date())).filter((r) => r.sectorId === 'pod-wm' && r.late).length;
+    expect(late).toBeGreaterThan(0);
+    expect(within(row).getByText(`${late} late`)).toBeInTheDocument();
+    expect(row).toHaveClass('row--late');
     await user.click(within(row).getByTitle(/2 of 4 required plans uploaded/));
     expect(screen.getByText('Required floorplans · Podium World Master')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Edit plan' })).toHaveLength(4);
+  });
+
+  it('leads with what is late, and filters to those sectors on click', async () => {
+    const user = await renderAs('admin', '/prep');
+    const rows = taskRows(opsStore().get(), toIsoDay(new Date()));
+    const late = rows.filter((r) => r.late).length;
+    const bar = screen.getByRole('region', { name: 'Deadlines' });
+    await user.click(within(bar).getByRole('button', { name: new RegExp(`^${late} late`) }));
+    const lateSectors = new Set(rows.filter((r) => r.late).map((r) => r.sectorId)).size;
+    expect(screen.getByText(`${lateSectors} of 25 sectors shown`)).toBeInTheDocument();
   });
 
   it('filters to incomplete sectors', async () => {

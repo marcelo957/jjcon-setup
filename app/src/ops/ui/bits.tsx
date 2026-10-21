@@ -50,6 +50,38 @@ export function UploadChip({ done, late, size, onClick, title }: { done: boolean
     : <span className={cls} title={title}>{body}</span>;
 }
 
+/**
+ * The first thing on every deadline screen: how much is late, and how much is due in the next
+ * 7 days, each a button to that list. Nothing late shows green.
+ */
+export function AttentionBar({ late, week, done, total, onLate, onWeek, lateOn, weekOn, scope = '' }: {
+  late: number; week: number; done?: number; total?: number;
+  onLate?: () => void; onWeek?: () => void; lateOn?: boolean; weekOn?: boolean; scope?: string;
+}) {
+  const block = (on: boolean | undefined, tone: 'late' | 'week' | 'clear', n: number, label: string, sub: string, onClick?: () => void) => {
+    const body = (
+      <>
+        <span className="attn__n">{n}</span>
+        <span className="attn__text"><span className="attn__label">{label}</span><span className="attn__sub">{sub}</span></span>
+      </>
+    );
+    return onClick
+      ? <button type="button" className={`attn__block attn__block--${tone}`} aria-pressed={!!on} aria-label={`${n} ${label}, ${sub}`} onClick={onClick}>{body}</button>
+      : <div className={`attn__block attn__block--${tone}`} role="group" aria-label={`${n} ${label}, ${sub}`}>{body}</div>;
+  };
+  return (
+    <section className="attn" aria-label="Deadlines">
+      {late > 0
+        ? block(lateOn, 'late', late, `late${scope}`, 'past the deadline, nothing in place', onLate)
+        : block(false, 'clear', 0, `late${scope}`, 'nothing is past its deadline')}
+      {block(weekOn, 'week', week, 'due in the next 7 days', 'still missing', onWeek)}
+      {total !== undefined && done !== undefined && (
+        <div className="attn__done"><span className="mono">{done} of {total}</span> in place</div>
+      )}
+    </section>
+  );
+}
+
 export function Overline({ children, secondary, style }: { children: ReactNode; secondary?: boolean; style?: React.CSSProperties }) {
   return <span className={`overline${secondary ? ' overline--secondary' : ''}`} style={style}>{children}</span>;
 }

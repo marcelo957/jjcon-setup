@@ -37,6 +37,24 @@ describe('Tasks', () => {
     expect(screen.getByText('Material lists empty')).toBeInTheDocument();
   });
 
+  it('opens most urgent first: longest overdue at the top, things in place at the bottom', async () => {
+    await renderAs('admin', '/tasks');
+    const list = rows();
+    const worst = list.filter((r) => r.late).sort((a, b) => b.lateDays - a.lateDays)[0];
+    const body = screen.getAllByRole('row').slice(1);
+    expect(body[0]).toHaveTextContent(worst.item);
+    expect(body[0]).toHaveClass('row--late');
+    expect(body[body.length - 1]).toHaveClass('row--done');
+  });
+
+  it('filters to what is due in the next 7 days from the deadline bar', async () => {
+    const user = await renderAs('admin', '/tasks');
+    const week = rows().filter((r) => r.week).length;
+    await user.click(within(screen.getByRole('region', { name: 'Deadlines' })).getByRole('button', { name: new RegExp(`^${week} due in the next 7 days`) }));
+    expect(screen.getByText(`${week} of ${rows().length} items`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove filter Due in the next 7 days' })).toBeInTheDocument();
+  });
+
   it('filters, shows removable chips, and clears them', async () => {
     const user = await renderAs('admin', '/tasks');
     await user.click(screen.getByRole('button', { name: 'Late only' }));
