@@ -6,7 +6,7 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, initials, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, plural, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType } from '../data/tasks';
+import { dueNote, plural, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath } from '../data/tasks';
 import type { OpsData, Person } from '../data/types';
 import { PageHead } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
@@ -212,7 +212,10 @@ function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, ope
 function TeamItem({ r, me, people, open, toggle, markDone, close }: {
   r: TaskRow; me: ReturnType<typeof useMe>; people: Person[]; open: boolean; toggle: () => void; markDone: () => void; close: () => void;
 }) {
-  const canDone = me.canMarkTask(r.who);
+  // Uploads are done by the file alone: their button goes to the upload instead.
+  const canDone = !r.auto && me.canMarkTask(r.who);
+  const canUpload = r.auto && me.canEditSector(opsStore().sector(r.sectorId)!);
+  const navigate = useNavigate();
   const canDue = me.canSetDeadline(r.who);
   const canNote = me.canReassign || r.who === me.id;
   const canOpen = me.canReassign || canDue || canNote;
@@ -237,6 +240,10 @@ function TeamItem({ r, me, people, open, toggle, markDone, close }: {
         {canDone ? (
           <button type="button" onClick={markDone} title="Mark done" aria-label={`Mark done: ${r.sector}, ${r.item}`} className="team-done">
             <Icon fa="check" size={11} />
+          </button>
+        ) : canUpload ? (
+          <button type="button" onClick={() => navigate(uploadPath(r))} title="Upload PDF" aria-label={`Upload PDF: ${r.sector}, ${r.item}`} className="team-done">
+            <Icon fa="upload" size={11} />
           </button>
         ) : <span style={{ flex: '0 0 26px' }} />}
         {canOpen
@@ -264,6 +271,7 @@ function TeamItem({ r, me, people, open, toggle, markDone, close }: {
                   onChange={(e) => { if (e.target.value) opsStore().setTaskDue([r.key], e.target.value, me.id); }} /></label>
             )}
             {canDone && <Button size="small" icon="check" onClick={markDone}>Mark done</Button>}
+            {canUpload && <Button size="small" icon="upload" onClick={() => navigate(uploadPath(r))}>Upload PDF</Button>}
           </div>
           {canNote && (
             <>

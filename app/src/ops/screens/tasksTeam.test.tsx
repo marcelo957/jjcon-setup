@@ -62,13 +62,16 @@ describe('Tasks', () => {
 
   it('marks a row done and records who did it', async () => {
     const user = await renderAs('admin', '/tasks?sector=crown');
-    await user.click(screen.getByRole('checkbox', { name: 'Crown Booth, Floorplan — General Layout done' }));
-    expect(rows().find((r) => r.key === 'crown:G')).toMatchObject({ done: true, doneBy: 'p-marcelo' });
+    await user.click(screen.getByRole('checkbox', { name: 'Crown Booth, Main material list done' }));
+    expect(rows().find((r) => r.key === 'crown:mainMat')).toMatchObject({ done: true, doneBy: 'p-marcelo' });
+    // Floorplans have no box: they are done when their PDF is uploaded.
+    expect(screen.queryByRole('checkbox', { name: 'Crown Booth, Floorplan — General Layout done' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Done when the PDF is uploaded').length).toBeGreaterThan(0);
   });
 
   it('crew can only tick their own tasks and cannot reassign or move deadlines', async () => {
     await renderAs('crew', '/tasks?sector=seminar');
-    expect(screen.getAllByRole('checkbox', { name: /Seminar Area/ }).length).toBe(rows().filter((r) => r.sectorId === 'seminar' && r.who === 'p-dandre').length);
+    expect(screen.getAllByRole('checkbox', { name: /Seminar Area/ }).length).toBe(rows().filter((r) => r.sectorId === 'seminar' && r.who === 'p-dandre' && !r.auto).length);
     expect(screen.queryByLabelText(/Deadline for/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reassign selected/ })).not.toBeInTheDocument();
   });

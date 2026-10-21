@@ -17,12 +17,24 @@ export function BuildTag({ status, style }: { status: BuildStatus; style?: React
   return <span className={`build build--${status}`} style={style}><Icon fa={b.icon} size={9} />{b.label}</span>;
 }
 
-export function Segments({ items }: { items: { status: PrepStatus; name: string }[] }) {
+/** One segment per item. An upload (no status) is filled when its file is there, dashed when it isn't. */
+export function Segments({ items }: { items: { name: string; status?: PrepStatus | null; done?: boolean }[] }) {
   return (
     <span className="segs">
-      {items.map((i, n) => <span key={n} className={`seg seg--${i.status}`} title={`${i.name} · ${PREP[i.status].label}`} />)}
+      {items.map((i, n) => i.status
+        ? <span key={n} className={`seg seg--${i.status}`} title={`${i.name} · ${PREP[i.status].label}`} />
+        : <span key={n} className={`seg seg--${i.done ? 'approved' : 'none'}`} title={`${i.name} · ${i.done ? 'Uploaded' : 'No PDF yet'}`} />)}
     </span>
   );
+}
+
+/** An upload's only two states: the file is there, or it isn't. */
+export function UploadChip({ done, size, onClick, title }: { done: boolean; size?: 'lg'; onClick?: () => void; title?: string }) {
+  const cls = `chip chip--${done ? 'approved' : 'none'}${size === 'lg' ? ' chip--lg' : ''}`;
+  const body = (<><Icon fa={done ? 'circle-check' : 'file-circle-exclamation'} size={10} /><span>{done ? 'Uploaded' : 'No PDF'}</span></>);
+  return onClick
+    ? <button type="button" className={cls} onClick={onClick} title={title}>{body}</button>
+    : <span className={cls} title={title}>{body}</span>;
 }
 
 export function Overline({ children, secondary, style }: { children: ReactNode; secondary?: boolean; style?: React.CSSProperties }) {

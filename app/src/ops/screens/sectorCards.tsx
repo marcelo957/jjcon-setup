@@ -5,10 +5,11 @@ import { Select } from '../../ds/Select';
 import { customKind, isReady, PREP, PREP_ORDER } from '../data/meta';
 import { dateLabel, materialGroups, plansOf, sizeLabel } from '../data/selectors';
 import type { CustomBlock, FileRef, MatRow, PlanKey, PrepStatus, Sector, Step } from '../data/types';
+import { opsStore } from '../data/store';
 import { storePdf } from '../files/fileStore';
 import { countPages } from '../files/pdf';
 import { blockNotice } from '../data/packet';
-import { PrepChip } from '../ui/bits';
+import { Modal, PrepChip, UploadChip } from '../ui/bits';
 import { PdfThumb, PdfViewer } from '../ui/PdfViewer';
 
 export interface CardProps {
@@ -73,13 +74,13 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
   const req = plans.filter((p) => p.required);
   const pick = plans.find((p) => p.key === plan && (p.required || editing)) ?? req[0] ?? (editing ? plans[0] : undefined);
   const unset = req.length === 0;
-  const ready = req.filter((p) => isReady(p.status)).length;
+  const ready = req.filter((p) => p.done).length;
   const slot = pick ? s.plans[pick.key] : undefined;
 
   return (
     <Card id="block-plans" title="Floorplans" aside={<>
-      <span className="muted" style={{ fontSize: 13 }}>{req.length ? `${ready} of ${req.length} required plans ready` : 'No plans chosen yet'}</span>
-      {editing && <span className="muted" style={{ marginLeft: 'auto', fontSize: 13 }}>Pick the plans this sector requires, then set a status for each.</span>}
+      <span className="muted" style={{ fontSize: 13 }}>{req.length ? `${ready} of ${req.length} required plans uploaded` : 'No plans chosen yet'}</span>
+      {editing && <span className="muted" style={{ marginLeft: 'auto', fontSize: 13 }}>Pick the plans this sector requires. A plan is done once its PDF is uploaded.</span>}
     </>}>
       <div role="tablist" aria-label="Floorplans" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {plans.map((p) => {
@@ -99,7 +100,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {!editing && (muted
                   ? <span className="chip--muted"><Icon fa={unset && !s.noFloorplans ? 'circle' : 'ban'} size={9} />{unset && !s.noFloorplans ? 'Not set' : 'Not applicable'}</span>
-                  : <PrepChip status={p.status} />)}
+                  : <UploadChip done={p.done} />)}
                 {editing && (
                   <>
                     <button type="button" role="switch" aria-checked={p.required} aria-label={`${p.name} required`}
@@ -107,10 +108,8 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, padding: '0 10px', border: `1px solid ${p.required ? 'var(--brand-primary)' : 'var(--border-divider)'}`, borderRadius: 4, background: p.required ? 'var(--brand-primary)' : 'var(--color-neutral-white)', color: p.required ? '#fff' : 'var(--color-neutral-gray-300)', fontSize: 12, cursor: 'pointer' }}>
                       <Icon fa={p.required ? 'circle-check' : 'circle'} size={10} />{p.required ? 'Required' : 'Not required'}
                     </button>
-                    {p.required && <Select label={`${p.name} status`} value={p.status} options={prepOptions} width={140} onChange={(v) => change((d) => { d.plans[p.key].status = v as PrepStatus; })} />}
                   </>
                 )}
-                {p.required && !p.hasFile && <span className="flag-nopdf"><Icon fa="circle-exclamation" size={10} />No PDF</span>}
               </div>
             </div>
           );
@@ -122,12 +121,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
           <span className="overline overline--secondary">PDF files · one per required plan</span>
           {req.map((p) => (
             <UploadRow key={p.key} name={p.name} file={s.plans[p.key].file} prev={s.plans[p.key].prevUploadedAt} meId={meId}
-              onFile={(f) => change((d) => {
-                const sl = d.plans[p.key];
-                sl.prevUploadedAt = sl.file?.uploadedAt;
-                sl.file = f;
-                if (sl.status !== 'approved') sl.status = 'draft';
-              })} />
+              onFile={(f) => opsStore().setPlanFile(s.id, p.key, f)} onRemove={() => opsStore().removePlanFile(s.id, p.key)} />
           ))}
         </div>
       )}
@@ -138,25 +132,22 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
           action={canEdit && !s.noFloorplans ? <Button size="small" variant="neutral" outlined icon="pen" onClick={startEdit}>Choose plans</Button> : undefined} />
       )}
       {pick && slot && pick.required && (slot.file ? (
-        <>
-          {!isReady(slot.status) && <DraftNote />}
-          <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} />
-        </>
+        <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} />
       ) : !editing && (
-        <Notice big icon="file-pdf"
-          title={slot.status === 'draft' ? `No released PDF · ${pick.name}` : `No PDF uploaded · ${pick.name}`}
-          text={slot.status === 'none' ? `Owner ${ownerName} has to upload this plan before load-in.`
-            : slot.status === 'draft' ? `${ownerName} is working on the drawing. Nothing is released to the floor or to print yet.`
-            : `Marked ${PREP[slot.status].label.toLowerCase()} but no file is attached. Contact ${ownerName}.`}
+        <Notice big icon="file-pdf" title={`No PDF uploaded · ${pick.name}`} text={`Owner ${ownerName} has to upload this plan before load-in.`}
           action={canEdit ? <Button size="small" variant="neutral" outlined icon="upload" onClick={startEdit}>Upload PDF</Button> : undefined} />
       ))}
     </Card>
   );
 }
 
-/** One drop zone per required plan: drag a PDF in or pick one. Replacing shows the previous file's date. */
-export function UploadRow({ name, file, prev, onFile, meId }: { name: string; file?: FileRef; prev?: string; onFile: (f: FileRef) => void; meId: string }) {
+/**
+ * One drop zone per required plan: drag a PDF in or pick one. The upload counts at once, before
+ * Save: the plan is done. Replacing keeps it done; Remove PDF makes it outstanding again.
+ */
+export function UploadRow({ name, file, prev, onFile, onRemove, meId }: { name: string; file?: FileRef; prev?: string; onFile: (f: FileRef) => void; onRemove: () => void; meId: string }) {
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(false);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -190,6 +181,7 @@ export function UploadRow({ name, file, prev, onFile, meId }: { name: string; fi
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}><Icon fa="file-pdf" size={14} style={{ color: 'var(--feedback-danger-text)' }} />{file.name}</span>
             <span className="mono muted" style={{ fontSize: 12 }}>{sizeLabel(file.size)} · {file.pages} page{file.pages > 1 ? 's' : ''} · uploaded {dateLabel(file.uploadedAt)}</span>
             <span className="muted" style={{ fontSize: 12 }}>{prev ? `Replaced the file uploaded ${dateLabel(prev)}` : 'First upload of this plan'}</span>
+            <span><Button size="small" variant="danger" ghost icon="trash" aria-label={`Remove the ${name} PDF`} onClick={() => setConfirm(true)}>Remove PDF</Button></span>
           </>
         )}
         {!busy && !file && <span style={{ fontSize: 13, color: 'var(--feedback-danger-text)' }}>No PDF uploaded yet</span>}
@@ -207,6 +199,17 @@ export function UploadRow({ name, file, prev, onFile, meId }: { name: string; fi
       </button>
       <input ref={input} type="file" accept="application/pdf,.pdf" hidden aria-label={`Upload PDF for ${name}`}
         onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ''; }} />
+      {confirm && file && (
+        <Modal title={`Remove the ${name} PDF?`} icon="trash" iconColor="var(--feedback-danger-text)" onClose={() => setConfirm(false)} width={520}
+          footer={<>
+            <Button ghost onClick={() => setConfirm(false)}>Cancel</Button>
+            <Button variant="danger" icon="trash" onClick={() => { onRemove(); setConfirm(false); }}>Remove PDF</Button>
+          </>}>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: '22px' }}>
+            {file.name} comes off this sector. {name} goes back to not done on the dashboard, in Tasks and on the Team page, and stays outstanding until a new PDF is uploaded.
+          </p>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -403,14 +406,16 @@ function LinkFields({ label, url, set }: { label: string; url: string; set: (lab
 
 /* ---------- Custom blocks ---------- */
 
-export function CustomCard({ c, editing, change, ownerName, canCheck, toggleRow, meId }: CardProps & { c: CustomBlock; toggleRow: (block: string, rowId: string) => void }) {
+export function CustomCard({ s, c, editing, change, ownerName, canCheck, toggleRow, meId }: CardProps & { c: CustomBlock; toggleRow: (block: string, rowId: string) => void }) {
   const kd = customKind(c.kind);
   const edit = (fn: (b: CustomBlock) => void) => change((d) => { const b = d.custom.find((x) => x.id === c.id); if (b) fn(b); });
   return (
     <Card id={`block-${c.id}`} title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}><Icon fa={kd.icon} size={14} style={{ color: 'var(--icon-tertiary)' }} />{c.name}</span>}
       aside={<>
         <span className="muted" style={{ fontSize: 12 }}>{kd.label}</span>
-        {editing ? <Select label={`${c.name} status`} value={c.status} options={prepOptions} width={140} onChange={(v) => edit((b) => { b.status = v as PrepStatus; })} /> : <PrepChip status={c.status} />}
+        {c.kind === 'pdf' ? <UploadChip done={!!c.file} />
+          : editing ? <Select label={`${c.name} status`} value={c.status} options={prepOptions} width={140} onChange={(v) => edit((b) => { b.status = v as PrepStatus; })} />
+          : <PrepChip status={c.status} />}
       </>}>
       {c.kind === 'checklist' && (editing
         ? <RowsEditor rows={c.rows ?? []} onChange={(fn) => edit((b) => { b.rows = b.rows ?? []; fn(b.rows); })} />
@@ -454,16 +459,14 @@ export function CustomCard({ c, editing, change, ownerName, canCheck, toggleRow,
         : safeUrl(c.url ?? '') ? <LinkOut url={safeUrl(c.url!)} label={c.label || c.url!} /> : <Blank icon={kd.icon} text="No link set yet." />)}
       {c.kind === 'pdf' && (
         <>
-          {editing && <UploadRow name={c.name} file={c.file} meId={meId} onFile={(f) => edit((b) => { b.file = f; if (b.status !== 'approved') b.status = 'draft'; })} />}
-          {!editing && c.file && <>{!isReady(c.status) && <DraftNote />}<PdfViewer file={c.file} /></>}
+          {editing && <UploadRow name={c.name} file={c.file} meId={meId} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
+          {!editing && c.file && <PdfViewer file={c.file} />}
           {!editing && !c.file && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--border-subtle)', borderLeft: '6px solid var(--feedback-warning-accent)', borderRadius: 8, background: 'var(--color-neutral-surface-50)' }}>
               <Icon fa="file-circle-exclamation" size={24} style={{ color: 'var(--feedback-warning-accent)' }} />
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontFamily: "'Roboto Condensed', sans-serif", fontSize: 17 }}>{c.status === 'draft' ? `No released PDF · ${c.name}` : `No PDF uploaded · ${c.name}`}</span>
-                <span style={{ display: 'block', fontSize: 14, lineHeight: '21px', color: 'var(--text-secondary)', marginTop: 2 }}>
-                  {c.status === 'draft' ? `${ownerName} is still working on this sheet. Nothing is released to the floor or to print yet.` : `${ownerName} has to upload this sheet before load-in.`}
-                </span>
+                <span style={{ display: 'block', fontFamily: "'Roboto Condensed', sans-serif", fontSize: 17 }}>No PDF uploaded · {c.name}</span>
+                <span style={{ display: 'block', fontSize: 14, lineHeight: '21px', color: 'var(--text-secondary)', marginTop: 2 }}>{ownerName} has to upload this sheet before load-in.</span>
               </span>
             </div>
           )}

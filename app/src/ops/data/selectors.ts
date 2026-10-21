@@ -41,50 +41,57 @@ export function sizeLabel(bytes: number): string {
   return bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-export interface PlanView { key: PlanKey; name: string; short: string; icon: string; required: boolean; status: PrepStatus; hasFile: boolean }
+/** A required plan is done exactly when its PDF is uploaded. */
+export interface PlanView { key: PlanKey; name: string; short: string; icon: string; required: boolean; done: boolean }
 
 export function plansOf(s: Sector): PlanView[] {
   return PLAN_KINDS.map((k) => {
     const slot = s.plans[k.key];
-    return { key: k.key, name: k.name, short: k.short, icon: k.icon, required: slot.required, status: slot.status, hasFile: !!slot.file };
+    return { key: k.key, name: k.name, short: k.short, icon: k.icon, required: slot.required, done: !!slot.file };
   });
 }
 
 export function planRoll(s: Sector) {
   const plans = plansOf(s).filter((p) => p.required);
-  return { plans, ready: plans.filter((p) => isReady(p.status)).length, total: plans.length };
+  return { plans, done: plans.filter((p) => p.done).length, total: plans.length };
 }
 
-export interface OtherItem { key: string; name: string; status: PrepStatus; custom: boolean; icon: string }
+/** A PDF block is done exactly when its file is uploaded; other custom blocks keep a prep status. */
+export const isUpload = (c: CustomBlock) => c.kind === 'pdf';
+
+/** `status` is null for uploads: they are done or not, by whether the file is there. */
+export interface OtherItem { key: string; name: string; status: PrepStatus | null; done: boolean; custom: boolean; icon: string }
 
 /** The blocks that roll up under the dashboard's "Other items" column. */
 export function otherItems(s: Sector): OtherItem[] {
   const out: OtherItem[] = [];
   (['netMat', 'info', 'install', 'link'] as BlockKey[]).forEach((k) => {
-    if (s.blocks[k].on) out.push({ key: k, name: blockLabel(k), status: s.blocks[k].status, custom: false, icon: BLOCK_DEFS.find((b) => b.k === k)!.icon });
+    if (s.blocks[k].on) out.push({ key: k, name: blockLabel(k), status: s.blocks[k].status, done: isReady(s.blocks[k].status), custom: false, icon: BLOCK_DEFS.find((b) => b.k === k)!.icon });
   });
-  s.custom.filter((c) => c.on).forEach((c) => out.push({ key: c.id, name: c.name, status: c.status, custom: true, icon: customKind(c.kind).icon }));
+  s.custom.filter((c) => c.on).forEach((c) => out.push(isUpload(c)
+    ? { key: c.id, name: c.name, status: null, done: !!c.file, custom: true, icon: customKind(c.kind).icon }
+    : { key: c.id, name: c.name, status: c.status, done: isReady(c.status), custom: true, icon: customKind(c.kind).icon }));
   return out;
 }
 
 export function otherRoll(s: Sector) {
   const items = otherItems(s);
-  return { items, ready: items.filter((i) => isReady(i.status)).length, total: items.length };
+  return { items, done: items.filter((i) => i.done).length, total: items.length };
 }
 
 /** Something required that nobody has started. */
 export function isBlocked(s: Sector): boolean {
-  return planRoll(s).plans.some((p) => p.status === 'none')
+  return planRoll(s).plans.some((p) => !p.done)
     || (s.blocks.mainMat.on && s.blocks.mainMat.status === 'none')
     || (s.blocks.instr.on && s.blocks.instr.status === 'none')
-    || otherItems(s).some((i) => i.status === 'none');
+    || otherItems(s).some((i) => (i.status === null ? !i.done : i.status === 'none'));
 }
 
 export function isComplete(s: Sector): boolean {
   const fp = planRoll(s);
   const core = (k: 'mainMat' | 'instr') => !s.blocks[k].on || isReady(s.blocks[k].status);
   const other = otherRoll(s);
-  return fp.ready === fp.total && core('mainMat') && core('instr') && other.ready === other.total;
+  return fp.done === fp.total && core('mainMat') && core('instr') && other.done === other.total;
 }
 
 /** The material list on the sector page: main and network rows, as the groups the crew sees. */

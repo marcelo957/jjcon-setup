@@ -150,7 +150,7 @@ export class OpsStore {
     const id = `sec-${Math.random().toString(36).slice(2, 8)}`;
     const blank: Sector = {
       id, name: '', group: f.group, leadId: '', ownerId: '', location: '', day: f.day, from: f.from, to: f.to, build: 'none',
-      plans: Object.fromEntries(PLAN_KEYS.map((k) => [k, { required: false, status: 'none' }])) as Sector['plans'],
+      plans: Object.fromEntries(PLAN_KEYS.map((k) => [k, { required: false }])) as Sector['plans'],
       blocks: {
         mainMat: { on: false, status: 'none', rows: [] }, netMat: { on: false, status: 'none', rows: [] },
         instr: { on: false, status: 'none', steps: [] }, install: { on: false, status: 'none', steps: [] },
@@ -255,22 +255,31 @@ export class OpsStore {
     });
   }
 
-  /** Attach an uploaded PDF to a plan. A new file sets the plan back to draft unless it was approved. */
+  /** Attach an uploaded PDF to a plan: the plan is done from now on. Replacing keeps it done. */
   setPlanFile(id: string, key: PlanKey, file: FileRef) {
     this.edit(id, (s) => {
       const slot = s.plans[key];
       slot.prevUploadedAt = slot.file?.uploadedAt;
       slot.file = file;
-      if (slot.status !== 'approved') slot.status = 'draft';
     });
+  }
+
+  /** Take a plan's PDF away: the plan is outstanding again, everywhere. */
+  removePlanFile(id: string, key: PlanKey) {
+    this.edit(id, (s) => { delete s.plans[key].file; delete s.plans[key].prevUploadedAt; });
   }
 
   setCustomFile(id: string, blockId: string, file: FileRef) {
     this.edit(id, (s) => {
       const c = s.custom.find((x) => x.id === blockId);
-      if (!c) return;
-      c.file = file;
-      if (c.status !== 'approved') c.status = 'draft';
+      if (c) c.file = file;
+    });
+  }
+
+  removeCustomFile(id: string, blockId: string) {
+    this.edit(id, (s) => {
+      const c = s.custom.find((x) => x.id === blockId);
+      if (c) delete c.file;
     });
   }
 }

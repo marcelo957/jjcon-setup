@@ -8,7 +8,7 @@ import { groupName, PLAN_KEYS } from '../data/meta';
 import { dateLabel, otherItems, packetState, personName, planRoll, windowLabel } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { PlanKey, PrepStatus, Sector } from '../data/types';
-import { BuildTag, PrepChip, Segments } from '../ui/bits';
+import { BuildTag, PrepChip, Segments, UploadChip } from '../ui/bits';
 import { ArchiveDialog, DeleteDialog } from '../ui/SectorDialogs';
 import { CustomCard, FloorplanCard, InfoCard, LinkCard, MaterialCard, prepOptions, StepsCard, type CardProps } from './sectorCards';
 
@@ -20,9 +20,21 @@ export function SectorPage() {
   return <SectorView key={sector.id} sector={sector} people={data.people} />;
 }
 
-/** Check-off state is live on site; edit mode never overwrites it with a stale copy. */
+/**
+ * Check-offs and uploaded files are live: a tick on site and an upload or removal take effect
+ * the moment they happen, so edit mode never overwrites them with a stale copy.
+ */
 function withLiveChecks(draft: Sector, live: Sector): Sector {
   const next = structuredClone(draft);
+  (Object.keys(next.plans) as PlanKey[]).forEach((k) => {
+    const l = live.plans[k];
+    if (l.file) next.plans[k].file = l.file; else delete next.plans[k].file;
+    if (l.prevUploadedAt) next.plans[k].prevUploadedAt = l.prevUploadedAt; else delete next.plans[k].prevUploadedAt;
+  });
+  next.custom.forEach((c) => {
+    const l = live.custom.find((x) => x.id === c.id);
+    if (l?.file) c.file = l.file; else delete c.file;
+  });
   const rows = new Map([...live.blocks.mainMat.rows, ...live.blocks.netMat.rows, ...live.custom.flatMap((c) => c.rows ?? [])].map((r) => [r.id, r.checked]));
   const steps = new Map([...live.blocks.instr.steps, ...live.blocks.install.steps].map((s) => [s.id, s.done]));
   [...next.blocks.mainMat.rows, ...next.blocks.netMat.rows, ...next.custom.flatMap((c) => c.rows ?? [])].forEach((r) => { if (rows.has(r.id)) r.checked = rows.get(r.id)!; });
@@ -30,7 +42,7 @@ function withLiveChecks(draft: Sector, live: Sector): Sector {
   return next;
 }
 
-const stripChecks = (s: Sector) => JSON.stringify(s, (k, v) => (k === 'checked' || k === 'done' ? undefined : v));
+const stripChecks = (s: Sector) => JSON.stringify(s, (k, v) => (['checked', 'done', 'file', 'prevUploadedAt', 'contentChangedAt'].includes(k) ? undefined : v));
 
 function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typeof useOps>['people'] }) {
   const me = useMe();
@@ -93,11 +105,11 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
   const xref = s.xref ? opsStore().sector(s.xref.sectorId) : undefined;
   const packet = packetState(s);
 
-  const statusBlocks: { key: string; label: string; status: PrepStatus; set: (v: PrepStatus) => void }[] = [];
+  const statusBlocks: { key: string; label: string; status: PrepStatus | null; done?: boolean; set: (v: PrepStatus) => void }[] = [];
   if (s.blocks.mainMat.on) statusBlocks.push({ key: 'mainMat', label: 'Material list', status: s.blocks.mainMat.status, set: (v) => change((d) => { d.blocks.mainMat.status = v; }) });
   if (s.blocks.instr.on) statusBlocks.push({ key: 'instr', label: 'Instructions', status: s.blocks.instr.status, set: (v) => change((d) => { d.blocks.instr.status = v; }) });
   otherItems(s).forEach((i) => statusBlocks.push({
-    key: i.key, label: i.name, status: i.status,
+    key: i.key, label: i.name, status: i.status, done: i.done,
     set: (v) => change((d) => {
       const c = d.custom.find((x) => x.id === i.key);
       if (c) c.status = v;
@@ -159,13 +171,15 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
         <span className="overline">Prep status</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="muted" style={{ fontSize: 13 }}>Floorplans</span>
-          {fp.total ? <><Segments items={fp.plans} /><span className="mono" style={{ fontSize: 14 }}>{fp.ready}/{fp.total}</span></>
+          {fp.total ? <><Segments items={fp.plans} /><span className="mono" style={{ fontSize: 14 }}>{fp.done}/{fp.total}</span></>
             : <span className="muted" style={{ fontSize: 12 }}>{s.noFloorplans ? 'Not applicable' : 'Not set'}</span>}
         </div>
         {statusBlocks.map((b) => (
           <div key={b.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="muted" style={{ fontSize: 13 }}>{b.label}</span>
-            {editing ? <Select label={`${b.label} status`} value={b.status} options={prepOptions} width={150} onChange={(v) => b.set(v as PrepStatus)} /> : <PrepChip status={b.status} size="lg" />}
+            {b.status === null ? <UploadChip done={!!b.done} size="lg" />
+              : editing ? <Select label={`${b.label} status`} value={b.status} options={prepOptions} width={150} onChange={(v) => b.set(v as PrepStatus)} />
+              : <PrepChip status={b.status} size="lg" />}
           </div>
         ))}
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', fontSize: 13, color: packet === 'stale' ? 'var(--feedback-danger-text)' : packet === 'current' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>

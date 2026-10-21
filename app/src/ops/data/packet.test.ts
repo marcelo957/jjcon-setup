@@ -36,11 +36,11 @@ describe('Packet pages', () => {
   it('prints a notice in place of anything not released', () => {
     const s = sector('customer');
     const key = PLAN_KINDS.find((k) => s.plans[k.key].required)!;
-    s.plans[key.key].status = 'draft';
+    delete s.plans[key.key].file;
     s.blocks.instr.status = 'none';
     const pages = packetPages(s, 'Diego');
     const plan = pages.find((p) => p.kind === 'plan' && p.sheet === key.name);
-    expect(plan?.kind === 'plan' && plan.notice?.title).toMatch(/^No released PDF/);
+    expect(plan?.kind === 'plan' && plan.notice?.title).toMatch(/^No PDF uploaded/);
     const steps = pages.find((p) => p.kind === 'steps');
     expect(steps?.kind === 'steps' && steps.notice?.title).toBe('No instructions yet');
   });

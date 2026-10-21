@@ -7,7 +7,7 @@ import { iconName } from './Icon';
  * `outlined` and `ghost` modifiers, `size` small | default.
  */
 export function Button({
-  children, onClick, variant = 'primary', outlined, ghost, size, icon, disabled, busy, type = 'button', block, style
+  children, onClick, variant = 'primary', outlined, ghost, size, icon, disabled, busy, type = 'button', block, style, 'aria-label': label
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -21,6 +21,7 @@ export function Button({
   type?: 'button' | 'submit';
   block?: boolean;
   style?: CSSProperties;
+  'aria-label'?: string;
 }) {
   const v = ghost ? 'ghost' : outlined ? 'outline' : variant === 'danger' ? 'danger' : variant === 'neutral' ? 'secondary' : 'primary';
   return (
@@ -34,6 +35,7 @@ export function Button({
       type={type}
       onClick={onClick}
       style={style}
+      aria-label={label}
     >
       {children}
     </DS.Button>

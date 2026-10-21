@@ -6,7 +6,7 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType } from '../data/tasks';
+import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath } from '../data/tasks';
 import { PageHead } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 import type { Person } from '../data/types';
@@ -220,7 +220,9 @@ function Row({ r, selected, onSelect, me, people, navigate }: {
   r: TaskRow; selected: boolean; onSelect: () => void; me: ReturnType<typeof useMe>; people: Person[]; navigate: ReturnType<typeof useNavigate>;
 }) {
   const pn = (id: string) => personName(people, id);
-  const canDone = me.canMarkTask(r.who);
+  // Uploads are done by the file alone: no box to tick, just the way to the upload.
+  const canDone = !r.auto && me.canMarkTask(r.who);
+  const canUpload = r.auto && me.canEditSector(opsStore().sector(r.sectorId)!);
   const canDue = me.canSetDeadline(r.who);
   const note = dueNote(r);
   const open = (hash = '') => navigate(`/sectors/${r.sectorId}${hash}`);
@@ -237,8 +239,11 @@ function Row({ r, selected, onSelect, me, people, navigate }: {
               <Icon fa="check" size={11} />
             </button>
           )}
+          {r.auto && <Icon fa={r.done ? 'circle-check' : 'file-circle-exclamation'} size={14} label={r.done ? 'Uploaded' : 'No PDF yet'} style={{ color: r.done ? 'var(--feedback-success-text)' : 'var(--color-neutral-gray-300)' }} />}
           <span className="overline" style={{ color: r.done ? 'var(--feedback-success-text)' : undefined }}>{r.done ? 'Done' : 'Not done'}</span>
+          {canUpload && !r.done && <button type="button" className="link-btn" style={{ fontSize: 13, whiteSpace: 'nowrap' }} onClick={() => navigate(uploadPath(r))}>Upload PDF</button>}
         </span>
+        {r.auto && !r.done && <span className="muted" style={{ display: 'block', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap' }}>Done when the PDF is uploaded</span>}
         {r.done && <span className="mono" style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'nowrap' }}>{pn(r.doneBy)} · {dateLabel(r.doneAt)}</span>}
       </td>
       <td style={{ padding: '6px 16px' }}>

@@ -17,12 +17,10 @@ export function blockNotice(status: PrepStatus, kind: string, owner: string, est
   return { title: `${cap} missing`, text: `Marked ready but no content is attached. Contact ${owner}.`, icon: 'circle-exclamation' };
 }
 
-/** Why a required plan, or a PDF block, can't be shown. Null when its file is released. */
-export function fileNotice(name: string, status: PrepStatus, file: FileRef | undefined, owner: string): Notice | null {
-  if (file && isReady(status)) return null;
-  if (status === 'draft') return { title: `No released PDF · ${name}`, text: `${owner} is working on the drawing. Nothing is released to the floor or to print yet.`, icon: 'pen' };
-  if (status === 'none') return { title: `No PDF uploaded · ${name}`, text: `Owner ${owner} has to upload this before load-in.`, icon: 'file-circle-exclamation' };
-  return { title: `No PDF attached · ${name}`, text: `Marked ready but no file is attached. Contact ${owner}.`, icon: 'file-circle-exclamation' };
+/** Why a required plan, or a PDF block, can't be shown: its file isn't uploaded. Null once it is. */
+export function fileNotice(name: string, file: FileRef | undefined, owner: string): Notice | null {
+  if (file) return null;
+  return { title: `No PDF uploaded · ${name}`, text: `Owner ${owner} has to upload this before load-in.`, icon: 'file-circle-exclamation' };
 }
 
 export interface FieldPlan { key: PlanKey; name: string; short: string; file?: FileRef; notice: Notice | null }
@@ -30,7 +28,7 @@ export interface FieldPlan { key: PlanKey; name: string; short: string; file?: F
 export const fieldPlans = (s: Sector, owner: string): FieldPlan[] =>
   PLAN_KINDS.filter((k) => s.plans[k.key].required).map((k) => {
     const slot = s.plans[k.key];
-    const notice = fileNotice(k.name, slot.status, slot.file, owner);
+    const notice = fileNotice(k.name, slot.file, owner);
     return { key: k.key, name: k.name, short: k.short, file: notice ? undefined : slot.file, notice };
   });
 
@@ -97,7 +95,7 @@ export function fieldRefs(s: Sector, owner: string): FieldRef[] {
   }
   s.custom.filter((c) => c.on && (c.kind === 'gallery' || c.kind === 'link' || c.kind === 'pdf')).forEach((c: CustomBlock) => {
     if (c.kind === 'pdf') {
-      const notice = fileNotice(c.name, c.status, c.file, owner);
+      const notice = fileNotice(c.name, c.file, owner);
       out.push({ key: c.id, name: c.name, notice, file: notice ? undefined : c.file });
     } else if (c.kind === 'link') {
       const url = safeUrl(c.url ?? '');
@@ -221,7 +219,7 @@ export function packetPages(s: Sector, owner: string): PacketPage[] {
 
   s.custom.filter((c) => c.on && c.kind !== 'link').forEach((c) => {
     if (c.kind === 'pdf') {
-      const notice = fileNotice(c.name, c.status, c.file, owner);
+      const notice = fileNotice(c.name, c.file, owner);
       const n = notice ? 1 : c.file!.pages;
       for (let i = 1; i <= n; i++) pages.push({ kind: 'plan', sheet: c.name, file: notice ? undefined : c.file, page: i, pages: n, notice });
       return;

@@ -250,7 +250,7 @@ export function seedData(now = new Date()): OpsData {
       const plans = Object.fromEntries(PLAN_KEYS.map((k) => {
         const required = req.includes(k);
         const status: PrepStatus = FP_BY[id]?.[k] ?? 'none';
-        const slot: PlanSlot = { required, status };
+        const slot: PlanSlot = { required };
         if (required && (status === 'ready' || status === 'approved')) {
           const named = FILE_BY[`${id}-${k}`];
           const file: FileRef = named
