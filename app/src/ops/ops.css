@@ -39,10 +39,11 @@
 /* Prep status chip: fixed width, icon in a fixed slot, label centred, so a column reads as one straight edge. */
 .chip { display: inline-grid; grid-template-columns: 14px 1fr; align-items: center; gap: 4px; width: 118px; box-sizing: border-box; padding: 4px 8px; border-radius: 9999px; font: var(--ib-text-body-small); text-align: center; white-space: nowrap; color: var(--text-primary); border: 1px solid transparent; }
 .chip--lg { padding: 6px 12px; }
-.chip--none { background: var(--background-raised); border: 1px dashed var(--border-default); color: var(--text-secondary); }
-.chip--draft { background: var(--feedback-warning-background); }
-.chip--ready { background: var(--feedback-info-background); }
-.chip--approved { background: var(--feedback-success-background); border-color: var(--feedback-success-border); }
+/* Content chips: written work recedes, empty is outlined, empty past its deadline is red. */
+.chip--has { background: transparent; border-color: var(--border-subtle); color: var(--text-secondary); }
+.chip--has > :first-child { color: var(--feedback-success-text); }
+.chip--empty { background: var(--background-raised); border: 1px dashed var(--border-default); color: var(--text-primary); }
+.chip--late { background: var(--feedback-danger-background); border-color: var(--feedback-danger-border); color: var(--feedback-danger-text); font-weight: 600; }
 button.chip { cursor: pointer; }
 button.chip:hover { box-shadow: var(--ib-elevation-1); }
 .chip--muted { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: 1px dashed var(--border-divider); border-radius: 4px; background: transparent; color: var(--color-neutral-gray-300); font: var(--ib-text-overline); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
@@ -55,9 +56,8 @@ button.chip:hover { box-shadow: var(--ib-elevation-1); }
 /* Rollup segments: fill weight carries the state in grayscale. */
 .segs { display: flex; gap: 3px; }
 .seg { display: block; width: 16px; height: 10px; border-radius: 4px; box-sizing: border-box; background: var(--color-neutral-white); border: 1px dashed var(--border-default); }
-.seg--approved { background: var(--brand-primary); border: 1px solid var(--brand-primary); }
-.seg--ready { border: 2px solid var(--brand-primary); }
-.seg--draft { background: repeating-linear-gradient(45deg, var(--border-default) 0 2px, var(--color-neutral-white) 2px 4px); border: 1px solid var(--border-default); }
+.seg--in { background: var(--brand-primary); border: 1px solid var(--brand-primary); }
+.seg--late { background: var(--feedback-danger-text); border: 1px solid var(--feedback-danger-text); }
 .roll { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-divider); border-radius: 4px; background: var(--color-neutral-white); padding: 5px 8px; cursor: pointer; font-family: Inter, sans-serif; color: var(--text-primary); }
 .roll[aria-expanded='true'] { border-color: var(--brand-primary); background: var(--color-neutral-surface-100); }
 .roll__label { font-family: 'Roboto Mono', monospace; font-size: 13px; }
@@ -194,3 +194,7 @@ button.chip:hover { box-shadow: var(--ib-elevation-1); }
   .print-page:last-child { break-after: auto; page-break-after: auto; }
   .packet-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* A written block's facts: what it holds and who edited it, or empty and when it's due. */
+.block-status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 10px; font-size: 13px; color: var(--text-secondary); }
+.final-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--color-neutral-surface-300); color: var(--text-primary); font-size: 12px; }

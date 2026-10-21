@@ -1,5 +1,6 @@
-import { BLOCK_DEFS, blockLabel, customKind, GROUPS, isReady, PLAN_KINDS } from './meta';
-import type { BlockKey, CustomBlock, OpsData, Person, PlanKey, PrepStatus, Sector } from './types';
+import { blockState, customState, isFinal } from './content';
+import { BLOCK_DEFS, blockLabel, customKind, GROUPS, PLAN_KINDS } from './meta';
+import type { BlockKey, CustomBlock, OpsData, Person, PlanKey, Sector } from './types';
 
 /** Group order, then full display name ignoring case, by code point so | and — stay ordinary characters. */
 export function sortSectors(list: Sector[]): Sector[] {
@@ -56,21 +57,29 @@ export function planRoll(s: Sector) {
   return { plans, done: plans.filter((p) => p.done).length, total: plans.length };
 }
 
-/** A PDF block is done exactly when its file is uploaded; other custom blocks keep a prep status. */
+/** A PDF block is done exactly when its file is uploaded; every other custom block is written content. */
 export const isUpload = (c: CustomBlock) => c.kind === 'pdf';
 
-/** `status` is null for uploads: they are done or not, by whether the file is there. */
-export interface OtherItem { key: string; name: string; status: PrepStatus | null; done: boolean; custom: boolean; icon: string }
+/**
+ * One item under the dashboard's "Other items" column. `done` is what exists: the file is
+ * uploaded, or the block holds something. `summary` says what, for written blocks.
+ */
+export interface OtherItem { key: string; name: string; kind: 'upload' | 'content'; done: boolean; summary: string; final: boolean; custom: boolean; icon: string }
 
 /** The blocks that roll up under the dashboard's "Other items" column. */
 export function otherItems(s: Sector): OtherItem[] {
   const out: OtherItem[] = [];
-  (['netMat', 'info', 'install', 'link'] as BlockKey[]).forEach((k) => {
-    if (s.blocks[k].on) out.push({ key: k, name: blockLabel(k), status: s.blocks[k].status, done: isReady(s.blocks[k].status), custom: false, icon: BLOCK_DEFS.find((b) => b.k === k)!.icon });
+  (['netMat', 'info', 'install', 'link'] as const).forEach((k) => {
+    if (!s.blocks[k].on) return;
+    const st = blockState(s.blocks, k);
+    out.push({ key: k, name: blockLabel(k), kind: 'content', done: !st.empty, summary: st.summary, final: isFinal(st.meta), custom: false, icon: BLOCK_DEFS.find((b) => b.k === k)!.icon });
   });
-  s.custom.filter((c) => c.on).forEach((c) => out.push(isUpload(c)
-    ? { key: c.id, name: c.name, status: null, done: !!c.file, custom: true, icon: customKind(c.kind).icon }
-    : { key: c.id, name: c.name, status: c.status, done: isReady(c.status), custom: true, icon: customKind(c.kind).icon }));
+  s.custom.filter((c) => c.on).forEach((c) => {
+    const st = customState(c);
+    out.push(st
+      ? { key: c.id, name: c.name, kind: 'content', done: !st.empty, summary: st.summary, final: isFinal(st.meta), custom: true, icon: customKind(c.kind).icon }
+      : { key: c.id, name: c.name, kind: 'upload', done: !!c.file, summary: '', final: false, custom: true, icon: customKind(c.kind).icon });
+  });
   return out;
 }
 
@@ -79,19 +88,18 @@ export function otherRoll(s: Sector) {
   return { items, done: items.filter((i) => i.done).length, total: items.length };
 }
 
-/** Something required that nobody has started. */
+const coreIn = (s: Sector, k: 'mainMat' | 'instr') => !s.blocks[k].on || !blockState(s.blocks, k).empty;
+
+/** Something required is missing: a plan with no PDF, or a written block that is empty. */
 export function isBlocked(s: Sector): boolean {
-  return planRoll(s).plans.some((p) => !p.done)
-    || (s.blocks.mainMat.on && s.blocks.mainMat.status === 'none')
-    || (s.blocks.instr.on && s.blocks.instr.status === 'none')
-    || otherItems(s).some((i) => (i.status === null ? !i.done : i.status === 'none'));
+  return !isComplete(s);
 }
 
+/** Everything required exists: every plan uploaded, every written block holds something. */
 export function isComplete(s: Sector): boolean {
   const fp = planRoll(s);
-  const core = (k: 'mainMat' | 'instr') => !s.blocks[k].on || isReady(s.blocks[k].status);
   const other = otherRoll(s);
-  return fp.done === fp.total && core('mainMat') && core('instr') && other.done === other.total;
+  return fp.done === fp.total && coreIn(s, 'mainMat') && coreIn(s, 'instr') && other.done === other.total;
 }
 
 /** The material list on the sector page: main and network rows, as the groups the crew sees. */

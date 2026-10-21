@@ -13,7 +13,8 @@ export function useMe() {
     canManageSectors: can(role, 'manageSectors'),
     canEditSector: (s: Sector) => can(role, 'editSectorContent', { leadsSector: leads(s) }),
     canCheckOff: can(role, 'checkOff'),
-    canMarkTask: (who: string) => can(role, 'markTaskDone', { isOwnTask: who === session.personId }),
+    /** Mark a written block final, or unlock it: the responsible person, or an admin. */
+    canMarkFinal: (who: string) => can(role, 'markFinal', { isOwnTask: who === session.personId }),
     canSetDeadline: (who: string) => can(role, 'changeDeadline', { isOwnTask: who === session.personId }),
     canReassign: can(role, 'reassignTasks'),
     canManagePeople: can(role, 'managePeople')

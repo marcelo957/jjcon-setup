@@ -27,18 +27,16 @@ describe('Uploads decide their own status', () => {
     expect(isBlocked(opsStore().sector(id)!)).toBe(true);
   });
 
-  it('ignores an old hand-made mark either way', () => {
+  it('ignores a done mark saved by an older version of the app', () => {
     const id = 'customer';
-    opsStore().setTaskDone([`${id}:A`], false, 'p-marcelo');
-    expect(row(id, 'A').done).toBe(true);
     opsStore().removePlanFile(id, 'A');
-    opsStore().setTaskDone([`${id}:A`], true, 'p-marcelo');
+    opsStore().saveSector(id, (s) => { (s.tasks!.A as Record<string, unknown>).done = true; });
     expect(row(id, 'A').done).toBe(false);
   });
 
   it('treats a PDF block the same way', () => {
     const id = 'customer';
-    opsStore().saveSector(id, (s) => { s.custom.push({ id: 'cb-sheet', kind: 'pdf', name: 'Seating sheet', status: 'approved', on: true }); });
+    opsStore().saveSector(id, (s) => { s.custom.push({ id: 'cb-sheet', kind: 'pdf', name: 'Seating sheet', on: true }); });
     expect(row(id, 'cb-sheet')).toMatchObject({ auto: true, done: false });
     opsStore().setCustomFile(id, 'cb-sheet', file);
     expect(row(id, 'cb-sheet').done).toBe(true);

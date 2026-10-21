@@ -1,20 +1,18 @@
 import { HELP_DESK } from '../../config';
-import { isReady, PLAN_KINDS } from './meta';
-import type { CustomBlock, FileRef, MatRow, PlanKey, PrepStatus, Sector } from './types';
+import { blockState, customState, isFinal } from './content';
+import { PLAN_KINDS } from './meta';
+import type { CustomBlock, FileRef, MatRow, PlanKey, Sector } from './types';
 
 /**
- * What reaches the floor and the printed packet. Only released content does: a block is released
- * once it is ready or approved and holds something. Drafts stay in the office.
+ * What reaches the floor and the printed packet: whatever exists. A written block shows as soon
+ * as it holds something; one not marked final is printed with a "not final" line.
  */
 
 export interface Notice { title: string; text: string; icon: string }
 
-/** Why a block has nothing to work from, in the owner's name. */
-export function blockNotice(status: PrepStatus, kind: string, owner: string, estimate?: string): Notice {
-  const cap = kind[0].toUpperCase() + kind.slice(1);
-  if (status === 'none') return { title: `No ${kind} yet`, text: `Owner ${owner} has not started this block. Nothing to work from on the floor.`, icon: 'circle-exclamation' };
-  if (status === 'draft') return { title: `${cap} in draft`, text: `${owner} is still writing this block${estimate ? `, ${estimate}` : ''}. It is not released for the floor or for print.`, icon: 'pen' };
-  return { title: `${cap} missing`, text: `Marked ready but no content is attached. Contact ${owner}.`, icon: 'circle-exclamation' };
+/** Why a written block has nothing to work from, in the owner's name. */
+export function emptyNotice(kind: string, owner: string): Notice {
+  return { title: `No ${kind} yet`, text: `Nothing written yet. ${owner === 'Unassigned' ? 'Nobody is responsible yet.' : `${owner} is responsible.`}`, icon: 'circle-exclamation' };
 }
 
 /** Why a required plan, or a PDF block, can't be shown: its file isn't uploaded. Null once it is. */
@@ -33,26 +31,26 @@ export const fieldPlans = (s: Sector, owner: string): FieldPlan[] =>
   });
 
 /** A list of rows the crew confirms: a material list or a checklist block. */
-export interface FieldList { block: string; name: string; rows: MatRow[] | null; notice: Notice | null; foot?: string }
+export interface FieldList { block: string; name: string; rows: MatRow[] | null; notice: Notice | null; foot?: string; final: boolean }
 
 export function fieldLists(s: Sector, owner: string): FieldList[] {
   const out: FieldList[] = [];
   const mat = (k: 'mainMat' | 'netMat', name: string) => {
     const b = s.blocks[k];
     if (!b.on) return;
-    const ok = isReady(b.status) && b.rows.length > 0;
-    out.push({ block: k, name, rows: ok ? b.rows : null, notice: ok ? null : blockNotice(b.status, 'material list', owner) });
+    const ok = !blockState(s.blocks, k).empty;
+    out.push({ block: k, name, rows: ok ? b.rows : null, notice: ok ? null : emptyNotice('material list', owner), final: isFinal(b) });
   };
   mat('mainMat', 'Main materials');
   mat('netMat', 'Computers & network');
   s.custom.filter((c) => c.on && c.kind === 'checklist').forEach((c) => {
-    const ok = isReady(c.status) && !!c.rows?.length;
-    out.push({ block: c.id, name: c.name, rows: ok ? c.rows! : null, notice: ok ? null : blockNotice(c.status, 'checklist', owner), foot: c.foot });
+    const ok = !customState(c)!.empty;
+    out.push({ block: c.id, name: c.name, rows: ok ? c.rows! : null, notice: ok ? null : emptyNotice('checklist', owner), foot: c.foot, final: isFinal(c) });
   });
   return out;
 }
 
-export interface FieldSteps { block: string; name: string; steps: { id: string; text: string; done: boolean }[] | null; notice: Notice | null; checkable: boolean }
+export interface FieldSteps { block: string; name: string; steps: { id: string; text: string; done: boolean }[] | null; notice: Notice | null; checkable: boolean; final: boolean }
 
 export function fieldSteps(s: Sector, owner: string): FieldSteps[] {
   const out: FieldSteps[] = [];
@@ -60,12 +58,12 @@ export function fieldSteps(s: Sector, owner: string): FieldSteps[] {
     const b = s.blocks[k];
     if (!b.on) return;
     const name = k === 'instr' ? 'Setup instructions' : 'Installation';
-    const ok = isReady(b.status) && b.steps.length > 0;
-    out.push({ block: k, name, steps: ok ? b.steps : null, notice: ok ? null : blockNotice(b.status, k === 'instr' ? 'instructions' : 'installation steps', owner), checkable: true });
+    const ok = !blockState(s.blocks, k).empty;
+    out.push({ block: k, name, steps: ok ? b.steps : null, notice: ok ? null : emptyNotice(k === 'instr' ? 'instructions' : 'installation steps', owner), checkable: true, final: isFinal(b) });
   });
   s.custom.filter((c) => c.on && c.kind === 'text').forEach((c) => {
-    const ok = isReady(c.status) && !!c.steps?.length;
-    out.push({ block: c.id, name: c.name, steps: ok ? c.steps! : null, notice: ok ? null : blockNotice(c.status, 'text', owner), checkable: false });
+    const ok = !customState(c)!.empty;
+    out.push({ block: c.id, name: c.name, steps: ok ? c.steps! : null, notice: ok ? null : emptyNotice('text', owner), checkable: false, final: isFinal(c) });
   });
   return out;
 }
@@ -85,8 +83,8 @@ export function fieldRefs(s: Sector, owner: string): FieldRef[] {
   const out: FieldRef[] = [];
   const info = s.blocks.info;
   if (info.on) {
-    const ok = isReady(info.status) && info.rows.length > 0;
-    out.push({ key: 'info', name: 'Information', notice: ok ? null : blockNotice(info.status, 'information', owner), info: ok ? info.rows : undefined });
+    const ok = !blockState(s.blocks, 'info').empty;
+    out.push({ key: 'info', name: 'Information', notice: ok ? null : emptyNotice('information', owner), info: ok ? info.rows : undefined });
   }
   const link = s.blocks.link;
   if (link.on) {
@@ -101,8 +99,8 @@ export function fieldRefs(s: Sector, owner: string): FieldRef[] {
       const url = safeUrl(c.url ?? '');
       out.push({ key: c.id, name: c.name, notice: url ? null : { title: 'No link set yet', text: `Contact ${owner}.`, icon: 'link' }, link: url ? { label: c.label || url, url } : undefined });
     } else {
-      const ok = isReady(c.status) && !!c.shots?.length;
-      out.push({ key: c.id, name: c.name, notice: ok ? null : blockNotice(c.status, 'photo set', owner), shots: ok ? c.shots : undefined });
+      const ok = !customState(c)!.empty;
+      out.push({ key: c.id, name: c.name, notice: ok ? null : emptyNotice('photo set', owner), shots: ok ? c.shots : undefined });
     }
   });
   return out;
@@ -123,7 +121,7 @@ export function fieldTabs(s: Sector): { id: FieldTab; label: string }[] {
   return tabs;
 }
 
-/** Confirmed / total over released lists, or null when nothing is released to confirm. */
+/** Confirmed / total over written lists, or null when there is nothing to confirm. */
 export function fieldProgress(s: Sector, owner: string): { done: number; total: number } | null {
   const rows = fieldLists(s, owner).flatMap((l) => l.rows ?? []);
   return rows.length ? { done: rows.filter((r) => r.checked).length, total: rows.length } : null;
@@ -135,8 +133,8 @@ export type PacketRow = { group: true; item: string } | { group: false; item: st
 
 export type PacketPage =
   | { kind: 'plan'; sheet: string; file?: FileRef; page: number; pages: number; notice: Notice | null }
-  | { kind: 'rows'; sheet: string; title: string; rows: PacketRow[]; notice: Notice | null; qty: boolean; sign: boolean; continues: boolean }
-  | { kind: 'steps'; sheet: string; title: string; steps: { n: number; text: string }[]; notice: Notice | null; last: boolean }
+  | { kind: 'rows'; sheet: string; title: string; rows: PacketRow[]; notice: Notice | null; qty: boolean; sign: boolean; continues: boolean; notFinal: boolean }
+  | { kind: 'steps'; sheet: string; title: string; steps: { n: number; text: string }[]; notice: Notice | null; last: boolean; notFinal: boolean }
   | { kind: 'empty'; sheet: string };
 
 // Room on a Letter page below the packet header, in CSS pixels.
@@ -193,25 +191,26 @@ export function packetPages(s: Sector, owner: string): PacketPage[] {
   if (lists.length) {
     const released = lists.filter((l) => l.rows);
     if (!released.length) {
-      pages.push({ kind: 'rows', sheet: 'Material list', title: 'Material list', rows: [], notice: lists[0].notice, qty: true, sign: true, continues: false });
+      pages.push({ kind: 'rows', sheet: 'Material list', title: 'Material list', rows: [], notice: lists[0].notice, qty: true, sign: true, continues: false, notFinal: false });
     } else {
       const rows: PacketRow[] = lists.flatMap((l): PacketRow[] => l.rows
         ? [{ group: true, item: l.name }, ...matRows(l.rows)]
-        : [{ group: true, item: `${l.name} · not released yet` }]);
+        : [{ group: true, item: `${l.name} · nothing written yet` }]);
       const chunks = chunkRows(rows);
+      const notFinal = released.some((l) => !l.final);
       chunks.forEach((c, i) => pages.push({
         kind: 'rows', sheet: 'Material list', title: i === 0 ? 'Material list · check on arrival' : 'Material list · continued',
-        rows: c, notice: null, qty: true, sign: i === chunks.length - 1, continues: i < chunks.length - 1
+        rows: c, notice: null, qty: true, sign: i === chunks.length - 1, continues: i < chunks.length - 1, notFinal
       }));
     }
   }
 
   const stepPages = (st: FieldSteps) => {
-    if (!st.steps) { pages.push({ kind: 'steps', sheet: st.name, title: st.name, steps: [], notice: st.notice, last: true }); return; }
+    if (!st.steps) { pages.push({ kind: 'steps', sheet: st.name, title: st.name, steps: [], notice: st.notice, last: true, notFinal: false }); return; }
     const chunks = chunkSteps(st.steps.map((x) => x.text));
     let n = 0;
     chunks.forEach((c, i) => {
-      pages.push({ kind: 'steps', sheet: st.name, title: i === 0 ? st.name : `${st.name} · continued`, steps: c.map((text) => ({ n: ++n, text })), notice: null, last: i === chunks.length - 1 });
+      pages.push({ kind: 'steps', sheet: st.name, title: i === 0 ? st.name : `${st.name} · continued`, steps: c.map((text) => ({ n: ++n, text })), notice: null, last: i === chunks.length - 1, notFinal: !st.final });
     });
   };
   const allSteps = fieldSteps(s, owner);
@@ -225,15 +224,15 @@ export function packetPages(s: Sector, owner: string): PacketPage[] {
       return;
     }
     if (c.kind === 'text') { stepPages(allSteps.find((st) => st.block === c.id)!); return; }
-    const ok = isReady(c.status);
+    const ok = !customState(c)!.empty;
     const rows: PacketRow[] = !ok ? []
       : c.kind === 'checklist' ? matRows(c.rows ?? [])
       : (c.shots ?? []).map((sh) => ({ group: false, item: sh.title, qty: '', note: sh.caption || undefined }));
-    const notice = ok && rows.length ? null : blockNotice(c.status, c.kind === 'gallery' ? 'photo set' : c.kind, owner);
+    const notice = ok ? null : emptyNotice(c.kind === 'gallery' ? 'photo set' : c.kind, owner);
     const chunks = notice ? [[]] : chunkRows(rows);
     chunks.forEach((r, i) => pages.push({
       kind: 'rows', sheet: c.name, title: i === 0 ? c.name : `${c.name} · continued`, rows: r, notice,
-      qty: c.kind !== 'gallery', sign: false, continues: i < chunks.length - 1
+      qty: c.kind !== 'gallery', sign: false, continues: i < chunks.length - 1, notFinal: ok && !isFinal(c)
     }));
   });
 

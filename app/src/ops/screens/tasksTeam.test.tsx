@@ -33,7 +33,8 @@ describe('Tasks', () => {
     await renderAs('admin', '/tasks');
     const total = rows().length;
     expect(screen.getByText(`${total} of ${total} items`)).toBeInTheDocument();
-    expect(screen.getByText('Floorplans ready · required plans')).toBeInTheDocument();
+    expect(screen.getByText('Floorplans uploaded · required plans')).toBeInTheDocument();
+    expect(screen.getByText('Material lists empty')).toBeInTheDocument();
   });
 
   it('filters, shows removable chips, and clears them', async () => {
@@ -45,11 +46,11 @@ describe('Tasks', () => {
     expect(screen.getByText(`${rows().length} of ${rows().length} items`)).toBeInTheDocument();
   });
 
-  it('explains that Done and Late only never overlap', async () => {
+  it('explains that In place and Late only never overlap', async () => {
     const user = await renderAs('admin', '/tasks?status=done&late=1');
     expect(screen.getByText('Nothing matches')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Show late items' }));
-    expect(screen.getByRole('button', { name: 'Not done', pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Missing', pressed: true })).toBeInTheDocument();
   });
 
   it('My tasks filters to the signed-in person', async () => {
@@ -60,18 +61,19 @@ describe('Tasks', () => {
     expect(screen.getByText(`${mine} of ${rows().length} items`)).toBeInTheDocument();
   });
 
-  it('marks a row done and records who did it', async () => {
+  it('shows what exists instead of a tick, with the way to add what is missing', async () => {
     const user = await renderAs('admin', '/tasks?sector=crown');
-    await user.click(screen.getByRole('checkbox', { name: 'Crown Booth, Main material list done' }));
-    expect(rows().find((r) => r.key === 'crown:mainMat')).toMatchObject({ done: true, doneBy: 'p-marcelo' });
-    // Floorplans have no box: they are done when their PDF is uploaded.
-    expect(screen.queryByRole('checkbox', { name: 'Crown Booth, Floorplan — General Layout done' })).not.toBeInTheDocument();
-    expect(screen.getAllByText('Done when the PDF is uploaded').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('checkbox', { name: / done$/ })).not.toBeInTheDocument();
+    const mat = rows().find((r) => r.key === 'crown:mainMat')!;
+    expect(mat.done).toBe(false);
+    await user.click(screen.getAllByRole('button', { name: 'Write it' })[0]);
+    expect(await screen.findByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
 
-  it('crew can only tick their own tasks and cannot reassign or move deadlines', async () => {
+  it('crew cannot write, upload, reassign or move deadlines from the list', async () => {
     await renderAs('crew', '/tasks?sector=seminar');
-    expect(screen.getAllByRole('checkbox', { name: /Seminar Area/ }).length).toBe(rows().filter((r) => r.sectorId === 'seminar' && r.who === 'p-dandre' && !r.auto).length);
+    expect(screen.queryByRole('button', { name: 'Write it' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Upload PDF' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Deadline for/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reassign selected/ })).not.toBeInTheDocument();
   });
@@ -94,15 +96,14 @@ describe('Team', () => {
     expect(names[1]).toBe('Diego');
   });
 
-  it('marks an item done with an undo', async () => {
+  it('sends you to the work instead of marking it done', async () => {
     const user = await renderAs('admin', '/team?person=__un');
     const card = screen.getByRole('region', { name: 'Unassigned' });
-    await user.click(within(card).getAllByRole('button', { name: /^Mark done:/ })[0]);
-    expect(screen.getByRole('status')).toHaveTextContent('Marked done');
-    const doneCount = rows().filter((r) => r.who === '' && r.done).length;
-    expect(doneCount).toBe(1);
-    await user.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(rows().filter((r) => r.who === '' && r.done).length).toBe(0);
+    expect(within(card).queryByRole('button', { name: /^Mark done/ })).not.toBeInTheDocument();
+    const go = within(card).getAllByRole('button', { name: /^(Write it|Upload PDF):/ });
+    expect(go.length).toBeGreaterThan(0);
+    await user.click(go[0]);
+    expect(await screen.findByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
 
   it('records a delay note that shows on the item', async () => {

@@ -47,14 +47,12 @@ describe('Prep dashboard', () => {
     expect(screen.getByRole('button', { name: 'IBJJF Store' })).toBeInTheDocument();
   });
 
-  it('marks drafts ready on the selected sectors, leaving plans to their files', async () => {
-    const user = await renderAs('admin', '/prep');
-    await user.click(screen.getByLabelText('Select Entrance — Spectators'));
-    await user.click(screen.getByRole('button', { name: 'Mark ready' }));
-    await user.click(screen.getByRole('button', { name: 'Mark 3 drafts ready' }));
-    const s = opsStore().sector('ent-spec')!;
-    expect([s.blocks.mainMat.status, s.blocks.netMat.status, s.blocks.instr.status]).toEqual(['ready', 'ready', 'ready']);
-    expect(s.plans.B.file).toBeUndefined();
+  it('shows what written blocks hold, with no status to set', async () => {
+    await renderAs('admin', '/prep');
+    expect(screen.queryByRole('button', { name: 'Mark ready' })).not.toBeInTheDocument();
+    const s = opsStore().sector('rooms')!;
+    const row = screen.getByRole('button', { name: 'Rooms' }).closest('tr')!;
+    expect(within(row).getByText(`${s.blocks.mainMat.rows.length} items`)).toBeInTheDocument();
   });
 
   it('leaves Add sector and bulk actions out for crew', async () => {
@@ -130,7 +128,7 @@ describe('Sector form', () => {
 describe('Sector page', () => {
   it('checks material off directly from desktop', async () => {
     const user = await renderAs('crew', '/sectors/rooms');
-    expect(screen.getByText('/ 10 confirmed')).toBeInTheDocument();
+    expect(screen.getByText('/ 10 confirmed on site')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Confirm Water stations' }));
     expect(opsStore().sector('rooms')!.blocks.mainMat.rows.find((r) => r.item === 'Water stations')!.checked).toBe(true);
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
@@ -147,7 +145,9 @@ describe('Sector page', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
-  it('edits material rows and steps, then saves', async () => {
+  it('edits material rows and steps, then saves, recording who edited', async () => {
+    opsStore().unlockFinal('crates', 'mainMat', 'p-marcelo');
+    opsStore().unlockFinal('crates', 'instr', 'p-marcelo');
     const user = await renderAs('admin', '/sectors/crates');
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     const qty = screen.getAllByLabelText('Quantity 1')[0];
@@ -155,12 +155,26 @@ describe('Sector page', () => {
     await user.type(qty, '10');
     expect(screen.getByText(/Unsaved changes/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Add step' }));
-    await user.type(screen.getByLabelText('Step 4'), 'Sweep the dock.');
+    await user.type(screen.getAllByLabelText(/^Step \d+$/).at(-1)!, 'Sweep the dock.');
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
     const s = opsStore().sector('crates')!;
     expect(s.blocks.mainMat.rows[0].qty).toBe(10);
     expect(s.blocks.instr.steps.map((x) => x.text)).toContain('Sweep the dock.');
     expect(screen.getByText('Sweep the dock.')).toBeInTheDocument();
+    expect(s.blocks.instr.edited?.by).toBe('p-marcelo');
+  });
+
+  it('locks a block marked final until someone unlocks it', async () => {
+    opsStore().unlockFinal('rooms', 'mainMat', 'p-marcelo');
+    const user = await renderAs('admin', '/sectors/rooms');
+    await user.click(screen.getAllByRole('button', { name: 'Mark final' })[0]);
+    expect(opsStore().sector('rooms')!.blocks.mainMat.final?.by).toBe('p-marcelo');
+    expect(screen.getAllByText(/^Final · Marcelo/).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getAllByText('Final. Unlock it to edit.').length).toBeGreaterThan(0);
+    await user.click(screen.getAllByRole('button', { name: 'Unlock to edit' })[0]);
+    expect(opsStore().sector('rooms')!.blocks.mainMat.final).toBeUndefined();
+    expect(screen.getAllByLabelText('Quantity 1').length).toBeGreaterThan(0);
   });
 
   it('cancel discards edits', async () => {

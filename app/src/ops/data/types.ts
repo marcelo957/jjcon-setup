@@ -1,6 +1,3 @@
-/** Prep status: the office's preparation of one content block. */
-export type PrepStatus = 'none' | 'draft' | 'ready' | 'approved';
-
 /** Build status: the physical work on site. */
 export type BuildStatus = 'none' | 'progress' | 'complete';
 
@@ -50,7 +47,22 @@ export interface MatRow { id: string; item: string; qty: number; note?: string; 
 export interface Step { id: string; text: string; done: boolean }
 export interface InfoRow { id: string; label: string; value: string }
 
-interface BlockBase { on: boolean; status: PrepStatus }
+/** Who did something, and when. */
+export interface Stamp { by: string; at: string }
+
+/**
+ * A written block (list, steps, information, link, photos) has no status to set: it is empty or it
+ * holds something. These record who last changed its content, and whether it is frozen as final.
+ */
+export interface ContentMeta {
+  edited?: Stamp;
+  /** Locked from editing until someone unlocks it. Optional; never required. */
+  final?: Stamp;
+  /** The last unlock, kept so the history shows who reopened a final block. */
+  unlocked?: Stamp;
+}
+
+interface BlockBase extends ContentMeta { on: boolean }
 export interface MatBlock extends BlockBase { rows: MatRow[] }
 export interface StepBlock extends BlockBase { steps: Step[] }
 export interface InfoBlock extends BlockBase { rows: InfoRow[] }
@@ -67,12 +79,11 @@ export interface Blocks {
 
 export interface Shot { id: string; title: string; caption: string }
 
-export interface CustomBlock {
+/** PDF blocks are done exactly when their file is uploaded; every other kind is written content. */
+export interface CustomBlock extends ContentMeta {
   id: string;
   kind: CustomKind;
   name: string;
-  /** Unused for PDF blocks: those are done exactly when their file is uploaded. */
-  status: PrepStatus;
   /** Off keeps the content but hides the block everywhere. */
   on: boolean;
   rows?: MatRow[];
@@ -90,10 +101,6 @@ export interface TaskState {
   due?: string;
   /** Person id, or '' for unassigned. Unset: the sector's owner (lead for instructions and installation). */
   who?: string;
-  /** Unset: done once the item is ready or approved. */
-  done?: boolean;
-  doneBy?: string;
-  doneAt?: string;
   note?: { text: string; by: string; at: string };
 }
 

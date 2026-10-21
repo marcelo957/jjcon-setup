@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '../../ds/Button';
 import { Icon } from '../../ds/Icon';
-import { Select } from '../../ds/Select';
 import { useMe } from '../access';
-import { groupName, PLAN_KEYS } from '../data/meta';
+import { blockState, CONTENT_KEYS, slotMeta } from '../data/content';
+import { blockLabel, groupName, PLAN_KEYS } from '../data/meta';
 import { dateLabel, otherItems, packetState, personName, planRoll, windowLabel } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import type { PlanKey, PrepStatus, Sector } from '../data/types';
-import { BuildTag, PrepChip, Segments, UploadChip } from '../ui/bits';
+import { taskKey, taskRows, toIsoDay } from '../data/tasks';
+import type { PlanKey, Sector } from '../data/types';
+import { BuildTag, ContentChip, Segments, UploadChip } from '../ui/bits';
 import { ArchiveDialog, DeleteDialog } from '../ui/SectorDialogs';
-import { CustomCard, FloorplanCard, InfoCard, LinkCard, MaterialCard, prepOptions, StepsCard, type CardProps } from './sectorCards';
+import { CustomCard, FloorplanCard, InfoCard, LinkCard, MaterialCard, StepsCard, type CardProps } from './sectorCards';
 
 export function SectorPage() {
   const { id } = useParams();
@@ -35,6 +36,13 @@ function withLiveChecks(draft: Sector, live: Sector): Sector {
     const l = live.custom.find((x) => x.id === c.id);
     if (l?.file) c.file = l.file; else delete c.file;
   });
+  // Who edited, and final locks, are live too: Unlock in edit mode takes effect at once.
+  [...CONTENT_KEYS, ...next.custom.map((c) => c.id)].forEach((slot) => {
+    const d = slotMeta(next, slot);
+    const l = slotMeta(live, slot);
+    if (!d || !l) return;
+    (['edited', 'final', 'unlocked'] as const).forEach((k) => { if (l[k]) d[k] = l[k]; else delete d[k]; });
+  });
   const rows = new Map([...live.blocks.mainMat.rows, ...live.blocks.netMat.rows, ...live.custom.flatMap((c) => c.rows ?? [])].map((r) => [r.id, r.checked]));
   const steps = new Map([...live.blocks.instr.steps, ...live.blocks.install.steps].map((s) => [s.id, s.done]));
   [...next.blocks.mainMat.rows, ...next.blocks.netMat.rows, ...next.custom.flatMap((c) => c.rows ?? [])].forEach((r) => { if (rows.has(r.id)) r.checked = rows.get(r.id)!; });
@@ -42,7 +50,7 @@ function withLiveChecks(draft: Sector, live: Sector): Sector {
   return next;
 }
 
-const stripChecks = (s: Sector) => JSON.stringify(s, (k, v) => (['checked', 'done', 'file', 'prevUploadedAt', 'contentChangedAt'].includes(k) ? undefined : v));
+const stripChecks = (s: Sector) => JSON.stringify(s, (k, v) => (['checked', 'done', 'file', 'prevUploadedAt', 'contentChangedAt', 'edited', 'final', 'unlocked'].includes(k) ? undefined : v));
 
 function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typeof useOps>['people'] }) {
   const me = useMe();
@@ -65,7 +73,7 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
   // Deep links from the dashboard: #material, #steps, #block-<key>
   useEffect(() => {
     if (!location.hash) { window.scrollTo?.(0, 0); return; }
-    const t = setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' }), 30);
+    const t = setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView?.({ block: 'start' }), 30);
     return () => clearTimeout(t);
   }, [location.hash]);
 
@@ -92,7 +100,7 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
     if (!draft) return;
     if (!dirty) { stopEdit(); return; }
     const next = withLiveChecks(draft, sector);
-    opsStore().saveSector(sector.id, (x) => { Object.assign(x, next, { contentChangedAt: x.contentChangedAt }); });
+    opsStore().saveSector(sector.id, (x) => { Object.assign(x, next, { contentChangedAt: x.contentChangedAt }); }, me.id);
     stopEdit();
   };
   const change = (fn: (d: Sector) => void) => setDraft((d) => { if (!d) return d; const n = structuredClone(d); fn(n); return n; });
@@ -101,20 +109,29 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
 
   const ownerName = personName(people, s.ownerId);
   const fp = planRoll(s);
-  const props: CardProps = { s, editing, change, ownerName, canCheck: me.canCheckOff, meId: me.id };
+  // Deadlines and who is responsible come from the same rows Tasks shows.
+  const data = useOps();
+  const today = toIsoDay(new Date());
+  const rows = new Map(taskRows(data, today).filter((r) => r.sectorId === sector.id).map((r) => [r.key, r]));
+  const info: CardProps['info'] = (slot) => {
+    const r = rows.get(taskKey(sector.id, slot));
+    return { due: r?.due ?? s.day, late: !!r?.late, lateDays: r?.lateDays ?? 0, canFinal: r ? me.canMarkFinal(r.who) : false };
+  };
+  const pn = (id: string) => personName(people, id);
+  const props: CardProps = { s, editing, change, ownerName, canCheck: me.canCheckOff, meId: me.id, info, pn };
   const xref = s.xref ? opsStore().sector(s.xref.sectorId) : undefined;
   const packet = packetState(s);
 
-  const statusBlocks: { key: string; label: string; status: PrepStatus | null; done?: boolean; set: (v: PrepStatus) => void }[] = [];
-  if (s.blocks.mainMat.on) statusBlocks.push({ key: 'mainMat', label: 'Material list', status: s.blocks.mainMat.status, set: (v) => change((d) => { d.blocks.mainMat.status = v; }) });
-  if (s.blocks.instr.on) statusBlocks.push({ key: 'instr', label: 'Instructions', status: s.blocks.instr.status, set: (v) => change((d) => { d.blocks.instr.status = v; }) });
-  otherItems(s).forEach((i) => statusBlocks.push({
-    key: i.key, label: i.name, status: i.status, done: i.done,
-    set: (v) => change((d) => {
-      const c = d.custom.find((x) => x.id === i.key);
-      if (c) c.status = v;
-      else d.blocks[i.key as 'netMat' | 'info' | 'install' | 'link'].status = v;
-    })
+  // One fact per block: what it holds (or that it's empty, red once late). No status to set.
+  const facts: { key: string; label: string; node: React.ReactNode }[] = [];
+  (['mainMat', 'instr'] as const).forEach((k) => {
+    if (!s.blocks[k].on) return;
+    const st = blockState(s.blocks, k);
+    facts.push({ key: k, label: k === 'mainMat' ? 'Material list' : blockLabel(k), node: <ContentChip summary={st.summary} late={st.empty && info(k).late} final={!!st.meta.final} size="lg" /> });
+  });
+  otherItems(s).forEach((i) => facts.push({
+    key: i.key, label: i.name,
+    node: i.kind === 'upload' ? <UploadChip done={i.done} late={!i.done && info(i.key).late} size="lg" /> : <ContentChip summary={i.summary} late={!i.done && info(i.key).late} final={i.final} size="lg" />
   }));
 
   return (
@@ -168,18 +185,16 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
       </header>
 
       <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 8 }}>
-        <span className="overline">Prep status</span>
+        <span className="overline">What's here</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="muted" style={{ fontSize: 13 }}>Floorplans</span>
-          {fp.total ? <><Segments items={fp.plans} /><span className="mono" style={{ fontSize: 14 }}>{fp.done}/{fp.total}</span></>
+          {fp.total ? <><Segments items={fp.plans.map((p) => ({ ...p, late: !p.done && info(p.key).late }))} /><span className="mono" style={{ fontSize: 14 }}>{fp.done}/{fp.total}</span></>
             : <span className="muted" style={{ fontSize: 12 }}>{s.noFloorplans ? 'Not applicable' : 'Not set'}</span>}
         </div>
-        {statusBlocks.map((b) => (
+        {facts.map((b) => (
           <div key={b.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="muted" style={{ fontSize: 13 }}>{b.label}</span>
-            {b.status === null ? <UploadChip done={!!b.done} size="lg" />
-              : editing ? <Select label={`${b.label} status`} value={b.status} options={prepOptions} width={150} onChange={(v) => b.set(v as PrepStatus)} />
-              : <PrepChip status={b.status} size="lg" />}
+            {b.node}
           </div>
         ))}
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', fontSize: 13, color: packet === 'stale' ? 'var(--feedback-danger-text)' : packet === 'current' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>

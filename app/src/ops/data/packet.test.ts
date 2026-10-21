@@ -13,12 +13,12 @@ describe('Field content', () => {
     expect(fieldTabs(s).map((t) => t.label)).toEqual(['Floorplan', 'Information', 'Instructions']);
   });
 
-  it('keeps drafts off the floor', () => {
+  it('shows whatever is written, and says so when a list is empty', () => {
     const s = sector('customer');
-    s.blocks.mainMat.status = 'draft';
+    s.blocks.mainMat.rows = [];
     const [main, net] = fieldLists(s, 'Diego');
     expect(main.rows).toBeNull();
-    expect(main.notice?.title).toBe('Material list in draft');
+    expect(main.notice?.title).toBe('No material list yet');
     expect(net.rows?.length).toBeGreaterThan(0);
     expect(fieldProgress(s, 'Diego')!.total).toBe(net.rows!.length);
   });
@@ -33,16 +33,25 @@ describe('Packet pages', () => {
     expect(mat.kind === 'rows' && mat.sign && !mat.notice).toBe(true);
   });
 
-  it('prints a notice in place of anything not released', () => {
+  it('prints a notice in place of anything missing', () => {
     const s = sector('customer');
     const key = PLAN_KINDS.find((k) => s.plans[k.key].required)!;
     delete s.plans[key.key].file;
-    s.blocks.instr.status = 'none';
+    s.blocks.instr.steps = [];
     const pages = packetPages(s, 'Diego');
     const plan = pages.find((p) => p.kind === 'plan' && p.sheet === key.name);
     expect(plan?.kind === 'plan' && plan.notice?.title).toMatch(/^No PDF uploaded/);
     const steps = pages.find((p) => p.kind === 'steps');
     expect(steps?.kind === 'steps' && steps.notice?.title).toBe('No instructions yet');
+  });
+
+  it('marks written pages not final until the block is locked', () => {
+    const s = sector('customer');
+    delete s.blocks.instr.final;
+    const steps = () => packetPages(s, 'Diego').find((p) => p.kind === 'steps');
+    expect(steps()?.kind === 'steps' && steps()!.notFinal).toBe(true);
+    s.blocks.instr.final = { by: 'p-marcelo', at: '2026-10-20T10:00:00.000Z' };
+    expect(steps()?.kind === 'steps' && steps()!.notFinal).toBe(false);
   });
 
   it('still gives an empty sector one page', () => {

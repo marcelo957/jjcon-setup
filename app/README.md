@@ -37,8 +37,8 @@ in each visitor's browser, so nothing one person does is seen by anyone else.
 | `/invite/:token` | 3a accept, 3b expired, 3c already used (+ withdrawn / invalid link) |
 | `/access/roles` | 5 roles and permissions reference |
 | `/access` | index of all of the above with demo accounts |
-| `/prep` | Prep dashboard: readiness matrix, floorplan and other-item rollups, bulk owner and mark-ready |
-| `/tasks` | Every required item as one list: status, deadline, responsible; filters in the URL (`?person=`, `?sector=`, `?type=`, `?status=`, `?late=1`) |
+| `/prep` | Prep dashboard: what each sector has, what's empty, what's late; bulk owner and print |
+| `/tasks` | Every required item as one list: what exists, deadline, responsible; filters in the URL (`?person=`, `?sector=`, `?type=`, `?status=`, `?late=1`) |
 | `/team` | One card per person, most behind first, with notes and Present mode (arrow keys, Esc); `?person=`, `?overdue=1` |
 | `/sectors` | Sectors index, Active and Archived tabs, archive / restore / delete |
 | `/sectors/new`, `/sectors/:id/edit` | Create / edit form: plans, built-in blocks, custom blocks |
@@ -82,7 +82,7 @@ unticked, it lives in sessionStorage and ends with the browser.
 (`seed.ts`). Every screen reads it with `useOps()` and changes it only through `OpsStore`
 methods, so a real API replaces that one class. Tasks are not stored separately: every required plan and enabled block on an active sector is a
 task (`src/ops/data/tasks.ts`), and the sector keeps only what was decided about it (deadline,
-responsible, done, delay note). Demo deadlines are placed around today so overdue and due-soon
+responsible, delay note). Demo deadlines are placed around today so overdue and due-soon
 items show. Uploaded PDFs go to IndexedDB
 (`src/ops/files/fileStore.ts`); the demo plans point at `sample:` ids that are drawn on demand
 as real PDFs (`samplePdf.ts`). PDFs render with pdf.js (legacy build, for older phone browsers),
@@ -91,9 +91,17 @@ canvas only: no annotation layer, no document scripts.
 The console loads lazily after sign-in. The Bushido bundle is 1.9 MB unminified (about 165 KB
 gzipped) and cannot be tree-shaken.
 
-Field view and print packets (`src/ops/data/packet.ts`) show only released content: a block
-reaches the floor and the packet once it is ready or approved and holds something. Anything else
-shows the owner's notice instead (on paper, with blank lines to record what arrives). Check-offs
+Nothing has a status someone sets. Whether the work exists is the status:
+- **Uploads** (floorplans, PDF blocks) are in place while the file is uploaded; Remove PDF makes
+  them outstanding again.
+- **Written blocks** (material lists, instructions, information, links, checklists, photos) are
+  empty or hold something (`src/ops/data/content.ts`), with who last edited them and when.
+  Empty past its deadline is late. The responsible person (or an admin) can mark a block final,
+  which locks it until someone unlocks it; the unlock is recorded too.
+
+Field view and print packets (`src/ops/data/packet.ts`) show whatever exists; printed sheets of
+written blocks not marked final say so. Anything missing shows the owner's notice instead (on
+paper, with blank lines to record what arrives). Check-offs
 on the phone and the sector page are the same list. Printing lays every chosen packet out in a
 print-only layer, waits for the PDF sheets to draw, opens the browser's print dialog, then asks
 whether the packets printed before recording them as current.

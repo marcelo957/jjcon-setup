@@ -1,15 +1,15 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Button } from '../../ds/Button';
 import { Icon } from '../../ds/Icon';
-import { Select } from '../../ds/Select';
-import { customKind, isReady, PREP, PREP_ORDER } from '../data/meta';
-import { dateLabel, materialGroups, plansOf, sizeLabel } from '../data/selectors';
-import type { CustomBlock, FileRef, MatRow, PlanKey, PrepStatus, Sector, Step } from '../data/types';
+import { slotState } from '../data/content';
+import { customKind } from '../data/meta';
+import { dateLabel, dayLabel, materialGroups, plansOf, sizeLabel } from '../data/selectors';
+import type { CustomBlock, FileRef, MatRow, PlanKey, Sector, Step } from '../data/types';
 import { opsStore } from '../data/store';
+import { plural } from '../data/tasks';
 import { storePdf } from '../files/fileStore';
 import { countPages } from '../files/pdf';
-import { blockNotice } from '../data/packet';
-import { Modal, PrepChip, UploadChip } from '../ui/bits';
+import { Modal, UploadChip } from '../ui/bits';
 import { PdfThumb, PdfViewer } from '../ui/PdfViewer';
 
 export interface CardProps {
@@ -20,10 +20,15 @@ export interface CardProps {
   ownerName: string;
   canCheck: boolean;
   meId: string;
+  /** Deadline facts and who may mark it final, per task slot. */
+  info: (slot: string) => SlotInfo;
+  /** A person's name from their id. */
+  pn: (id: string) => string;
 }
 
+export interface SlotInfo { due: string; late: boolean; lateDays: number; canFinal: boolean }
+
 const newId = (p: string) => `${p}-${Math.random().toString(36).slice(2, 9)}`;
-export const prepOptions = PREP_ORDER.map((o) => ({ value: o, label: PREP[o].label }));
 
 export function Card({ id, children, title, aside }: { id?: string; children: ReactNode; title?: ReactNode; aside?: ReactNode }) {
   return (
@@ -50,11 +55,50 @@ export function Notice({ title, text, big, icon, action }: { title: string; text
   );
 }
 
-const DraftNote = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
-    <Icon fa="pen" size={12} style={{ color: 'var(--feedback-warning-accent)' }} />Draft. Not released to the floor or to print yet.
+/**
+ * A written block's facts, in place of a status: what it holds and who last edited it, or that it
+ * is empty and when it is due (red once late). Final shows who froze it, with Unlock; otherwise
+ * the responsible person can Mark final. Nothing here is required.
+ */
+export function BlockStatus({ s, slot, info, pn, meId, editing }: { s: Sector; slot: string; info: CardProps['info']; pn: CardProps['pn']; meId: string; editing: boolean }) {
+  const st = slotState(s, slot);
+  if (!st) return null;
+  const m = st.meta;
+  const i = info(slot);
+  return (
+    <div className="block-status">
+      {st.empty ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: i.late ? 'var(--feedback-danger-text)' : 'var(--text-secondary)', fontWeight: i.late ? 600 : 400 }}>
+          <Icon fa={i.late ? 'triangle-exclamation' : 'circle'} outline={!i.late} size={12} />
+          {i.late ? `Empty · was due ${dayLabel(i.due)}, ${plural(i.lateDays, 'day')} late` : `Empty · due ${dayLabel(i.due)}`}
+        </span>
+      ) : (
+        <span>
+          <strong style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{st.summary}</strong>
+          {m.edited ? ` · last edited by ${pn(m.edited.by)}, ${dateLabel(m.edited.at)}` : ' · no edits recorded yet'}
+        </span>
+      )}
+      {m.final && <span className="final-tag"><Icon fa="lock" size={11} />Final · {pn(m.final.by)}, {dateLabel(m.final.at)}</span>}
+      {!m.final && m.unlocked && <span className="muted">Unlocked by {pn(m.unlocked.by)}, {dateLabel(m.unlocked.at)}</span>}
+      <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 8 }}>
+        {m.final && i.canFinal && <Button size="small" variant="neutral" outlined icon="lock-open" onClick={() => opsStore().unlockFinal(s.id, slot, meId)}>Unlock to edit</Button>}
+        {!m.final && !st.empty && !editing && i.canFinal && (
+          <span title="Locks this block so nobody can change it until someone unlocks it. Optional.">
+            <Button size="small" variant="neutral" outlined icon="lock" onClick={() => opsStore().markFinal(s.id, slot, meId)}>Mark final</Button>
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+const Locked = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
+    <Icon fa="lock" size={12} />Final. Unlock it to edit.
   </div>
 );
+
+const emptyText = (what: string, owner: string) => `Nothing written yet. ${owner === 'Unassigned' ? 'Nobody is responsible yet.' : `${owner} is responsible for the ${what}.`}`;
 
 function CheckBox({ on, label, onClick, disabled }: { on: boolean; label: string; onClick: () => void; disabled?: boolean }) {
   return (
@@ -67,7 +111,7 @@ function CheckBox({ on, label, onClick, disabled }: { on: boolean; label: string
 
 /* ---------- Floorplans ---------- */
 
-export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, startEdit, canEdit, meId }: CardProps & {
+export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, startEdit, canEdit, meId, info }: CardProps & {
   plan: PlanKey | null; setPlan: (k: PlanKey) => void; startEdit: () => void; canEdit: boolean;
 }) {
   const plans = plansOf(s);
@@ -100,7 +144,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {!editing && (muted
                   ? <span className="chip--muted"><Icon fa={unset && !s.noFloorplans ? 'circle' : 'ban'} size={9} />{unset && !s.noFloorplans ? 'Not set' : 'Not applicable'}</span>
-                  : <UploadChip done={p.done} />)}
+                  : <UploadChip done={p.done} late={!p.done && info(p.key).late} />)}
                 {editing && (
                   <>
                     <button type="button" role="switch" aria-checked={p.required} aria-label={`${p.name} required`}
@@ -216,35 +260,40 @@ export function UploadRow({ name, file, prev, onFile, onRemove, meId }: { name: 
 
 /* ---------- Material list ---------- */
 
-export function MaterialCard({ s, editing, change, ownerName, canCheck, toggleRow }: CardProps & { toggleRow: (block: string, rowId: string) => void }) {
+export function MaterialCard({ s, editing, change, ownerName, canCheck, toggleRow, info, pn, meId }: CardProps & { toggleRow: (block: string, rowId: string) => void }) {
   const groups = materialGroups(s);
   const rows = groups.flatMap((g) => g.rows);
   const done = rows.filter((r) => r.checked).length;
-  const main = s.blocks.mainMat;
-  const status = main.on ? main.status : s.blocks.netMat.status;
-  if (!rows.length && !editing) {
-    const n = blockNotice(status, 'material list', ownerName);
-    return <Card id="material" title="Material list"><Notice title={n.title} text={n.text} /></Card>;
-  }
   return (
     <Card id="material">
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <h2 className="card__title" style={{ margin: 0, fontWeight: 400, flex: 1 }}>Material list</h2>
-        <span className="mono" style={{ fontSize: 18 }}>{done}</span>
-        <span className="mono muted" style={{ fontSize: 13 }}>/ {rows.length} confirmed</span>
+        {rows.length > 0 && <>
+          <span className="mono" style={{ fontSize: 18 }}>{done}</span>
+          <span className="mono muted" style={{ fontSize: 13 }}>/ {rows.length} confirmed on site</span>
+        </>}
       </div>
-      <div role="progressbar" aria-label="Material confirmed" aria-valuenow={done} aria-valuemax={rows.length} style={{ height: 8, borderRadius: 4, background: 'var(--color-neutral-surface-500)', margin: '10px 0 14px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${rows.length ? Math.round(done / rows.length * 100) : 0}%`, background: done === rows.length && rows.length ? 'var(--feedback-success-text)' : 'var(--brand-primary)' }} />
-      </div>
-      {!isReady(status) && rows.length > 0 && !editing && <DraftNote />}
-      {groups.map((g) => (
-        <div key={g.key} style={{ marginBottom: 14 }}>
-          <div className="overline" style={{ paddingBottom: 4, borderBottom: '2px solid var(--border-divider)' }}>{g.name}</div>
-          {editing
-            ? <RowsEditor rows={g.rows} onChange={(fn) => change((d) => { fn(d.blocks[g.key].rows); })} />
-            : <MatTable rows={g.rows} canCheck={canCheck} toggle={(id) => toggleRow(g.key, id)} />}
+      {rows.length > 0 && (
+        <div role="progressbar" aria-label="Material confirmed" aria-valuenow={done} aria-valuemax={rows.length} style={{ height: 8, borderRadius: 4, background: 'var(--color-neutral-surface-500)', margin: '10px 0 14px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${Math.round(done / rows.length * 100)}%`, background: done === rows.length ? 'var(--feedback-success-text)' : 'var(--brand-primary)' }} />
         </div>
-      ))}
+      )}
+      {groups.map((g) => {
+        const locked = !!s.blocks[g.key].final;
+        return (
+          <div key={g.key} style={{ marginBottom: 14 }}>
+            <div className="overline" style={{ paddingBottom: 4, borderBottom: '2px solid var(--border-divider)' }}>{g.name}</div>
+            <BlockStatus s={s} slot={g.key} info={info} pn={pn} meId={meId} editing={editing} />
+            {editing && !locked
+              ? <RowsEditor rows={g.rows} onChange={(fn) => change((d) => { fn(d.blocks[g.key].rows); })} />
+              : <>
+                  {editing && locked && <Locked />}
+                  {g.rows.length ? <MatTable rows={g.rows} canCheck={canCheck} toggle={(id) => toggleRow(g.key, id)} />
+                    : <div className="muted" style={{ fontSize: 13, padding: '8px 6px' }}>{emptyText('material list', ownerName)}</div>}
+                </>}
+          </div>
+        );
+      })}
       <div className="muted" style={{ fontSize: 12 }}>Check items off here or on the phone. Both views share one list.</div>
     </Card>
   );
@@ -293,19 +342,21 @@ function RowsEditor({ rows, onChange, itemLabel = 'Item' }: { rows: MatRow[]; on
 
 /* ---------- Steps ---------- */
 
-export function StepsCard({ s, block, title, editing, change, ownerName, canCheck, toggleStep }: CardProps & {
+export function StepsCard({ s, block, title, editing, change, ownerName, canCheck, toggleStep, info, pn, meId }: CardProps & {
   block: 'instr' | 'install'; title: string; toggleStep: (block: 'instr' | 'install', id: string) => void;
 }) {
   const b = s.blocks[block];
+  const locked = !!b.final;
   return (
     <Card id={block === 'instr' ? 'steps' : 'install'} title={title}>
-      {editing ? (
+      <BlockStatus s={s} slot={block} info={info} pn={pn} meId={meId} editing={editing} />
+      {editing && !locked ? (
         <StepsEditor steps={b.steps} onChange={(fn) => change((d) => { fn(d.blocks[block].steps); })} />
       ) : !b.steps.length ? (
-        (() => { const n = blockNotice(b.status, title.toLowerCase(), ownerName); return <Notice title={n.title} text={n.text} />; })()
+        <Notice title={`No ${title.toLowerCase()} yet`} text={emptyText(title.toLowerCase(), ownerName)} />
       ) : (
         <>
-          {!isReady(b.status) && <DraftNote />}
+          {editing && locked && <Locked />}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {b.steps.map((st, i) => (
               <button key={st.id} type="button" role="checkbox" aria-checked={st.done} disabled={!canCheck} onClick={() => toggleStep(block, st.id)}
@@ -342,11 +393,13 @@ function StepsEditor({ steps, onChange }: { steps: Step[]; onChange: (fn: (l: St
 
 /* ---------- Information and link ---------- */
 
-export function InfoCard({ s, editing, change, ownerName }: CardProps) {
+export function InfoCard({ s, editing, change, ownerName, info, pn, meId }: CardProps) {
   const rows = s.blocks.info.rows;
+  const locked = !!s.blocks.info.final;
   return (
     <Card id="block-info" title="Information">
-      {editing ? (
+      <BlockStatus s={s} slot="info" info={info} pn={pn} meId={meId} editing={editing} />
+      {editing && !locked ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {rows.map((r, i) => (
             <div key={r.id} style={{ display: 'flex', gap: 8 }}>
@@ -358,14 +411,17 @@ export function InfoCard({ s, editing, change, ownerName }: CardProps) {
           <div><Button size="small" variant="neutral" outlined icon="plus" onClick={() => change((d) => { d.blocks.info.rows.push({ id: newId('i'), label: '', value: '' }); })}>Add row</Button></div>
         </div>
       ) : rows.length ? (
-        rows.map((r) => (
-          <div key={r.id} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 14 }}>
-            <span className="muted" style={{ flex: '0 0 110px' }}>{r.label}</span>
-            <span style={{ flex: 1, minWidth: 0 }}>{r.value}</span>
-          </div>
-        ))
+        <>
+          {editing && locked && <Locked />}
+          {rows.map((r) => (
+            <div key={r.id} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 14 }}>
+              <span className="muted" style={{ flex: '0 0 110px' }}>{r.label}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>{r.value}</span>
+            </div>
+          ))}
+        </>
       ) : (
-        (() => { const n = blockNotice(s.blocks.info.status, 'information', ownerName); return <Notice title={n.title} text={n.text} />; })()
+        <Notice title="No information yet" text={emptyText('information', ownerName)} />
       )}
     </Card>
   );
@@ -381,12 +437,13 @@ function LinkOut({ url, label }: { url: string; label: string }) {
 
 const safeUrl = (u: string) => (/^https?:\/\//i.test(u) ? u : '');
 
-export function LinkCard({ s, editing, change }: CardProps) {
+export function LinkCard({ s, editing, change, info, pn, meId }: CardProps) {
   const l = s.blocks.link;
   return (
     <Card id="block-link" title="External link">
+      <BlockStatus s={s} slot="link" info={info} pn={pn} meId={meId} editing={editing} />
       <div style={{ fontSize: 14, lineHeight: '22px', color: 'var(--text-secondary)' }}>This block points at a document held outside JJCON SetUp. It is the record of what happened, and it is not printed in the packet.</div>
-      {editing ? <LinkFields label={l.label} url={l.url} set={(label, url) => change((d) => { d.blocks.link.label = label; d.blocks.link.url = url; })} />
+      {editing && !l.final ? <LinkFields label={l.label} url={l.url} set={(label, url) => change((d) => { d.blocks.link.label = label; d.blocks.link.url = url; })} />
         : safeUrl(l.url) ? <LinkOut url={safeUrl(l.url)} label={l.label || l.url} />
         : <div className="muted" style={{ fontSize: 13, marginTop: 10 }}>No link set yet.</div>}
     </Card>
@@ -406,17 +463,19 @@ function LinkFields({ label, url, set }: { label: string; url: string; set: (lab
 
 /* ---------- Custom blocks ---------- */
 
-export function CustomCard({ s, c, editing, change, ownerName, canCheck, toggleRow, meId }: CardProps & { c: CustomBlock; toggleRow: (block: string, rowId: string) => void }) {
+export function CustomCard({ s, c, editing: editMode, change, ownerName, canCheck, toggleRow, meId, info, pn }: CardProps & { c: CustomBlock; toggleRow: (block: string, rowId: string) => void }) {
   const kd = customKind(c.kind);
   const edit = (fn: (b: CustomBlock) => void) => change((d) => { const b = d.custom.find((x) => x.id === c.id); if (b) fn(b); });
+  // A block marked final shows its content read-only, even in edit mode, until someone unlocks it.
+  const editing = editMode && !c.final;
   return (
     <Card id={`block-${c.id}`} title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}><Icon fa={kd.icon} size={14} style={{ color: 'var(--icon-tertiary)' }} />{c.name}</span>}
       aside={<>
         <span className="muted" style={{ fontSize: 12 }}>{kd.label}</span>
-        {c.kind === 'pdf' ? <UploadChip done={!!c.file} />
-          : editing ? <Select label={`${c.name} status`} value={c.status} options={prepOptions} width={140} onChange={(v) => edit((b) => { b.status = v as PrepStatus; })} />
-          : <PrepChip status={c.status} />}
+        {c.kind === 'pdf' && <UploadChip done={!!c.file} late={!c.file && info(c.id).late} />}
       </>}>
+      {c.kind !== 'pdf' && <BlockStatus s={s} slot={c.id} info={info} pn={pn} meId={meId} editing={editMode} />}
+      {editMode && c.final && <Locked />}
       {c.kind === 'checklist' && (editing
         ? <RowsEditor rows={c.rows ?? []} onChange={(fn) => edit((b) => { b.rows = b.rows ?? []; fn(b.rows); })} />
         : c.rows?.length
@@ -459,9 +518,9 @@ export function CustomCard({ s, c, editing, change, ownerName, canCheck, toggleR
         : safeUrl(c.url ?? '') ? <LinkOut url={safeUrl(c.url!)} label={c.label || c.url!} /> : <Blank icon={kd.icon} text="No link set yet." />)}
       {c.kind === 'pdf' && (
         <>
-          {editing && <UploadRow name={c.name} file={c.file} meId={meId} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
-          {!editing && c.file && <PdfViewer file={c.file} />}
-          {!editing && !c.file && (
+          {editMode && <UploadRow name={c.name} file={c.file} meId={meId} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
+          {!editMode && c.file && <PdfViewer file={c.file} />}
+          {!editMode && !c.file && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--border-subtle)', borderLeft: '6px solid var(--feedback-warning-accent)', borderRadius: 8, background: 'var(--color-neutral-surface-50)' }}>
               <Icon fa="file-circle-exclamation" size={24} style={{ color: 'var(--feedback-warning-accent)' }} />
               <span style={{ flex: 1, minWidth: 0 }}>

@@ -80,8 +80,8 @@ describe('can', () => {
   it('matches the roles table', () => {
     expect(can('crew', 'checkOff')).toBe(true);
     expect(can('crew', 'changeDeadline')).toBe(false);
-    expect(can('crew', 'markTaskDone', { isOwnTask: false })).toBe(false);
-    expect(can('crew', 'markTaskDone', { isOwnTask: true })).toBe(true);
+    expect(can('crew', 'markFinal', { isOwnTask: false })).toBe(false);
+    expect(can('crew', 'markFinal', { isOwnTask: true })).toBe(true);
     expect(can('editor', 'editSectorContent', { leadsSector: false })).toBe(false);
     expect(can('editor', 'editSectorContent', { leadsSector: true })).toBe(true);
     expect(can('editor', 'managePeople')).toBe(false);
