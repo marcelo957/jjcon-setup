@@ -17,9 +17,9 @@ describe('seed data', () => {
   it('counts plans against the required set only', () => {
     const d = store().get();
     const pod = d.sectors.find((s) => s.id === 'pod-jjc')!;
-    expect(planRoll(pod)).toMatchObject({ ready: 3, total: 3 });
+    expect(planRoll(pod)).toMatchObject({ done: 3, total: 3 });
     const store1 = d.sectors.find((s) => s.id === 'store')!;
-    expect(planRoll(store1)).toMatchObject({ ready: 3, total: 5 });
+    expect(planRoll(store1)).toMatchObject({ done: 3, total: 5 });
     expect(isBlocked(store1)).toBe(true);
     const truss = d.sectors.find((s) => s.id === 'truss')!;
     expect(otherRoll(truss).items.map((i) => i.name)).toEqual(['Reference images']);
@@ -42,7 +42,7 @@ describe('OpsStore', () => {
     const id = s.createSector(f);
     const sec = s.sector(id)!;
     expect(sec.blocks.mainMat.on && sec.blocks.netMat.on && sec.blocks.instr.on).toBe(true);
-    expect(planRoll(sec)).toMatchObject({ ready: 0, total: 1 });
+    expect(planRoll(sec)).toMatchObject({ done: 0, total: 1 });
     expect(sectorInventory(sec)).toEqual([]);
     const ibjjf = activeSectors(s.get()).filter((x) => x.group === 'ibjjf').map((x) => x.name);
     expect(ibjjf[ibjjf.length - 1]).toBe('Warm-up Area');
@@ -77,14 +77,16 @@ describe('OpsStore', () => {
     expect(s.sector('rooms')!.contentChangedAt).toBe(before);
   });
 
-  it('a new plan file goes back to draft unless the plan was approved', () => {
+  it('a plan file is the plan: upload, replace and remove', () => {
     const s = store();
     const file = { id: 'f-1', name: 'new.pdf', size: 10, pages: 1, uploadedAt: now.toISOString() };
     s.setPlanFile('store', 'C', file);
-    expect(s.sector('store')!.plans.C).toMatchObject({ status: 'draft', file });
+    expect(s.sector('store')!.plans.C.file).toEqual(file);
     s.setPlanFile('store', 'G', file);
-    expect(s.sector('store')!.plans.G.status).toBe('approved');
     expect(s.sector('store')!.plans.G.prevUploadedAt).toBeDefined();
+    s.removePlanFile('store', 'G');
+    expect(s.sector('store')!.plans.G.file).toBeUndefined();
+    expect(s.sector('store')!.plans.G.prevUploadedAt).toBeUndefined();
   });
 
   it('persists across instances', () => {

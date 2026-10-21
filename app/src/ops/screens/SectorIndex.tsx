@@ -131,7 +131,7 @@ function IndexRow({ s, people, canManage, open, edit, archive, remove }: {
       </div>
       <span style={{ flex: '0 0 120px', fontSize: 13, color: 'var(--text-secondary)' }}>{personName(people, s.leadId)}</span>
       <span className="mono" style={{ flex: '0 0 110px', fontSize: 13, color: roll.total ? 'var(--text-secondary)' : 'var(--color-neutral-gray-300)' }}>
-        {roll.total ? `${roll.ready}/${roll.total} plans` : 'No plans set'}
+        {roll.total ? `${roll.done}/${roll.total} plans` : 'No plans set'}
       </span>
       <div style={{ flex: '1 1 260px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {blocks.map((b) => <span key={b.k} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: 'var(--color-neutral-surface-300)', color: 'var(--text-secondary)', fontSize: 12, whiteSpace: 'nowrap' }}>{b.label}</span>)}

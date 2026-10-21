@@ -37,13 +37,13 @@ describe('task actions', () => {
   it('marks done with who and when, and undoes it', () => {
     const s = store();
     const before = s.sector('crown')!.contentChangedAt;
-    s.setTaskDone(['crown:G'], true, 'p-diego');
-    let r = taskRows(s.get(), today).find((x) => x.key === 'crown:G')!;
+    s.setTaskDone(['crown:mainMat'], true, 'p-diego');
+    let r = taskRows(s.get(), today).find((x) => x.key === 'crown:mainMat')!;
     expect(r).toMatchObject({ done: true, doneBy: 'p-diego', late: false });
     expect(s.sector('crown')!.contentChangedAt).toBe(before);
     expect(s.get().tasksUpdated!.by).toBe('p-diego');
-    s.setTaskDone(['crown:G'], false, 'p-diego');
-    r = taskRows(s.get(), today).find((x) => x.key === 'crown:G')!;
+    s.setTaskDone(['crown:mainMat'], false, 'p-diego');
+    r = taskRows(s.get(), today).find((x) => x.key === 'crown:mainMat')!;
     expect(r.done).toBe(false);
   });
 

@@ -5,11 +5,11 @@ import { Icon } from '../../ds/Icon';
 import { SearchInput, Select } from '../../ds/Select';
 import { EVENT_NAME, VENUE } from '../../config';
 import { useMe } from '../access';
-import { GROUPS, isReady, PREP, PREP_ORDER } from '../data/meta';
-import { activeSectors, isBlocked, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
+import { GROUPS, PREP, PREP_ORDER } from '../data/meta';
+import { activeSectors, isBlocked, isComplete, isUpload, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { PrepStatus, Sector } from '../data/types';
-import { BuildTag, IconBtn, Modal, PageHead, PrepChip, Segments } from '../ui/bits';
+import { BuildTag, IconBtn, Modal, PageHead, PrepChip, Segments, UploadChip } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 
 type Expand = `${string}|fp` | `${string}|other` | null;
@@ -163,18 +163,16 @@ export function PrepDashboard() {
 function countDrafts(list: Sector[]) {
   let n = 0;
   list.forEach((s) => {
-    n += planRoll(s).plans.filter((p) => p.status === 'draft').length;
     (['mainMat', 'netMat', 'instr', 'info', 'install', 'link'] as const).forEach((k) => { if (s.blocks[k].on && s.blocks[k].status === 'draft') n++; });
-    n += s.custom.filter((c) => c.on && c.status === 'draft').length;
+    n += s.custom.filter((c) => c.on && !isUpload(c) && c.status === 'draft').length;
   });
   return n;
 }
 
 function markDraftsReady(s: Sector) {
   const up = (st: PrepStatus): PrepStatus => (st === 'draft' ? 'ready' : st);
-  Object.values(s.plans).forEach((p) => { if (p.required) p.status = up(p.status); });
   (['mainMat', 'netMat', 'instr', 'info', 'install', 'link'] as const).forEach((k) => { if (s.blocks[k].on) s.blocks[k].status = up(s.blocks[k].status); });
-  s.custom.forEach((c) => { if (c.on) c.status = up(c.status); });
+  s.custom.forEach((c) => { if (c.on && !isUpload(c)) c.status = up(c.status); });
 }
 
 function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, canEdit }: {
@@ -204,8 +202,8 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
         </td>
         <td>
           {fp.total > 0
-            ? <Roll segs={fp.plans} label={`${fp.ready}/${fp.total}`} open={fpOpen} onClick={() => toggle('fp')}
-                title={`${fp.ready} of ${fp.total} required plans ready — click to open the list`} />
+            ? <Roll segs={fp.plans} label={`${fp.done}/${fp.total}`} open={fpOpen} onClick={() => toggle('fp')}
+                title={`${fp.done} of ${fp.total} required plans uploaded — click to open the list`} />
             : <span className="mono muted" style={{ fontSize: 13 }} title={s.noFloorplans ? `${s.name} requires no floorplan` : 'No plans chosen yet — open the sector to choose which plans it needs'}>{s.noFloorplans ? '—' : 'Not set'}</span>}
         </td>
         {(['mainMat', 'instr'] as const).map((k) => (
@@ -218,8 +216,8 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
         ))}
         <td>
           {other.total > 0
-            ? <Roll segs={other.items} label={`${other.ready}/${other.total}`} open={otherOpen} onClick={() => toggle('other')}
-                title={`${other.ready} of ${other.total} other items ready — click to open the list`} />
+            ? <Roll segs={other.items} label={`${other.done}/${other.total}`} open={otherOpen} onClick={() => toggle('other')}
+                title={`${other.done} of ${other.total} other items done — click to open the list`} />
             : <span className="na-dash" style={{ width: 100, textAlign: 'left' }} title="This sector has no other blocks">—</span>}
         </td>
         <td style={{ padding: '3px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -232,8 +230,8 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
       {fpOpen && (
         <ExpandRow title={`Required floorplans · ${s.name}`}
           items={fp.plans.map((p) => ({
-            key: p.key, name: p.name, status: p.status,
-            missing: !isReady(p.status) || !p.hasFile ? (p.status === 'draft' ? 'PDF not released' : 'No PDF uploaded') : null,
+            key: p.key, name: p.name, status: null, done: p.done,
+            missing: p.done ? null : 'No PDF uploaded',
             action: canEdit ? 'Edit plan' : 'Open plan',
             go: () => navigate(`/sectors/${s.id}?plan=${p.key}${canEdit ? '&edit=1' : ''}`)
           }))} />
@@ -241,8 +239,8 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
       {otherOpen && (
         <ExpandRow title={`Other items · ${s.name}`}
           items={other.items.map((i) => ({
-            key: i.key, name: i.name, status: i.status,
-            missing: isReady(i.status) ? null : i.status === 'draft' ? 'Not released' : 'Nothing added yet',
+            key: i.key, name: i.name, status: i.status, done: i.done,
+            missing: i.done ? null : i.status === null ? 'No PDF uploaded' : i.status === 'draft' ? 'Not released' : 'Nothing added yet',
             action: 'Open block',
             go: () => open(s, `#block-${i.key}`)
           }))} />
@@ -251,7 +249,7 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
   );
 }
 
-function Roll({ segs, label, open, onClick, title }: { segs: { status: PrepStatus; name: string }[]; label: string; open: boolean; onClick: () => void; title: string }) {
+function Roll({ segs, label, open, onClick, title }: { segs: { status?: PrepStatus | null; done?: boolean; name: string }[]; label: string; open: boolean; onClick: () => void; title: string }) {
   return (
     <button type="button" className="roll" aria-expanded={open} onClick={onClick} title={title}>
       <Segments items={segs} />
@@ -261,7 +259,7 @@ function Roll({ segs, label, open, onClick, title }: { segs: { status: PrepStatu
   );
 }
 
-function ExpandRow({ title, items }: { title: string; items: { key: string; name: string; status: PrepStatus; missing: string | null; action: string; go: () => void }[] }) {
+function ExpandRow({ title, items }: { title: string; items: { key: string; name: string; status: PrepStatus | null; done: boolean; missing: string | null; action: string; go: () => void }[] }) {
   return (
     <tr style={{ background: 'var(--color-neutral-surface-100)', borderBottom: '1px solid var(--border-subtle)' }}>
       <td />
@@ -275,7 +273,7 @@ function ExpandRow({ title, items }: { title: string; items: { key: string; name
                   {p.name}
                   {p.missing && <span style={{ display: 'block', fontSize: 12, color: 'var(--feedback-danger-text)' }}>{p.missing}</span>}
                 </span>
-                <PrepChip status={p.status} />
+                {p.status ? <PrepChip status={p.status} /> : <UploadChip done={p.done} />}
                 <button type="button" onClick={p.go} style={{ minHeight: 30, padding: '0 10px', border: '1px solid var(--brand-primary)', borderRadius: 4, background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', fontFamily: 'Inter, sans-serif', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>{p.action}</button>
               </div>
             ))}

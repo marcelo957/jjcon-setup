@@ -38,9 +38,9 @@ export interface FileRef {
   uploadedBy?: string | null;
 }
 
+/** A required plan is done exactly when its PDF is uploaded; there is no status to set. */
 export interface PlanSlot {
   required: boolean;
-  status: PrepStatus;
   file?: FileRef;
   /** When the file this one replaced was uploaded. */
   prevUploadedAt?: string;
@@ -71,6 +71,7 @@ export interface CustomBlock {
   id: string;
   kind: CustomKind;
   name: string;
+  /** Unused for PDF blocks: those are done exactly when their file is uploaded. */
   status: PrepStatus;
   /** Off keeps the content but hides the block everywhere. */
   on: boolean;

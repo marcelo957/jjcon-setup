@@ -35,7 +35,7 @@ describe('Prep dashboard', () => {
     expect(screen.queryByText('Empty Crate Return')).not.toBeInTheDocument();
     const row = screen.getByRole('button', { name: 'Podium World Master' }).closest('tr')!;
     expect(within(row).getByText('Blocked')).toBeInTheDocument();
-    await user.click(within(row).getByTitle(/2 of 4 required plans ready/));
+    await user.click(within(row).getByTitle(/2 of 4 required plans uploaded/));
     expect(screen.getByText('Required floorplans · Podium World Master')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Edit plan' })).toHaveLength(4);
   });
@@ -47,14 +47,14 @@ describe('Prep dashboard', () => {
     expect(screen.getByRole('button', { name: 'IBJJF Store' })).toBeInTheDocument();
   });
 
-  it('marks drafts ready on the selected sectors', async () => {
+  it('marks drafts ready on the selected sectors, leaving plans to their files', async () => {
     const user = await renderAs('admin', '/prep');
     await user.click(screen.getByLabelText('Select Entrance — Spectators'));
     await user.click(screen.getByRole('button', { name: 'Mark ready' }));
-    await user.click(screen.getByRole('button', { name: 'Mark 4 drafts ready' }));
+    await user.click(screen.getByRole('button', { name: 'Mark 3 drafts ready' }));
     const s = opsStore().sector('ent-spec')!;
-    expect([s.blocks.mainMat.status, s.blocks.netMat.status, s.blocks.instr.status, s.plans.B.status]).toEqual(['ready', 'ready', 'ready', 'ready']);
-    expect(s.plans.A.status).toBe('ready');
+    expect([s.blocks.mainMat.status, s.blocks.netMat.status, s.blocks.instr.status]).toEqual(['ready', 'ready', 'ready']);
+    expect(s.plans.B.file).toBeUndefined();
   });
 
   it('leaves Add sector and bulk actions out for crew', async () => {

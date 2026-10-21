@@ -1,6 +1,6 @@
 import { customKind, isReady, PLAN_KINDS } from './meta';
 import { activeSectors, dayLabel } from './selectors';
-import type { OpsData, PlanKey, Sector, TaskState } from './types';
+import type { FileRef, OpsData, PlanKey, Sector, TaskState } from './types';
 
 export type TaskType = 'floorplan' | 'material' | 'instructions' | 'other';
 export const TASK_TYPES: { id: TaskType; label: string }[] = [
@@ -28,6 +28,8 @@ export interface TaskRow {
   planKey?: PlanKey;
   /** Sector order, then item order: the default order of the list. */
   ord: number;
+  /** An upload: done exactly when its file is there, never marked by hand. */
+  auto: boolean;
   done: boolean;
   doneBy: string;
   doneAt: string;
@@ -52,10 +54,10 @@ export const splitKey = (key: string) => { const i = key.indexOf(':'); return [k
 
 /** The items a sector requires, in the order the office reads them: plans, lists, steps, the rest. */
 export function sectorItems(s: Sector) {
-  const out: { slot: string; item: string; type: TaskType; ready: boolean; owner: string; hash: string; planKey?: PlanKey; offset: number }[] = [];
+  const out: { slot: string; item: string; type: TaskType; ready: boolean; owner: string; hash: string; planKey?: PlanKey; offset: number; file?: FileRef | null }[] = [];
   PLAN_KINDS.forEach((k) => {
     const p = s.plans[k.key];
-    if (p.required) out.push({ slot: k.key, item: `Floorplan — ${k.name}`, type: 'floorplan', ready: isReady(p.status), owner: s.ownerId, hash: '', planKey: k.key, offset: DUE_OFFSET[k.key] });
+    if (p.required) out.push({ slot: k.key, item: `Floorplan — ${k.name}`, type: 'floorplan', ready: !!p.file, file: p.file ?? null, owner: s.ownerId, hash: '', planKey: k.key, offset: DUE_OFFSET[k.key] });
   });
   const b = s.blocks;
   if (b.mainMat.on) out.push({ slot: 'mainMat', item: 'Main material list', type: 'material', ready: isReady(b.mainMat.status), owner: s.ownerId, hash: '#material', offset: DUE_OFFSET.mainMat });
@@ -64,7 +66,10 @@ export function sectorItems(s: Sector) {
   if (b.instr.on) out.push({ slot: 'instr', item: 'Instructions', type: 'instructions', ready: isReady(b.instr.status), owner: s.leadId, hash: '#steps', offset: DUE_OFFSET.instr });
   if (b.install.on) out.push({ slot: 'install', item: 'Installation', type: 'other', ready: isReady(b.install.status), owner: s.leadId, hash: '#install', offset: DUE_OFFSET.install });
   if (b.link.on) out.push({ slot: 'link', item: 'External link', type: 'other', ready: isReady(b.link.status), owner: s.ownerId, hash: '#block-link', offset: DUE_OFFSET.link });
-  s.custom.filter((c) => c.on).forEach((c) => out.push({ slot: c.id, item: `${customKind(c.kind).label} — ${c.name}`, type: 'other', ready: isReady(c.status), owner: s.ownerId, hash: `#block-${c.id}`, offset: CUSTOM_DUE_OFFSET }));
+  s.custom.filter((c) => c.on).forEach((c) => out.push({
+    slot: c.id, item: `${customKind(c.kind).label} — ${c.name}`, type: 'other', owner: s.ownerId, hash: `#block-${c.id}`, offset: CUSTOM_DUE_OFFSET,
+    ...(c.kind === 'pdf' ? { ready: !!c.file, file: c.file ?? null } : { ready: isReady(c.status) })
+  }));
   return out;
 }
 
@@ -75,13 +80,17 @@ export function taskRows(d: OpsData, today: string): TaskRow[] {
     sectorItems(s).forEach((it) => {
       const t = s.tasks?.[it.slot] ?? {};
       const due = t.due ?? addDays(s.day, -it.offset);
-      const done = t.done ?? it.ready;
+      // An upload is done exactly while its file is there: no mark, old or new, can say otherwise.
+      const auto = it.file !== undefined;
+      const done = auto ? it.ready : t.done ?? it.ready;
       const who = t.who ?? it.owner;
       const left = dayDiff(today, due);
       rows.push({
         key: taskKey(s.id, it.slot), sectorId: s.id, sector: s.name, slot: it.slot, item: it.item, type: it.type,
-        hash: it.planKey ? `?plan=${it.planKey}#block-plans` : it.hash, planKey: it.planKey, ord: rows.length,
-        done, doneBy: t.doneBy ?? who, doneAt: t.doneAt ?? `${addDays(due, -2)}T09:00:00`,
+        hash: it.planKey ? `?plan=${it.planKey}#block-plans` : it.hash, planKey: it.planKey, ord: rows.length, auto,
+        done,
+        doneBy: auto ? it.file?.uploadedBy || who : t.doneBy ?? who,
+        doneAt: auto ? it.file?.uploadedAt ?? '' : t.doneAt ?? `${addDays(due, -2)}T09:00:00`,
         due, who, late: !done && left < 0, lateDays: -left, soon: !done && left >= 0 && left <= SOON_DAYS, daysLeft: left,
         note: t.note
       });
@@ -89,6 +98,9 @@ export function taskRows(d: OpsData, today: string): TaskRow[] {
   });
   return rows;
 }
+
+/** The sector page in edit mode, at the item's upload. */
+export const uploadPath = (r: TaskRow) => `/sectors/${r.sectorId}?${r.planKey ? `plan=${r.planKey}&` : ''}edit=1${r.planKey ? '#block-plans' : r.hash}`;
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 /** "4 days late", "due today", "due in 2 days", or '' when not close. */
