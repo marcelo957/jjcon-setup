@@ -199,7 +199,7 @@ function FormBody({ saved, people }: { saved?: Sector; people: ReturnType<typeof
             <h2 id="f-custom" className="card__title" style={{ margin: 0, fontWeight: 400 }}>Custom blocks</h2>
             <div style={{ marginLeft: 'auto' }}><Button size="small" variant="neutral" outlined icon="plus" onClick={() => setDialog({ kind: 'add' })}>Add block</Button></div>
           </div>
-          <p className="muted" style={{ fontSize: 13, margin: '0 0 12px', maxWidth: 640, textWrap: 'pretty' }}>For anything the built-in blocks do not cover. A custom block gets a card on the sector page, its own prep status, its own task row and its own pages in the print packet.</p>
+          <p className="muted" style={{ fontSize: 13, margin: '0 0 12px', maxWidth: 640, textWrap: 'pretty' }}>For anything the built-in blocks do not cover. A custom block gets a card on the sector page, its own task row and deadline, and its own pages in the print packet.</p>
           {!f.custom.length ? (
             <div style={{ border: '1px dashed var(--border-divider)', borderRadius: 8, padding: 24, textAlign: 'center', background: 'var(--color-neutral-surface-50)' }}>
               <Icon fa="layer-group" size={30} style={{ color: 'var(--border-divider)' }} />
@@ -295,7 +295,7 @@ function AddBlockDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (b: Cu
   const [pick, setPick] = useState<CustomKind>('checklist');
   const [name, setName] = useState('');
   const add = () => {
-    const b: CustomBlock = { id: `cb-${Math.random().toString(36).slice(2, 8)}`, kind: pick, name: name.trim() || customKind(pick).label, status: 'none', on: true };
+    const b: CustomBlock = { id: `cb-${Math.random().toString(36).slice(2, 8)}`, kind: pick, name: name.trim() || customKind(pick).label, on: true };
     if (pick === 'checklist') b.rows = [];
     if (pick === 'text') b.steps = [];
     if (pick === 'gallery') b.shots = [];

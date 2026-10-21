@@ -224,7 +224,7 @@ function Sheet({ s, data, page, n, total, onReady }: { s: Sector; data: OpsData;
             <div style={{ marginTop: 'auto', borderTop: rule, paddingTop: 10, fontSize: 14, lineHeight: '20px' }}>Printed from the uploaded PDF. One sheet per plan — request a missing sheet at the set up desk, {HELP_DESK.room}.</div>
           </>
         ) : (
-          <Blocked title={page.notice!.title} text={page.notice!.text} then={`Do not build this sector from memory. Request the released plan at the set up desk, ${HELP_DESK.room}.`} />
+          <Blocked title={page.notice!.title} text={page.notice!.text} then={`Do not build this sector from memory. Request the plan at the set up desk, ${HELP_DESK.room}.`} />
         ))}
 
         {page.kind === 'rows' && (
@@ -234,6 +234,7 @@ function Sheet({ s, data, page, n, total, onReady }: { s: Sector; data: OpsData;
             ) : (
               <>
                 <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 16, marginBottom: 10 }}>{page.title}</div>
+                {page.notFinal && <NotFinal />}
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
@@ -270,6 +271,7 @@ function Sheet({ s, data, page, n, total, onReady }: { s: Sector; data: OpsData;
             ) : (
               <>
                 <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 16, marginBottom: 10 }}>{page.title}</div>
+                {page.notFinal && <NotFinal />}
                 <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {page.steps.map((st) => (
                     <li key={st.n} style={{ display: 'flex', gap: 14, borderBottom: rule, paddingBottom: 12 }}>
@@ -320,6 +322,15 @@ function Blocked({ title, text, then, lines }: { title: string; text: string; th
           {Array.from({ length: 6 }, (_, i) => <div key={i} style={{ borderBottom: rule, height: 1 }} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Printed on content nobody has marked final: the crew knows the sheet may still change. */
+function NotFinal() {
+  return (
+    <div style={{ border: `1.5px dashed ${ink}`, padding: '6px 10px', marginBottom: 12, fontSize: 14 }}>
+      <strong>Not final</strong> — this may still change. Check JJCON SetUp for the current version before you build.
     </div>
   );
 }

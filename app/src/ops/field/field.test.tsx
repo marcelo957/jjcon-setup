@@ -50,10 +50,11 @@ describe('Field view', () => {
     expect(box).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('shows a draft as not released instead of its content', async () => {
-    opsStore().saveSector('customer', (x) => { x.blocks.instr.status = 'draft'; });
+  it('says so when instructions are empty, instead of showing a status', async () => {
+    opsStore().unlockFinal('customer', 'instr', 'p-marcelo');
+    opsStore().saveSector('customer', (x) => { x.blocks.instr.steps = []; });
     await renderAs('crew', '/field/customer?tab=steps');
-    expect(await screen.findByText('Instructions in draft')).toBeInTheDocument();
+    expect(await screen.findByText('No instructions yet')).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Call Marcelo/ })).toHaveAttribute('href', 'tel:+17025550143');
   });

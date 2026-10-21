@@ -34,17 +34,41 @@ describe('task rows', () => {
 });
 
 describe('task actions', () => {
-  it('marks done with who and when, and undoes it', () => {
+  it('a written block is in place while it holds something, whatever was marked before', () => {
     const s = store();
-    const before = s.sector('crown')!.contentChangedAt;
-    s.setTaskDone(['crown:mainMat'], true, 'p-diego');
-    let r = taskRows(s.get(), today).find((x) => x.key === 'crown:mainMat')!;
-    expect(r).toMatchObject({ done: true, doneBy: 'p-diego', late: false });
-    expect(s.sector('crown')!.contentChangedAt).toBe(before);
-    expect(s.get().tasksUpdated!.by).toBe('p-diego');
-    s.setTaskDone(['crown:mainMat'], false, 'p-diego');
-    r = taskRows(s.get(), today).find((x) => x.key === 'crown:mainMat')!;
-    expect(r.done).toBe(false);
+    const key = 'crates:mainMat';
+    const row = () => taskRows(s.get(), today).find((x) => x.key === key);
+    // Crates is outside the dashboard's active rows only by archive; restore it for the check.
+    s.restore('crates');
+    s.unlockFinal('crates', 'mainMat', 'p-diego');
+    expect(row()).toMatchObject({ kind: 'content', done: true });
+    expect(row()!.summary).toMatch(/^\d+ items?$/);
+    s.saveSector('crates', (x) => { x.blocks.mainMat.rows = []; }, 'p-diego');
+    expect(row()).toMatchObject({ done: false, summary: '' });
+    expect(s.sector('crates')!.blocks.mainMat.edited).toMatchObject({ by: 'p-diego' });
+  });
+
+  it('records who edited a block, and only the block that changed', () => {
+    const s = store();
+    s.unlockFinal('rooms', 'mainMat', 'p-marcelo');
+    const instrBefore = s.sector('rooms')!.blocks.instr.edited;
+    s.saveSector('rooms', (x) => { x.blocks.mainMat.rows[0].qty += 1; }, 'p-diego');
+    expect(s.sector('rooms')!.blocks.mainMat.edited).toEqual({ by: 'p-diego', at: now.toISOString() });
+    expect(s.sector('rooms')!.blocks.instr.edited).toEqual(instrBefore);
+  });
+
+  it('keeps a final block exactly as it is until someone unlocks it', () => {
+    const s = store();
+    s.markFinal('rooms', 'mainMat', 'p-marcelo');
+    const rows = s.sector('rooms')!.blocks.mainMat.rows.length;
+    s.saveSector('rooms', (x) => { x.blocks.mainMat.rows = []; }, 'p-diego');
+    expect(s.sector('rooms')!.blocks.mainMat.rows).toHaveLength(rows);
+    expect(s.sector('rooms')!.blocks.mainMat.final).toMatchObject({ by: 'p-marcelo' });
+    s.unlockFinal('rooms', 'mainMat', 'p-diego');
+    expect(s.sector('rooms')!.blocks.mainMat).toMatchObject({ unlocked: { by: 'p-diego' } });
+    expect(s.sector('rooms')!.blocks.mainMat.final).toBeUndefined();
+    s.saveSector('rooms', (x) => { x.blocks.mainMat.rows = []; }, 'p-diego');
+    expect(taskRows(s.get(), today).find((r) => r.key === 'rooms:mainMat')!.done).toBe(false);
   });
 
   it('reassigns and shifts deadlines in bulk', () => {

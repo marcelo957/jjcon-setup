@@ -1,7 +1,13 @@
 import { BLOCK_DEFAULTS, PLAN_KEYS } from './meta';
 import { sortSectors } from './selectors';
 import { addDays, sectorItems, toIsoDay } from './tasks';
-import type { BlockKey, Blocks, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, PrepStatus, Sector, TaskState } from './types';
+import type { BlockKey, Blocks, ContentMeta, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, Sector, TaskState } from './types';
+
+/**
+ * The design's statuses, kept only to tell the demo's story: nothing written yet (none), written
+ * and edited (draft, ready), or written and frozen as final (approved). The app has no statuses.
+ */
+type PrepStatus = 'none' | 'draft' | 'ready' | 'approved';
 
 /**
  * Demo data from project/JJCon Ops.dc.html: the Jiu-Jitsu Con 2027 sectors, their plans, material
@@ -235,15 +241,24 @@ export function seedData(now = new Date()): OpsData {
       const steps = (STEPS[id] ?? []).map((text, k) => ({ id: uid('s'), text, done: tick(DONE[id], k) }));
       const stepsAreInstall = on.install && !on.instr;
 
+      // Who last edited each written block and when; final for the ones the design shows approved.
+      const meta = (k: BlockKey): ContentMeta => {
+        const w = st(k);
+        if (w === 'none') return {};
+        const who = (k === 'instr' || k === 'install' ? leadId : ownerId) || 'p-marcelo';
+        const d = 1 + ((id.length * 7 + k.length * 3) % 11);
+        return { edited: { by: who, at: ago(d) }, ...(w === 'approved' ? { final: { by: who, at: ago(d / 2) } } : {}) };
+      };
+      const keep = <T,>(k: BlockKey, list: T[]) => (st(k) === 'none' ? [] : list);
       const blocks: Blocks = {
-        mainMat: { on: on.mainMat, status: st('mainMat'), rows: main },
-        netMat: { on: on.netMat, status: st('netMat'), rows: net },
-        instr: { on: on.instr, status: st('instr'), steps: stepsAreInstall ? [] : steps },
-        install: { on: on.install, status: st('install'), steps: stepsAreInstall ? steps : [] },
-        info: { on: on.info, status: st('info'), rows: (INFO[id] ?? []).map(([label, value]) => ({ id: uid('i'), label, value })) },
+        mainMat: { on: on.mainMat, rows: keep('mainMat', main), ...meta('mainMat') },
+        netMat: { on: on.netMat, rows: keep('netMat', net), ...meta('netMat') },
+        instr: { on: on.instr, steps: keep('instr', stepsAreInstall ? [] : steps), ...meta('instr') },
+        install: { on: on.install, steps: keep('install', stepsAreInstall ? steps : []), ...meta('install') },
+        info: { on: on.info, rows: keep('info', (INFO[id] ?? []).map(([label, value]) => ({ id: uid('i'), label, value }))), ...meta('info') },
         link: id === 'staff'
-          ? { on: true, status: st('link'), label: 'Staff check-in / check-out sheet · Google Sheets', url: 'https://docs.google.com/spreadsheets' }
-          : { on: on.link, status: 'none', label: '', url: '' }
+          ? { on: true, label: 'Staff check-in / check-out sheet · Google Sheets', url: 'https://docs.google.com/spreadsheets', ...meta('link') }
+          : { on: on.link, label: '', url: '' }
       };
 
       const req = REQ_BY[id] ?? '';
@@ -264,12 +279,13 @@ export function seedData(now = new Date()): OpsData {
 
       const custom: CustomBlock[] = [];
       if (id === 'truss') {
-        custom.push({ id: 'truss-refs', kind: 'gallery', name: 'Reference images', status: 'approved', on: true,
+        custom.push({ id: 'truss-refs', kind: 'gallery', name: 'Reference images', on: true,
+          edited: { by: ownerId || 'p-marcelo', at: ago(6) }, final: { by: ownerId || 'p-marcelo', at: ago(3) },
           shots: [['Truss built, 2026 edition', 'Mat signage hung at 6 m'], ['Banner alignment', 'Seen from the bleacher side'], ['Hang point detail', 'Sling and shackle, correct dressing']]
             .map(([title, caption]) => ({ id: uid('g'), title, caption })) });
       }
       if (id === 'bagline') {
-        custom.push({ id: 'bag-contents', kind: 'checklist', name: 'Bag contents', status: 'ready', on: true, foot: 'Quantities are per bag. Totals assume 6 000 bags.',
+        custom.push({ id: 'bag-contents', kind: 'checklist', name: 'Bag contents', on: true, edited: { by: ownerId || 'p-marcelo', at: ago(4) }, foot: 'Quantities are per bag. Totals assume 6 000 bags.',
           rows: ([['Event programme', 1, '6 000 total'], ['Sponsor flyer set', 3, '18 000 total, three sponsors'], ['Sticker sheet', 1, '6 000 total'], ['Supplement sample sachet', 2, '12 000 total'], ['Branded microfibre towel', 1, '6 000 total'], ['Water bottle, 600 ml', 1, '6 000 total'], ['Discount card, IBJJF Store', 1, '6 000 total']] as Row[])
             .map(([item, qty, note], k) => ({ id: uid('c'), item, qty, note, checked: tick(CHECKED[id], k) })) });
       }

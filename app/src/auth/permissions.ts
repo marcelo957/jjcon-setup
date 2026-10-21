@@ -7,7 +7,7 @@ import type { Role } from './types';
 export type Capability =
   | 'view'
   | 'checkOff'
-  | 'markTaskDone'
+  | 'markFinal'
   | 'changeDeadline'
   | 'editSectorContent'
   | 'reassignTasks'
@@ -39,8 +39,8 @@ export const PERMISSIONS: { capability: Capability; label: string; grants: Recor
     grants: { admin: { scope: 'all' }, editor: { scope: 'all' }, crew: { scope: 'all' } }
   },
   {
-    capability: 'markTaskDone',
-    label: 'Mark a task done',
+    capability: 'markFinal',
+    label: 'Mark a list or instructions final (locks it), or unlock it',
     grants: {
       admin: { scope: 'all', label: 'Any task' },
       editor: { scope: 'own', label: 'Own tasks' },
@@ -54,7 +54,7 @@ export const PERMISSIONS: { capability: Capability; label: string; grants: Recor
   },
   {
     capability: 'editSectorContent',
-    label: 'Upload PDFs, edit material lists, instructions and prep status',
+    label: 'Upload and remove PDFs, write material lists, instructions and information',
     grants: { admin: { scope: 'all', label: 'All sectors' }, editor: { scope: 'led', label: 'Sectors they lead' }, crew: null }
   },
   {

@@ -19,8 +19,8 @@ export function personHistory(d: OpsData, id: string, today: string): string[] {
   const tasks = d.sectors.flatMap((s) => Object.values(s.tasks ?? {}));
   const notes = tasks.filter((t) => t.note?.by === id).length;
   if (notes) out.push(`${plural(notes, 'note')} on delayed items`);
-  const marked = tasks.filter((t) => t.doneBy === id).length;
-  if (marked) out.push(`${plural(marked, 'item')} marked done`);
+  const edited = d.sectors.flatMap((s) => [...Object.values(s.blocks), ...s.custom]).filter((b) => b.edited?.by === id || b.final?.by === id).length;
+  if (edited) out.push(`${plural(edited, 'block')} written or marked final`);
   const arch = d.sectors.filter((s) => s.archived?.by === id).length;
   if (arch) out.push(`${plural(arch, 'archived sector')}`);
   const files = d.sectors.flatMap((s) => Object.values(s.plans).map((p) => p.file)).filter((f) => f?.uploadedBy === id).length;

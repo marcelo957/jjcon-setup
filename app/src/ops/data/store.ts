@@ -1,3 +1,4 @@
+import { CONTENT_KEYS, contentPrint, isContentKey, isFinal, slotMeta } from './content';
 import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
@@ -10,7 +11,8 @@ import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey,
  * replacing this class, not the screens.
  */
 
-const KEY = 'jjcon.ops.v2';
+// v3: written blocks carry no status; content, edits and final locks instead.
+const KEY = 'jjcon.ops.v3';
 
 /** Everything the create/edit sector form controls. */
 export interface SectorStructure {
@@ -152,9 +154,9 @@ export class OpsStore {
       id, name: '', group: f.group, leadId: '', ownerId: '', location: '', day: f.day, from: f.from, to: f.to, build: 'none',
       plans: Object.fromEntries(PLAN_KEYS.map((k) => [k, { required: false }])) as Sector['plans'],
       blocks: {
-        mainMat: { on: false, status: 'none', rows: [] }, netMat: { on: false, status: 'none', rows: [] },
-        instr: { on: false, status: 'none', steps: [] }, install: { on: false, status: 'none', steps: [] },
-        info: { on: false, status: 'none', rows: [] }, link: { on: false, status: 'none', label: '', url: '' }
+        mainMat: { on: false, rows: [] }, netMat: { on: false, rows: [] },
+        instr: { on: false, steps: [] }, install: { on: false, steps: [] },
+        info: { on: false, rows: [] }, link: { on: false, label: '', url: '' }
       },
       custom: [],
       contentChangedAt: this.now().toISOString()
@@ -170,9 +172,39 @@ export class OpsStore {
     this.edit(id, (s) => applyStructure(s, f));
   }
 
-  /** Changes made on the sector page in edit mode. */
-  saveSector(id: string, fn: (s: Sector) => void) {
-    this.edit(id, fn);
+  /**
+   * Changes made on the sector page in edit mode. With `by`, each written block whose content
+   * changed records who edited it and when. A block marked final keeps its content regardless.
+   */
+  saveSector(id: string, fn: (s: Sector) => void, by?: string) {
+    const before = this.sector(id);
+    this.edit(id, (s) => {
+      fn(s);
+      if (!before) return;
+      const at = this.now().toISOString();
+      const slots = new Set([...CONTENT_KEYS, ...before.custom.map((c) => c.id)]);
+      slots.forEach((slot) => {
+        const was = slotMeta(before, slot);
+        const now = slotMeta(s, slot);
+        if (!was || !now || contentPrint(before, slot) === contentPrint(s, slot)) return;
+        if (isFinal(was)) { restoreContent(s, before, slot); return; }
+        if (by) now.edited = { by, at };
+      });
+    });
+  }
+
+  /** Freeze a written block: no edits until someone unlocks it. Not a content change. */
+  markFinal(id: string, slot: string, by: string) {
+    this.edit(id, (s) => { const m = slotMeta(s, slot); if (m) m.final = { by, at: this.now().toISOString() }; }, false);
+  }
+
+  unlockFinal(id: string, slot: string, by: string) {
+    this.edit(id, (s) => {
+      const m = slotMeta(s, slot);
+      if (!m?.final) return;
+      delete m.final;
+      m.unlocked = { by, at: this.now().toISOString() };
+    }, false);
   }
 
   archive(id: string, by: string, reason = 'Not running this year') {
@@ -228,13 +260,6 @@ export class OpsStore {
     this.commit(next);
   }
 
-  setTaskDone(keys: string[], done: boolean, by: string) {
-    this.editTasks(keys, by, (t) => {
-      t.done = done;
-      if (done) { t.doneBy = by; t.doneAt = this.now().toISOString(); } else { delete t.doneBy; delete t.doneAt; }
-    });
-  }
-
   setTaskWho(keys: string[], who: string, by: string) {
     this.editTasks(keys, by, (t) => { t.who = who; });
   }
@@ -282,6 +307,14 @@ export class OpsStore {
       if (c) delete c.file;
     });
   }
+}
+
+/** Put a final block's content back as it was; its on/off and site ticks are not content. */
+function restoreContent(s: Sector, before: Sector, slot: string) {
+  if (isContentKey(slot)) { s.blocks[slot] = { ...structuredClone(before.blocks[slot]), on: s.blocks[slot].on } as never; return; }
+  const i = s.custom.findIndex((c) => c.id === slot);
+  const was = before.custom.find((c) => c.id === slot);
+  if (i >= 0 && was) s.custom[i] = { ...structuredClone(was), on: s.custom[i].on };
 }
 
 /** The form's structure onto a sector. Content of blocks turned off is kept, never discarded. */

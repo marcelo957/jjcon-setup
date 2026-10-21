@@ -1,12 +1,23 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../../ds/Icon';
-import { BUILD, PREP } from '../data/meta';
-import type { BuildStatus, PrepStatus } from '../data/types';
+import { BUILD } from '../data/meta';
+import type { BuildStatus } from '../data/types';
 
-export function PrepChip({ status, size, onClick, title }: { status: PrepStatus; size?: 'lg'; onClick?: () => void; title?: string }) {
-  const p = PREP[status];
-  const cls = `chip chip--${status}${size === 'lg' ? ' chip--lg' : ''}`;
-  const body = (<><Icon fa={p.icon} size={10} /><span>{p.label}</span></>);
+/**
+ * What a written block holds, never a typed status. Something written is quiet ("12 items");
+ * empty is outlined; empty past its deadline is red. A lock marks a block frozen as final.
+ */
+export function ContentChip({ summary, late, final, size, onClick, title }: {
+  summary: string; late?: boolean; final?: boolean; size?: 'lg'; onClick?: () => void; title?: string;
+}) {
+  const state = summary ? 'has' : late ? 'late' : 'empty';
+  const cls = `chip chip--${state}${size === 'lg' ? ' chip--lg' : ''}`;
+  const body = (
+    <>
+      <Icon fa={summary ? (final ? 'lock' : 'circle-check') : late ? 'triangle-exclamation' : 'circle'} outline={!summary && !late} size={10} label={final ? 'Final' : undefined} />
+      <span>{summary || (late ? 'Empty · late' : 'Empty')}</span>
+    </>
+  );
   return onClick
     ? <button type="button" className={cls} onClick={onClick} title={title}>{body}</button>
     : <span className={cls} title={title}>{body}</span>;
@@ -17,21 +28,23 @@ export function BuildTag({ status, style }: { status: BuildStatus; style?: React
   return <span className={`build build--${status}`} style={style}><Icon fa={b.icon} size={9} />{b.label}</span>;
 }
 
-/** One segment per item. An upload (no status) is filled when its file is there, dashed when it isn't. */
-export function Segments({ items }: { items: { name: string; status?: PrepStatus | null; done?: boolean }[] }) {
+/**
+ * One segment per item: filled when the work exists (file uploaded, content written), dashed when
+ * it doesn't, red when it doesn't and its deadline has passed.
+ */
+export function Segments({ items }: { items: { name: string; done: boolean; late?: boolean; kind?: 'upload' | 'content'; summary?: string }[] }) {
+  const what = (i: (typeof items)[number]) => (i.done ? (i.summary || 'Uploaded') : `${i.kind === 'content' ? 'Empty' : 'No PDF'}${i.late ? ' · late' : ''}`);
   return (
     <span className="segs">
-      {items.map((i, n) => i.status
-        ? <span key={n} className={`seg seg--${i.status}`} title={`${i.name} · ${PREP[i.status].label}`} />
-        : <span key={n} className={`seg seg--${i.done ? 'approved' : 'none'}`} title={`${i.name} · ${i.done ? 'Uploaded' : 'No PDF yet'}`} />)}
+      {items.map((i, n) => <span key={n} className={`seg seg--${i.done ? 'in' : i.late ? 'late' : 'out'}`} title={`${i.name} · ${what(i)}`} />)}
     </span>
   );
 }
 
-/** An upload's only two states: the file is there, or it isn't. */
-export function UploadChip({ done, size, onClick, title }: { done: boolean; size?: 'lg'; onClick?: () => void; title?: string }) {
-  const cls = `chip chip--${done ? 'approved' : 'none'}${size === 'lg' ? ' chip--lg' : ''}`;
-  const body = (<><Icon fa={done ? 'circle-check' : 'file-circle-exclamation'} size={10} /><span>{done ? 'Uploaded' : 'No PDF'}</span></>);
+/** An upload's only states: the file is there, or it isn't (red once its deadline has passed). */
+export function UploadChip({ done, late, size, onClick, title }: { done: boolean; late?: boolean; size?: 'lg'; onClick?: () => void; title?: string }) {
+  const cls = `chip chip--${done ? 'has' : late ? 'late' : 'empty'}${size === 'lg' ? ' chip--lg' : ''}`;
+  const body = (<><Icon fa={done ? 'circle-check' : late ? 'triangle-exclamation' : 'file-circle-exclamation'} size={10} /><span>{done ? 'Uploaded' : late ? 'No PDF · late' : 'No PDF'}</span></>);
   return onClick
     ? <button type="button" className={cls} onClick={onClick} title={title}>{body}</button>
     : <span className={cls} title={title}>{body}</span>;

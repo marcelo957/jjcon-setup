@@ -6,7 +6,7 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, initials, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, plural, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath } from '../data/tasks';
+import { dueNote, plural, shortDue, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath } from '../data/tasks';
 import type { OpsData, Person } from '../data/types';
 import { PageHead } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
@@ -26,7 +26,6 @@ export function TeamPage() {
   const [params, setParams] = useSearchParams();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [more, setMore] = useState<Record<string, boolean>>({});
-  const [undo, setUndo] = useState<{ key: string; label: string } | null>(null);
   const [presenting, setPresenting] = useState<number | null>(null);
 
   const person = params.get('person') ?? 'all';
@@ -62,11 +61,6 @@ export function TeamPage() {
   const totWeek = open.filter(isWeek).length;
   const snapshot = snapshotLabel(data);
 
-  const markDone = (r: TaskRow) => {
-    opsStore().setTaskDone([r.key], true, me.id);
-    setOpenKey(null);
-    setUndo({ key: r.key, label: `${r.sector} · ${r.item}` });
-  };
 
   return (
     <div>
@@ -115,18 +109,10 @@ export function TeamPage() {
         {ordered.map((b, i) => (
           <PersonCard key={b.id || '_un'} b={b} people={data.people} me={me} tail={tail} overdueOnly={overdue}
             showAll={!!more[b.id]} toggleMore={() => setMore((m) => ({ ...m, [b.id]: !m[b.id] }))}
-            openKey={openKey} setOpenKey={setOpenKey} markDone={markDone} present={() => setPresenting(i)} />
+            openKey={openKey} setOpenKey={setOpenKey} present={() => setPresenting(i)} />
         ))}
       </div>
 
-      {undo && (
-        <div role="status" style={{ position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 950, display: 'flex', alignItems: 'center', gap: 14, maxWidth: 'calc(100% - 48px)', padding: '12px 16px', borderRadius: 8, background: 'var(--text-primary)', color: 'var(--color-neutral-white)', boxShadow: 'var(--ib-elevation-3)', fontSize: 14 }}>
-          <Icon fa="circle-check" size={14} style={{ color: 'var(--color-feedback-success-300)' }} />
-          <span style={{ minWidth: 0 }}>Marked done · {undo.label}</span>
-          <button type="button" onClick={() => { opsStore().setTaskDone([undo.key], false, me.id); setUndo(null); }} style={{ border: 0, background: 'none', padding: 0, fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--color-neutral-white)', textDecoration: 'underline', cursor: 'pointer' }}>Undo</button>
-          <button type="button" onClick={() => setUndo(null)} aria-label="Dismiss" style={{ border: 0, background: 'none', padding: 0, color: 'var(--color-neutral-gray-100)', cursor: 'pointer' }}><Icon fa="xmark" size={14} /></button>
-        </div>
-      )}
 
       {presenting !== null && ordered.length > 0 && (
         <Presentation buckets={ordered} index={Math.min(presenting, ordered.length - 1)} setIndex={setPresenting} people={data.people} snapshot={snapshot} tail={tail} overdueOnly={overdue} />
@@ -151,9 +137,9 @@ function clearCopy(b: Bucket, name: string, tail: string, overdueOnly: boolean) 
   return overdueOnly ? { title: 'Nothing overdue', text: `${name} has no overdue items${tail}.` } : { title: 'All clear', text: `${name} has nothing outstanding${tail}.` };
 }
 
-function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, openKey, setOpenKey, markDone, present }: {
+function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, openKey, setOpenKey, present }: {
   b: Bucket; people: Person[]; me: ReturnType<typeof useMe>; tail: string; overdueOnly: boolean; showAll: boolean; toggleMore: () => void;
-  openKey: string | null; setOpenKey: (k: string | null) => void; markDone: (r: TaskRow) => void; present: () => void;
+  openKey: string | null; setOpenKey: (k: string | null) => void; present: () => void;
 }) {
   const isUn = b.id === '';
   const rec = people.find((p) => p.id === b.id);
@@ -197,7 +183,7 @@ function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, ope
         <>
           <ul style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0, listStyle: 'none' }}>
             {(showAll ? b.items : b.items.slice(0, LIMIT)).map((r) => (
-              <TeamItem key={r.key} r={r} me={me} people={people} open={openKey === r.key} toggle={() => setOpenKey(openKey === r.key ? null : r.key)} markDone={() => markDone(r)} close={() => setOpenKey(null)} />
+              <TeamItem key={r.key} r={r} me={me} people={people} open={openKey === r.key} toggle={() => setOpenKey(openKey === r.key ? null : r.key)} close={() => setOpenKey(null)} />
             ))}
           </ul>
           {b.items.length > LIMIT && (
@@ -209,12 +195,13 @@ function PersonCard({ b, people, me, tail, overdueOnly, showAll, toggleMore, ope
   );
 }
 
-function TeamItem({ r, me, people, open, toggle, markDone, close }: {
-  r: TaskRow; me: ReturnType<typeof useMe>; people: Person[]; open: boolean; toggle: () => void; markDone: () => void; close: () => void;
+function TeamItem({ r, me, people, open, toggle, close }: {
+  r: TaskRow; me: ReturnType<typeof useMe>; people: Person[]; open: boolean; toggle: () => void; close: () => void;
 }) {
-  // Uploads are done by the file alone: their button goes to the upload instead.
-  const canDone = !r.auto && me.canMarkTask(r.who);
-  const canUpload = r.auto && me.canEditSector(opsStore().sector(r.sectorId)!);
+  // Nothing is marked done by hand: the button goes straight to the work (upload or write).
+  const canWork = me.canEditSector(opsStore().sector(r.sectorId)!);
+  const workPath = r.kind === 'upload' ? uploadPath(r) : writePath(r);
+  const workLabel = r.kind === 'upload' ? 'Upload PDF' : 'Write it';
   const navigate = useNavigate();
   const canDue = me.canSetDeadline(r.who);
   const canNote = me.canReassign || r.who === me.id;
@@ -237,13 +224,9 @@ function TeamItem({ r, me, people, open, toggle, markDone, close }: {
   return (
     <li style={{ borderTop: '1px solid var(--border-subtle)', ...(open ? { background: 'var(--color-neutral-surface-200)', margin: '0 -16px', padding: '0 16px' } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0' }}>
-        {canDone ? (
-          <button type="button" onClick={markDone} title="Mark done" aria-label={`Mark done: ${r.sector}, ${r.item}`} className="team-done">
-            <Icon fa="check" size={11} />
-          </button>
-        ) : canUpload ? (
-          <button type="button" onClick={() => navigate(uploadPath(r))} title="Upload PDF" aria-label={`Upload PDF: ${r.sector}, ${r.item}`} className="team-done">
-            <Icon fa="upload" size={11} />
+        {canWork ? (
+          <button type="button" onClick={() => navigate(workPath)} title={workLabel} aria-label={`${workLabel}: ${r.sector}, ${r.item}`} className="team-done">
+            <Icon fa={r.kind === 'upload' ? 'upload' : 'pen'} size={11} />
           </button>
         ) : <span style={{ flex: '0 0 26px' }} />}
         {canOpen
@@ -270,8 +253,7 @@ function TeamItem({ r, me, people, open, toggle, markDone, close }: {
                 <input type="date" className="input input--mono" style={{ minHeight: 36, width: 150 }} value={r.due}
                   onChange={(e) => { if (e.target.value) opsStore().setTaskDue([r.key], e.target.value, me.id); }} /></label>
             )}
-            {canDone && <Button size="small" icon="check" onClick={markDone}>Mark done</Button>}
-            {canUpload && <Button size="small" icon="upload" onClick={() => navigate(uploadPath(r))}>Upload PDF</Button>}
+            {canWork && <Button size="small" icon={r.kind === 'upload' ? 'upload' : 'pen'} onClick={() => navigate(workPath)}>{workLabel}</Button>}
           </div>
           {canNote && (
             <>

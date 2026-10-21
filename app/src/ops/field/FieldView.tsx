@@ -25,7 +25,7 @@ export function loadInLine(today: string): string {
 
 /**
  * What a sector lead carries on the floor: their sectors, then one sector at a time with its
- * floorplan, material list and steps. Only released content shows; build status, never prep status.
+ * floorplan, material list and steps. Content shows as soon as it is written or uploaded.
  */
 export function FieldView() {
   const { id } = useParams();
@@ -46,10 +46,10 @@ export function FieldView() {
           {sector ? <FieldSector key={sector.id} s={sector} data={data} /> : <FieldIndex data={data} />}
         </div>
         <aside className="field-desk field-aside">
-          <section className="card card--pad" aria-label="Build status, not prep status">
-            <h2 className="card__title" style={{ margin: '0 0 8px', fontWeight: 400 }}>Build status, not prep status</h2>
+          <section className="card card--pad" aria-label="What the phone shows">
+            <h2 className="card__title" style={{ margin: '0 0 8px', fontWeight: 400 }}>What the phone shows</h2>
             <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: '22px' }}>
-              The phone only shows <strong>build status</strong>, the physical work. Prep status stays in the office, and drafts are not shown on the floor.
+              Everything written or uploaded for the sector, as soon as it exists, and the <strong>build status</strong> of the physical work. Printed packets mark anything not yet final.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {BUILD_ORDER.map((k) => (
@@ -146,7 +146,7 @@ function SectorCard({ s, data }: { s: Sector; data: OpsData }) {
       ) : main.on && (
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 14, color: 'var(--text-primary)' }}>
           <Icon fa="triangle-exclamation" size={12} style={{ color: 'var(--feedback-warning-accent)' }} />
-          Material list {main.status === 'draft' ? 'in draft' : main.status === 'none' ? 'not started' : 'is empty'} · {owner}
+          Material list empty · {owner}
         </span>
       )}
     </Link>

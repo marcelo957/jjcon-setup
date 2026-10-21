@@ -5,11 +5,13 @@ import { Icon } from '../../ds/Icon';
 import { SearchInput, Select } from '../../ds/Select';
 import { EVENT_NAME, VENUE } from '../../config';
 import { useMe } from '../access';
-import { GROUPS, PREP, PREP_ORDER } from '../data/meta';
-import { activeSectors, isBlocked, isComplete, isUpload, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
+import { blockState, isFinal } from '../data/content';
+import { GROUPS } from '../data/meta';
+import { taskKey, taskRows, toIsoDay } from '../data/tasks';
+import { activeSectors, dateLabel, isBlocked, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import type { PrepStatus, Sector } from '../data/types';
-import { BuildTag, IconBtn, Modal, PageHead, PrepChip, Segments, UploadChip } from '../ui/bits';
+import type { Sector } from '../data/types';
+import { BuildTag, ContentChip, IconBtn, PageHead, Segments, UploadChip } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 
 type Expand = `${string}|fp` | `${string}|other` | null;
@@ -23,9 +25,12 @@ export function PrepDashboard() {
   const [incomplete, setIncomplete] = useState(false);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [expand, setExpand] = useState<Expand>(null);
-  const [confirmReady, setConfirmReady] = useState(false);
 
   const active = activeSectors(data);
+  // Whether each item is past its deadline with nothing there, from the same rows Tasks shows.
+  const today = toIsoDay(new Date());
+  const tasks = new Map(taskRows(data, today).map((r) => [r.key, r]));
+  const lateOf = (sid: string, slot: string) => !!tasks.get(taskKey(sid, slot))?.late;
   const people = sortPeople(data.people.filter((p) => p.active));
   const needle = q.trim().toLowerCase();
   const visible = active.filter((s) =>
@@ -36,7 +41,6 @@ export function PrepDashboard() {
   const chosen = active.filter((s) => sel[s.id]);
   const allSelected = visible.length > 0 && visible.every((s) => sel[s.id]);
   const open = (s: Sector, hash = '') => navigate(`/sectors/${s.id}${hash}`);
-  const drafts = countDrafts(chosen);
 
   return (
     <div>
@@ -95,7 +99,7 @@ export function PrepDashboard() {
                     {rows.map((s) => (
                       <SectorRow key={s.id} s={s} people={data.people} selected={!!sel[s.id]}
                         onSelect={() => setSel((v) => ({ ...v, [s.id]: !v[s.id] }))}
-                        expand={expand} setExpand={setExpand} open={open}
+                        expand={expand} setExpand={setExpand} open={open} lateOf={(slot) => lateOf(s.id, slot)}
                         canEdit={me.canEditSector(s)} />
                     ))}
                   </Fragment>
@@ -122,7 +126,6 @@ export function PrepDashboard() {
                   onPick={(id) => { chosen.forEach((s) => opsStore().saveSector(s.id, (x) => { x.ownerId = id; })); }}
                   onAdd={(name) => { const id = opsStore().addPerson(name); chosen.forEach((s) => opsStore().saveSector(s.id, (x) => { x.ownerId = id; })); }} />
               </div>
-              <Button size="small" outlined variant="neutral" icon="circle-check" disabled={!chosen.length} onClick={() => setConfirmReady(true)}>Mark ready</Button>
             </>}
             <Button size="small" icon="print" disabled={!chosen.length} onClick={() => navigate(`/print?sel=${chosen.map((s) => s.id).join(',')}&sector=${chosen[0].id}`)}>Print packets</Button>
           </div>
@@ -130,58 +133,33 @@ export function PrepDashboard() {
       </div>
 
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', marginTop: 14, padding: '12px 16px', background: 'var(--color-neutral-white)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
-        <span className="overline">Prep status</span>
-        {PREP_ORDER.map((k) => (
-          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            <PrepChip status={k} />{PREP[k].note}
-          </span>
-        ))}
+        <span className="overline">What the columns show</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}><ContentChip summary="12 items" />written: what it holds</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}><ContentChip summary="" />nothing written yet</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}><ContentChip summary="" late />empty past its deadline</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}><ContentChip summary="8 steps" final />marked final, locked</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}><span className="segs"><span className="seg seg--in" /><span className="seg" /><span className="seg seg--late" /></span>uploaded · missing · missing and late</span>
       </div>
 
-      {confirmReady && (
-        <Modal title={`Mark ${chosen.length} sector${chosen.length === 1 ? '' : 's'} ready?`} icon="circle-check" iconColor="var(--brand-primary)"
-          onClose={() => setConfirmReady(false)}
-          footer={<>
-            <Button ghost onClick={() => setConfirmReady(false)}>Cancel</Button>
-            <Button icon="circle-check" disabled={!drafts} onClick={() => {
-              chosen.forEach((s) => opsStore().saveSector(s.id, markDraftsReady));
-              setConfirmReady(false);
-              setSel({});
-            }}>{drafts ? `Mark ${drafts} draft${drafts === 1 ? '' : 's'} ready` : 'Nothing to mark'}</Button>
-          </>}>
-          <div className="modal__body">
-            {drafts
-              ? <>Every plan and block in draft on the selected sectors moves to Ready, waiting for sign-off. Items not started stay as they are: there is nothing to mark ready yet.</>
-              : <>None of the selected sectors has anything in draft. Items not started need content before they can be ready, and ready or approved items are already done.</>}
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
 
-function countDrafts(list: Sector[]) {
-  let n = 0;
-  list.forEach((s) => {
-    (['mainMat', 'netMat', 'instr', 'info', 'install', 'link'] as const).forEach((k) => { if (s.blocks[k].on && s.blocks[k].status === 'draft') n++; });
-    n += s.custom.filter((c) => c.on && !isUpload(c) && c.status === 'draft').length;
-  });
-  return n;
-}
-
-function markDraftsReady(s: Sector) {
-  const up = (st: PrepStatus): PrepStatus => (st === 'draft' ? 'ready' : st);
-  (['mainMat', 'netMat', 'instr', 'info', 'install', 'link'] as const).forEach((k) => { if (s.blocks[k].on) s.blocks[k].status = up(s.blocks[k].status); });
-  s.custom.forEach((c) => { if (c.on && !isUpload(c)) c.status = up(c.status); });
-}
-
-function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, canEdit }: {
+function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, canEdit, lateOf }: {
   s: Sector; people: Parameters<typeof personName>[0]; selected: boolean; onSelect: () => void;
   expand: Expand; setExpand: (e: Expand) => void; open: (s: Sector, hash?: string) => void; canEdit: boolean;
+  lateOf: (slot: string) => boolean;
 }) {
   const navigate = useNavigate();
   const fp = planRoll(s);
   const other = otherRoll(s);
+  const plans = fp.plans.map((p) => ({ ...p, kind: 'upload' as const, late: !p.done && lateOf(p.key) }));
+  const others = other.items.map((i) => ({ ...i, late: !i.done && lateOf(i.key) }));
+  const fpLate = plans.filter((p) => p.late).length;
+  // Written blocks: count what needs attention (late, then empty), not what's "done".
+  const oLate = others.filter((i) => i.late).length;
+  const oEmpty = others.filter((i) => !i.done && !i.late).length;
+  const oLabel = oLate || oEmpty ? [oLate && `${oLate} late`, oEmpty && `${oEmpty} empty`].filter(Boolean).join(' · ') : 'All in';
   const fpOpen = expand === `${s.id}|fp`;
   const otherOpen = expand === `${s.id}|other`;
   const toggle = (k: 'fp' | 'other') => setExpand(expand === `${s.id}|${k}` ? null : `${s.id}|${k}`);
@@ -202,22 +180,26 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
         </td>
         <td>
           {fp.total > 0
-            ? <Roll segs={fp.plans} label={`${fp.done}/${fp.total}`} open={fpOpen} onClick={() => toggle('fp')}
-                title={`${fp.done} of ${fp.total} required plans uploaded — click to open the list`} />
+            ? <Roll segs={plans} label={`${fp.done}/${fp.total}`} late={fpLate > 0} open={fpOpen} onClick={() => toggle('fp')}
+                title={`${fp.done} of ${fp.total} required plans uploaded${fpLate ? `, ${fpLate} missing past the deadline` : ''} — click to open the list`} />
             : <span className="mono muted" style={{ fontSize: 13 }} title={s.noFloorplans ? `${s.name} requires no floorplan` : 'No plans chosen yet — open the sector to choose which plans it needs'}>{s.noFloorplans ? '—' : 'Not set'}</span>}
         </td>
-        {(['mainMat', 'instr'] as const).map((k) => (
-          <td key={k}>
-            {s.blocks[k].on
-              ? <PrepChip status={s.blocks[k].status} onClick={() => open(s, k === 'mainMat' ? '#material' : '#steps')}
-                  title={`${k === 'mainMat' ? 'Main Material List' : 'Instructions'} · ${PREP[s.blocks[k].status].label} · ${personName(people, s.ownerId)}`} />
-              : <span className="na-dash" title={`${s.name} does not use ${k === 'mainMat' ? 'a material list' : 'instructions'}`}>—</span>}
-          </td>
-        ))}
+        {(['mainMat', 'instr'] as const).map((k) => {
+          const st = blockState(s.blocks, k);
+          const what = k === 'mainMat' ? 'Main material list' : 'Instructions';
+          return (
+            <td key={k}>
+              {s.blocks[k].on
+                ? <ContentChip summary={st.summary} late={st.empty && lateOf(k)} final={isFinal(st.meta)} onClick={() => open(s, k === 'mainMat' ? '#material' : '#steps')}
+                    title={`${what} · ${st.summary || (lateOf(k) ? 'empty past its deadline' : 'empty')}${st.meta.edited ? ` · last edited by ${personName(people, st.meta.edited.by)} ${dateLabel(st.meta.edited.at)}` : ''}`} />
+                : <span className="na-dash" title={`${s.name} does not use ${k === 'mainMat' ? 'a material list' : 'instructions'}`}>—</span>}
+            </td>
+          );
+        })}
         <td>
           {other.total > 0
-            ? <Roll segs={other.items} label={`${other.done}/${other.total}`} open={otherOpen} onClick={() => toggle('other')}
-                title={`${other.done} of ${other.total} other items done — click to open the list`} />
+            ? <Roll segs={others} label={oLabel} late={oLate > 0} quiet={!oLate && !oEmpty} open={otherOpen} onClick={() => toggle('other')}
+                title={`${oLabel} — click to open the list`} />
             : <span className="na-dash" style={{ width: 100, textAlign: 'left' }} title="This sector has no other blocks">—</span>}
         </td>
         <td style={{ padding: '3px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -229,18 +211,18 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
       </tr>
       {fpOpen && (
         <ExpandRow title={`Required floorplans · ${s.name}`}
-          items={fp.plans.map((p) => ({
-            key: p.key, name: p.name, status: null, done: p.done,
-            missing: p.done ? null : 'No PDF uploaded',
+          items={plans.map((p) => ({
+            key: p.key, name: p.name, kind: 'upload' as const, done: p.done, late: p.late, summary: '', final: false,
+            missing: p.done ? null : p.late ? 'No PDF uploaded · past its deadline' : 'No PDF uploaded',
             action: canEdit ? 'Edit plan' : 'Open plan',
             go: () => navigate(`/sectors/${s.id}?plan=${p.key}${canEdit ? '&edit=1' : ''}`)
           }))} />
       )}
       {otherOpen && (
         <ExpandRow title={`Other items · ${s.name}`}
-          items={other.items.map((i) => ({
-            key: i.key, name: i.name, status: i.status, done: i.done,
-            missing: i.done ? null : i.status === null ? 'No PDF uploaded' : i.status === 'draft' ? 'Not released' : 'Nothing added yet',
+          items={others.map((i) => ({
+            key: i.key, name: i.name, kind: i.kind, done: i.done, late: i.late, summary: i.summary, final: i.final,
+            missing: i.done ? null : `${i.kind === 'upload' ? 'No PDF uploaded' : 'Nothing written yet'}${i.late ? ' · past its deadline' : ''}`,
             action: 'Open block',
             go: () => open(s, `#block-${i.key}`)
           }))} />
@@ -249,17 +231,22 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
   );
 }
 
-function Roll({ segs, label, open, onClick, title }: { segs: { status?: PrepStatus | null; done?: boolean; name: string }[]; label: string; open: boolean; onClick: () => void; title: string }) {
+function Roll({ segs, label, late, quiet, open, onClick, title }: {
+  segs: Parameters<typeof Segments>[0]['items']; label: string; late?: boolean; quiet?: boolean; open: boolean; onClick: () => void; title: string;
+}) {
   return (
     <button type="button" className="roll" aria-expanded={open} onClick={onClick} title={title}>
       <Segments items={segs} />
-      <span className="roll__label">{label}</span>
+      <span className="roll__label" style={late ? { color: 'var(--feedback-danger-text)', fontWeight: 600 } : quiet ? { color: 'var(--color-neutral-gray-300)' } : undefined}>{label}</span>
       <Icon fa={open ? 'chevron-up' : 'chevron-down'} size={10} style={{ color: 'var(--icon-tertiary)' }} />
     </button>
   );
 }
 
-function ExpandRow({ title, items }: { title: string; items: { key: string; name: string; status: PrepStatus | null; done: boolean; missing: string | null; action: string; go: () => void }[] }) {
+function ExpandRow({ title, items }: {
+  title: string;
+  items: { key: string; name: string; kind: 'upload' | 'content'; done: boolean; late: boolean; summary: string; final: boolean; missing: string | null; action: string; go: () => void }[];
+}) {
   return (
     <tr style={{ background: 'var(--color-neutral-surface-100)', borderBottom: '1px solid var(--border-subtle)' }}>
       <td />
@@ -271,9 +258,9 @@ function ExpandRow({ title, items }: { title: string; items: { key: string; name
               <div key={p.key} style={{ flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--color-neutral-white)', border: '1px solid var(--border-subtle)', borderRadius: 4, padding: '8px 10px' }}>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: 'var(--text-primary)' }}>
                   {p.name}
-                  {p.missing && <span style={{ display: 'block', fontSize: 12, color: 'var(--feedback-danger-text)' }}>{p.missing}</span>}
+                  {p.missing && <span style={{ display: 'block', fontSize: 12, color: p.late ? 'var(--feedback-danger-text)' : 'var(--text-secondary)', fontWeight: p.late ? 600 : 400 }}>{p.missing}</span>}
                 </span>
-                {p.status ? <PrepChip status={p.status} /> : <UploadChip done={p.done} />}
+                {p.kind === 'upload' ? <UploadChip done={p.done} late={p.late} /> : <ContentChip summary={p.summary} late={p.late} final={p.final} />}
                 <button type="button" onClick={p.go} style={{ minHeight: 30, padding: '0 10px', border: '1px solid var(--brand-primary)', borderRadius: 4, background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', fontFamily: 'Inter, sans-serif', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>{p.action}</button>
               </div>
             ))}

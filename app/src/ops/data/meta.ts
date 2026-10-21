@@ -1,13 +1,4 @@
-import type { BlockKey, BuildStatus, CustomKind, GroupId, PlanKey, PrepStatus } from './types';
-
-export const PREP: Record<PrepStatus, { label: string; icon: string; note: string }> = {
-  none: { label: 'Not started', icon: 'minus', note: 'nothing uploaded' },
-  draft: { label: 'Draft', icon: 'pen', note: 'being written' },
-  ready: { label: 'Ready', icon: 'circle-check', note: 'waiting for sign-off' },
-  approved: { label: 'Approved', icon: 'check-double', note: 'locked for print' }
-};
-export const PREP_ORDER: PrepStatus[] = ['none', 'draft', 'ready', 'approved'];
-export const isReady = (s: PrepStatus) => s === 'ready' || s === 'approved';
+import type { BlockKey, BuildStatus, CustomKind, GroupId, PlanKey } from './types';
 
 export const BUILD: Record<BuildStatus, { label: string; icon: string; accent: string; note: string }> = {
   none: { label: 'Not started', icon: 'circle-dot', accent: 'var(--border-divider)', note: 'crate unopened' },

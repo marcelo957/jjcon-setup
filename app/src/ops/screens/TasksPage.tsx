@@ -6,8 +6,8 @@ import { Select } from '../../ds/Select';
 import { useMe } from '../access';
 import { activeSectors, dateLabel, personName, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath } from '../data/tasks';
-import { PageHead } from '../ui/bits';
+import { dueNote, TASK_TYPES, taskRows, toIsoDay, type TaskRow, type TaskType, uploadPath, writePath } from '../data/tasks';
+import { ContentChip, PageHead, UploadChip } from '../ui/bits';
 import { PersonPicker } from '../ui/PersonPicker';
 import type { Person } from '../data/types';
 
@@ -53,7 +53,7 @@ export function TasksPage() {
   list = list.slice().sort((a, b) => cmp[sort.key](a, b) * sort.dir || a.ord - b.ord);
 
   const chips: { label: string; clear: () => void }[] = [];
-  if (status !== 'all') chips.push({ label: `Status · ${status === 'done' ? 'Done' : 'Not done'}`, clear: () => setParam('status', null) });
+  if (status !== 'all') chips.push({ label: `Status · ${status === 'done' ? 'In place' : 'Missing'}`, clear: () => setParam('status', null) });
   if (person !== 'all') chips.push({ label: `Person · ${person === '__un' ? 'Unassigned' : pn(person)}`, clear: () => setParam('person', null) });
   if (sectorId !== 'all') chips.push({ label: `Sector · ${sectors.find((s) => s.id === sectorId)?.name ?? 'Unknown'}`, clear: () => setParam('sector', null) });
   if (type !== 'all') chips.push({ label: `Item · ${TASK_TYPES.find((t) => t.id === type)?.label}`, clear: () => setParam('type', null) });
@@ -64,11 +64,15 @@ export function TasksPage() {
   const dueOf = (k: string) => all.find((r) => r.key === k)!.due;
   const mine = person === me.id;
 
+  // Uploads count what's in; written blocks count what needs attention: empty, and empty past the deadline.
   const summary = (['floorplan', 'material', 'instructions', 'other'] as TaskType[]).map((t) => {
     const f = list.filter((r) => r.type === t), a = all.filter((r) => r.type === t);
     return {
-      t, label: { floorplan: 'Floorplans ready · required plans', material: 'Material lists ready', instructions: 'Instruction sets ready', other: 'Other items ready' }[t],
-      n: f.filter((r) => r.done).length, of: f.length, an: a.filter((r) => r.done).length, aof: a.length
+      t, upload: t === 'floorplan',
+      label: { floorplan: 'Floorplans uploaded · required plans', material: 'Material lists empty', instructions: 'Instruction sets empty', other: 'Other items missing' }[t],
+      n: t === 'floorplan' ? f.filter((r) => r.done).length : f.filter((r) => !r.done).length, of: f.length,
+      late: f.filter((r) => r.late).length,
+      an: t === 'floorplan' ? a.filter((r) => r.done).length : a.filter((r) => !r.done).length, aof: a.length, alate: a.filter((r) => r.late).length
     };
   });
 
@@ -100,21 +104,24 @@ export function TasksPage() {
         {summary.map((c) => (
           <div key={c.t} style={{ flex: '1 1 0', minWidth: 150, boxSizing: 'border-box', padding: '14px 20px', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span className="mono" style={{ fontSize: 28, lineHeight: '34px', color: 'var(--brand-primary)' }}>{c.n}</span>
+              <span className="mono" style={{ fontSize: 28, lineHeight: '34px', color: c.upload ? 'var(--brand-primary)' : c.n ? 'var(--text-primary)' : 'var(--color-neutral-gray-300)' }}>{c.n}</span>
               <span className="mono muted" style={{ fontSize: 14 }}>of {c.of}</span>
+              {c.late > 0 && <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: 'var(--feedback-danger-text)', marginLeft: 'auto' }}>{c.late} late</span>}
             </div>
             <div className="overline" style={{ flex: 1, marginTop: 2, lineHeight: '16px' }}>{c.label}</div>
-            <div style={{ height: 4, borderRadius: 2, background: 'var(--color-neutral-surface-500)', marginTop: 8 }}>
-              <div style={{ height: '100%', width: `${c.of ? Math.round(c.n / c.of * 100) : 0}%`, borderRadius: 2, background: 'var(--brand-primary)' }} />
-            </div>
-            <div className="mono muted" style={{ fontSize: 11, marginTop: 6 }}>{c.an} of {c.aof} across all sectors</div>
+            {c.upload && (
+              <div style={{ height: 4, borderRadius: 2, background: 'var(--color-neutral-surface-500)', marginTop: 8 }}>
+                <div style={{ height: '100%', width: `${c.of ? Math.round(c.n / c.of * 100) : 0}%`, borderRadius: 2, background: 'var(--brand-primary)' }} />
+              </div>
+            )}
+            <div className="mono muted" style={{ fontSize: 11, marginTop: 6 }}>{c.an} of {c.aof}{c.alate ? ` · ${c.alate} late` : ''} across all sectors</div>
           </div>
         ))}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
         <div role="group" aria-label="Status" style={{ display: 'inline-flex', border: '1px solid var(--border-divider)', borderRadius: 8, overflow: 'hidden', background: 'var(--color-neutral-white)' }}>
-          {([['all', 'All', 'list'], ['done', 'Done', 'circle-check'], ['open', 'Not done', 'circle']] as const).map(([v, label, icon], i) => {
+          {([['all', 'All', 'list'], ['open', 'Missing', 'circle'], ['done', 'In place', 'circle-check']] as const).map(([v, label, icon], i) => {
             const on = status === v;
             return (
               <button key={v} type="button" aria-pressed={on} onClick={() => setParam('status', v === 'all' ? null : v)}
@@ -169,15 +176,15 @@ export function TasksPage() {
           </div>
         )}
         {!list.length && late && status === 'done' && (
-          <Empty icon="circle-check" title="Nothing matches" text="A done item is no longer late, so Done and Late only never overlap. Drop one of the two to see results."
+          <Empty icon="circle-check" title="Nothing matches" text="Something in place is never late, so In place and Late only never overlap. Drop one of the two to see results."
             actions={<>
-              <Button size="small" variant="neutral" outlined icon="circle-check" onClick={() => setParam('late', null)}>Show all done</Button>
+              <Button size="small" variant="neutral" outlined icon="circle-check" onClick={() => setParam('late', null)}>Show everything in place</Button>
               <Button size="small" variant="neutral" outlined icon="circle-exclamation" onClick={() => setParam('status', 'open')}>Show late items</Button>
             </>} />
         )}
         {!list.length && late && status !== 'done' && (
           <Empty icon="circle-check" iconColor="var(--feedback-success-text)" title="Nothing is overdue"
-            text={chips.length > 1 ? 'Nothing overdue matches the other filters you have set. Everything still open there is inside its deadline.' : 'Every item still open is inside its deadline. Turn off the late filter to see the rest of the list.'}
+            text={chips.length > 1 ? 'Nothing overdue matches the other filters you have set. Everything still missing there is inside its deadline.' : 'Everything still missing is inside its deadline. Turn off the late filter to see the rest of the list.'}
             actions={<Button size="small" variant="neutral" outlined onClick={() => setParam('late', null)}>Show all items</Button>} />
         )}
         {!list.length && !late && (
@@ -220,9 +227,8 @@ function Row({ r, selected, onSelect, me, people, navigate }: {
   r: TaskRow; selected: boolean; onSelect: () => void; me: ReturnType<typeof useMe>; people: Person[]; navigate: ReturnType<typeof useNavigate>;
 }) {
   const pn = (id: string) => personName(people, id);
-  // Uploads are done by the file alone: no box to tick, just the way to the upload.
-  const canDone = !r.auto && me.canMarkTask(r.who);
-  const canUpload = r.auto && me.canEditSector(opsStore().sector(r.sectorId)!);
+  // Nothing is ticked by hand: the row shows what exists, with the way to add what's missing.
+  const canWork = me.canEditSector(opsStore().sector(r.sectorId)!);
   const canDue = me.canSetDeadline(r.who);
   const note = dueNote(r);
   const open = (hash = '') => navigate(`/sectors/${r.sectorId}${hash}`);
@@ -233,18 +239,12 @@ function Row({ r, selected, onSelect, me, people, navigate }: {
       <td style={{ padding: '6px 16px' }}><button type="button" className="link-btn" style={{ fontSize: 14, color: 'var(--text-primary)', whiteSpace: 'nowrap' }} onClick={() => open(r.hash)}>{r.item}</button></td>
       <td style={{ padding: '6px 16px' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {canDone && (
-            <button type="button" role="checkbox" aria-checked={r.done} aria-label={`${r.sector}, ${r.item} done`} className="checkbox-box" style={{ width: 20, height: 20, flexBasis: 20 }}
-              onClick={() => opsStore().setTaskDone([r.key], !r.done, me.id)}>
-              <Icon fa="check" size={11} />
-            </button>
-          )}
-          {r.auto && <Icon fa={r.done ? 'circle-check' : 'file-circle-exclamation'} size={14} label={r.done ? 'Uploaded' : 'No PDF yet'} style={{ color: r.done ? 'var(--feedback-success-text)' : 'var(--color-neutral-gray-300)' }} />}
-          <span className="overline" style={{ color: r.done ? 'var(--feedback-success-text)' : undefined }}>{r.done ? 'Done' : 'Not done'}</span>
-          {canUpload && !r.done && <button type="button" className="link-btn" style={{ fontSize: 13, whiteSpace: 'nowrap' }} onClick={() => navigate(uploadPath(r))}>Upload PDF</button>}
+          {r.kind === 'upload'
+            ? <UploadChip done={r.done} late={r.late} />
+            : <ContentChip summary={r.summary} late={r.late} final={!!r.final} />}
+          {canWork && !r.done && <button type="button" className="link-btn" style={{ fontSize: 13, whiteSpace: 'nowrap' }} onClick={() => navigate(r.kind === 'upload' ? uploadPath(r) : writePath(r))}>{r.kind === 'upload' ? 'Upload PDF' : 'Write it'}</button>}
         </span>
-        {r.auto && !r.done && <span className="muted" style={{ display: 'block', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap' }}>Done when the PDF is uploaded</span>}
-        {r.done && <span className="mono" style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'nowrap' }}>{pn(r.doneBy)} · {dateLabel(r.doneAt)}</span>}
+        {r.done && r.doneAt && <span className="mono" style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'nowrap' }}>{r.kind === 'upload' ? 'Uploaded' : 'Edited'}{r.doneBy ? ` by ${pn(r.doneBy)}` : ''} · {dateLabel(r.doneAt)}</span>}
       </td>
       <td style={{ padding: '6px 16px' }}>
         {canDue ? (
