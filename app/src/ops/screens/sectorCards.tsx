@@ -10,7 +10,7 @@ import { plural } from '../data/tasks';
 import { storePdf } from '../files/fileStore';
 import { countPages } from '../files/pdf';
 import { Modal, UploadChip } from '../ui/bits';
-import { PdfThumb, PdfViewer } from '../ui/PdfViewer';
+import { PdfThumb, PdfViewer, type PdfView } from '../ui/PdfViewer';
 
 export interface CardProps {
   s: Sector;
@@ -120,6 +120,8 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
   const unset = req.length === 0;
   const ready = req.filter((p) => p.done).length;
   const slot = pick ? s.plans[pick.key] : undefined;
+  // The zoom someone picks holds while they switch between this sector's plans.
+  const [view, setView] = useState<PdfView | null>(null);
 
   return (
     <Card id="block-plans" title="Floorplans" aside={<>
@@ -176,7 +178,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
           action={canEdit && !s.noFloorplans ? <Button size="small" variant="neutral" outlined icon="pen" onClick={startEdit}>Choose plans</Button> : undefined} />
       )}
       {pick && slot && pick.required && (slot.file ? (
-        <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} />
+        <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} view={view ?? undefined} onView={setView} />
       ) : !editing && (
         <Notice big icon="file-pdf" title={`No PDF uploaded · ${pick.name}`} text={`Owner ${ownerName} has to upload this plan before load-in.`}
           action={canEdit ? <Button size="small" variant="neutral" outlined icon="upload" onClick={startEdit}>Upload PDF</Button> : undefined} />

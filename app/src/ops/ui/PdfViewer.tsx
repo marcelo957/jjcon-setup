@@ -55,20 +55,38 @@ function PageCanvas({ doc, page, scale, onSize, onDone, minDpr = 1 }: {
   return <canvas ref={ref} role="img" aria-label={`Page ${page}`} style={{ display: 'block', background: '#fff', boxShadow: 'var(--ib-elevation-1)' }} />;
 }
 
+/** How the floorplan card shows a PDF: a set zoom (1 = 100%, true size), or fitted to the card. */
+export type PdfView = { mode: 'zoom'; zoom: number } | { mode: 'width' } | { mode: 'page' };
+
+/** CSS pixels per PDF point at 100%: true size, as Acrobat and browsers show it (96 dpi screens). */
+const TRUE_SIZE = 96 / 72;
+const PAD = 8;
+const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
+/** Phones fit the plan to the screen and pinch to zoom; desktops open at true size. */
+export const defaultPdfView = (): PdfView =>
+  (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 600px)').matches ? { mode: 'width' } : { mode: 'zoom', zoom: 1 });
+
 /**
- * The floorplan card's viewer: the uploaded PDF fitted to the box, page navigation for
- * multi-page files, zoom with a "Fit to page" reset, and a download of the original.
+ * The floorplan card's viewer. Opens at 100% (true size) at the top of the page; scrolls and
+ * drags to pan when the page is bigger than the card; presets for 100%, fit to width and fit
+ * to page. Pass `view`/`onView` to keep one zoom across several plans.
  */
-export function PdfViewer({ file, prevUploadedAt }: { file: FileRef; prevUploadedAt?: string }) {
+export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView }: { file: FileRef; prevUploadedAt?: string; view?: PdfView; onView?: (v: PdfView) => void }) {
   const { doc, blob, error } = usePdf(file);
   const [page, setPage] = useState(1);
-  const [zoom, setZoom] = useState<number | null>(null);
+  const [ownView, setOwnView] = useState<PdfView>(defaultPdfView);
+  const view = viewProp ?? ownView;
+  const setView = (v: PdfView) => { setOwnView(v); onView?.(v); };
   const [box, setBox] = useState({ w: 0, h: 0 });
-  const [pageSize, setPageSize] = useState({ w: 880, h: 660 });
+  const [pageSize, setPageSize] = useState({ w: 612, h: 792 });
   const boxRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [href, setHref] = useState<string | null>(null);
 
-  useEffect(() => { setPage(1); setZoom(null); }, [file.id]);
+  useEffect(() => { setPage(1); }, [file.id]);
+  // Every plan, and every page, opens at its top-left corner.
+  useEffect(() => { const el = boxRef.current; if (el) { el.scrollTop = 0; el.scrollLeft = 0; } }, [file.id, page]);
   useEffect(() => {
     if (!blob) return;
     const u = URL.createObjectURL(blob);
@@ -84,10 +102,22 @@ export function PdfViewer({ file, prevUploadedAt }: { file: FileRef; prevUploade
     return () => ro.disconnect();
   }, []);
 
-  const fit = box.w && box.h ? Math.max(0.2, Math.min(1.6, Math.min((box.w - 20) / pageSize.w, (box.h - 20) / pageSize.h))) : 0.8;
-  const scale = zoom ?? fit;
+  const fitWidth = box.w ? Math.max(0.1, (box.w - 2 * PAD) / (pageSize.w * TRUE_SIZE)) : 1;
+  const fitPage = box.w && box.h ? Math.max(0.1, Math.min(fitWidth, (box.h - 2 * PAD) / (pageSize.h * TRUE_SIZE))) : 1;
+  const zoom = view.mode === 'zoom' ? view.zoom : view.mode === 'width' ? fitWidth : fitPage;
+  const scale = zoom * TRUE_SIZE;
   const pages = doc?.numPages ?? file.pages;
-  const contentH = pageSize.h * scale;
+  const contentW = pageSize.w * scale + 2 * PAD;
+  const contentH = pageSize.h * scale + 2 * PAD;
+  const pans = contentW > box.w + 1 || contentH > box.h + 1;
+  const step = (dir: 1 | -1) => {
+    const next = dir > 0 ? STEPS.find((z) => z > zoom + 0.001) ?? STEPS[STEPS.length - 1] : [...STEPS].reverse().find((z) => z < zoom - 0.001) ?? STEPS[0];
+    setView({ mode: 'zoom', zoom: next });
+  };
+  const preset = (label: string, v: PdfView, on: boolean) => (
+    <button type="button" aria-pressed={on} onClick={() => setView(v)}
+      style={{ minHeight: 30, padding: '0 10px', border: 0, borderRight: '1px solid var(--border-divider)', background: on ? 'var(--brand-primary)' : 'var(--color-neutral-white)', color: on ? '#fff' : 'var(--text-primary)', fontFamily: 'Inter, sans-serif', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>
+  );
 
   return (
     <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, overflow: 'hidden' }}>
@@ -103,22 +133,44 @@ export function PdfViewer({ file, prevUploadedAt }: { file: FileRef; prevUploade
             <button type="button" className="icon-btn icon-btn--30" aria-label="Next page" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}><Icon fa="angle-right" size={14} /></button>
           </span>
         )}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-          <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom out" onClick={() => setZoom(Math.max(0.2, +(scale - 0.2).toFixed(2)))}><Icon fa="minus" size={14} /></button>
-          <span className="mono" style={{ fontSize: 13, minWidth: 48, textAlign: 'center' }} aria-live="polite">{Math.round(scale * 100)}%</span>
-          <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom in" onClick={() => setZoom(Math.min(2.4, +(scale + 0.2).toFixed(2)))}><Icon fa="plus" size={14} /></button>
-          <button type="button" className="text-btn" onClick={() => setZoom(null)}>Fit to page</button>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', flexWrap: 'wrap' }}>
+          <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom out" onClick={() => step(-1)}><Icon fa="minus" size={14} /></button>
+          <span className="mono" style={{ fontSize: 13, minWidth: 48, textAlign: 'center' }} aria-live="polite" aria-label={`Zoom ${Math.round(zoom * 100)}%`}>{Math.round(zoom * 100)}%</span>
+          <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom in" onClick={() => step(1)}><Icon fa="plus" size={14} /></button>
+          <span role="group" aria-label="Zoom presets" style={{ display: 'inline-flex', border: '1px solid var(--border-divider)', borderRadius: 4, overflow: 'hidden' }}>
+            {preset('100%', { mode: 'zoom', zoom: 1 }, view.mode === 'zoom' && view.zoom === 1)}
+            {preset('Fit width', { mode: 'width' }, view.mode === 'width')}
+            {preset('Fit page', { mode: 'page' }, view.mode === 'page')}
+          </span>
           <a href={href ?? undefined} download={file.name} aria-disabled={!href}
             style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 30, padding: '0 10px', border: '1px solid var(--brand-primary)', borderRadius: 4, fontSize: 13 }}>
             <Icon fa="download" size={11} />Download PDF
           </a>
         </span>
       </div>
-      <div ref={boxRef} style={{ height: 'min(660px, max(300px, calc(100vh - 430px)))', background: 'var(--color-neutral-surface-300)', overflow: 'auto' }}>
+      <div ref={boxRef} data-testid="pdf-box"
+        style={{ height: 'clamp(420px, calc(100vh - 200px), 1100px)', background: 'var(--color-neutral-surface-300)', overflow: 'auto', touchAction: 'pan-x pan-y pinch-zoom', cursor: pans ? (dragging ? 'grabbing' : 'grab') : 'default', userSelect: dragging ? 'none' : undefined }}
+        onPointerDown={(e) => {
+          // Click and drag to pan, like a hand tool. Touch keeps its own scrolling and pinch.
+          if (e.pointerType !== 'mouse' || e.button !== 0 || !pans) return;
+          const el = e.currentTarget;
+          drag.current = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop };
+          el.setPointerCapture?.(e.pointerId);
+          setDragging(true);
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d) return;
+          e.currentTarget.scrollLeft = d.left - (e.clientX - d.x);
+          e.currentTarget.scrollTop = d.top - (e.clientY - d.y);
+        }}
+        onPointerUp={(e) => { drag.current = null; setDragging(false); e.currentTarget.releasePointerCapture?.(e.pointerId); }}
+        onPointerCancel={() => { drag.current = null; setDragging(false); }}>
         {error && <div className="notice" style={{ margin: 16 }}><div className="notice__title">Can't show this PDF</div><div className="notice__text">{error}</div></div>}
         {!error && !doc && <div className="muted" style={{ padding: 16, fontSize: 13 }}>Loading the PDF…</div>}
         {doc && (
-          <div style={{ width: 'max-content', margin: `${Math.max(0, Math.round((box.h - contentH) / 2))}px auto 0`, padding: zoom ? 10 : 0 }}>
+          // Top-aligned; centred across while it's narrower than the card, panned when wider.
+          <div style={{ width: 'max-content', margin: '0 auto', padding: PAD }}>
             <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} onSize={(w, h) => { if (w !== pageSize.w || h !== pageSize.h) setPageSize({ w, h }); }} />
           </div>
         )}
