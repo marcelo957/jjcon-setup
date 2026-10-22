@@ -198,6 +198,16 @@ describe('Sector page', () => {
     expect(opsStore().sector('crates')!.blocks.mainMat.rows).toHaveLength(3);
   });
 
+  it('opens plans at 100% and keeps a chosen zoom while switching plans', async () => {
+    const user = await renderAs('admin', '/sectors/customer');
+    expect(await screen.findByRole('button', { name: '100%', pressed: true })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fit page' }));
+    const tabs = screen.getAllByRole('tab');
+    await user.click(tabs.find((t) => t.getAttribute('aria-selected') === 'false' && !t.hasAttribute('disabled'))!);
+    expect(screen.getByRole('button', { name: 'Fit page', pressed: true })).toBeInTheDocument();
+    expect(screen.getByText('Download PDF')).toBeInTheDocument();
+  });
+
   it('shows the missing-PDF notice for a required plan with no file', async () => {
     await renderAs('admin', '/sectors/store?plan=D');
     expect(screen.getByText('No PDF uploaded · Power Drops & Extension Cords')).toBeInTheDocument();
