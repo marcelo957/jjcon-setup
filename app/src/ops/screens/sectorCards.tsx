@@ -135,15 +135,17 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
           return (
             <div key={p.key} style={{
               flex: '1 1 180px', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', padding: '10px 12px',
-              border: `1px solid ${on ? 'var(--brand-primary)' : 'var(--border-divider)'}`, borderTop: `3px solid ${on ? 'var(--brand-primary)' : 'transparent'}`,
-              borderRadius: 4, background: on ? 'var(--color-neutral-surface-50)' : muted ? 'var(--color-neutral-surface-100)' : 'var(--color-neutral-white)', opacity: muted && !editing ? 0.65 : 1
+              // A defined outline in every state, the top edge strongest; the selected plan's is brand blue.
+              // Same widths everywhere, so the row reads as an even set.
+              border: `1px solid ${on ? 'var(--brand-primary)' : 'var(--border-default)'}`, borderTop: `2px solid ${on ? 'var(--brand-primary)' : 'var(--border-strong)'}`,
+              borderRadius: 4, background: on ? 'var(--color-neutral-surface-50)' : muted ? 'var(--color-neutral-surface-100)' : 'var(--color-neutral-white)'
             }}>
               <button type="button" role="tab" aria-selected={on} disabled={muted && !editing} onClick={() => setPlan(p.key)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 0, background: 'transparent', padding: 0, cursor: muted && !editing ? 'default' : 'pointer', textAlign: 'left' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 0, background: 'transparent', padding: 0, cursor: muted && !editing ? 'default' : 'pointer', textAlign: 'left', opacity: muted && !editing ? 0.65 : 1 }}>
                 <Icon fa={p.icon} size={12} style={{ color: 'var(--icon-tertiary)' }} />
                 <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 15, fontWeight: 500, letterSpacing: '.02em', color: muted ? 'var(--color-neutral-gray-300)' : 'var(--text-primary)' }}>{p.name}</span>
               </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', opacity: muted && !editing ? 0.65 : 1 }}>
                 {!editing && (muted
                   ? <span className="chip--muted"><Icon fa={unset && !s.noFloorplans ? 'circle' : 'ban'} size={9} />{unset && !s.noFloorplans ? 'Not set' : 'Not applicable'}</span>
                   : <UploadChip done={p.done} late={!p.done && info(p.key).late} />)}
