@@ -64,6 +64,9 @@ function genPlan(fp: SheetSpec): Item[] {
 }
 
 const W = 880, H = 660, DRAW_H = 540;
+/** US Letter, landscape, in PDF points: the size real floorplans are printed at. */
+const LETTER_W = 792, LETTER_H = 612;
+const FIT = LETTER_W / W;
 
 // WinAnsi bytes for the few non-ASCII characters the sheets use.
 const WIN: Record<string, number> = { '—': 0x97, '–': 0x96, '·': 0xb7, '×': 0xd7, '²': 0xb2, '’': 0x92 };
@@ -181,10 +184,12 @@ function assemble(pages: string[]): Uint8Array {
   ];
   const pagesId = objs.length + 1 + pages.length * 2;
   const kids: number[] = [];
-  pages.forEach((content) => {
+  pages.forEach((drawing) => {
+    // Drawn on an 880 × 660 grid, placed on a US Letter landscape sheet: scaled 90%, centred.
+    const content = `q ${FIT} 0 0 ${FIT} 0 ${(LETTER_H - H * FIT) / 2} cm\n${drawing}\nQ`;
     const bytes = latin1(content);
     const cid = add(`<< /Length ${bytes.length} >>\nstream\n${content}\nendstream`);
-    kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Contents ${cid} 0 R /Resources << /Font << /F1 ${fonts[0]} 0 R /F2 ${fonts[1]} 0 R /F3 ${fonts[2]} 0 R >> >> >>`));
+    kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${LETTER_W} ${LETTER_H}] /Contents ${cid} 0 R /Resources << /Font << /F1 ${fonts[0]} 0 R /F2 ${fonts[1]} 0 R /F3 ${fonts[2]} 0 R >> >> >>`));
   });
   add(`<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(' ')}] /Count ${kids.length} >>`);
   const catalog = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);

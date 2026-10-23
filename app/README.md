@@ -85,7 +85,7 @@ task (`src/ops/data/tasks.ts`), and the sector keeps only what was decided about
 responsible, delay note). Demo deadlines are placed around today so overdue and due-soon
 items show. Uploaded PDFs go to IndexedDB
 (`src/ops/files/fileStore.ts`); the demo plans point at `sample:` ids that are drawn on demand
-as real PDFs (`samplePdf.ts`). PDFs render with pdf.js (legacy build, for older phone browsers),
+as real US Letter landscape PDFs (`samplePdf.ts`). PDFs render with pdf.js (legacy build, for older phone browsers),
 canvas only: no annotation layer, no document scripts.
 
 The console loads lazily after sign-in. The Bushido bundle is 1.9 MB unminified (about 165 KB
