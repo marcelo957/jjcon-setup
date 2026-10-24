@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // The Edge Function imports the client the way Supabase's runtime does; tests use the installed one.
+  resolve: { alias: [{ find: /^npm:@supabase\/supabase-js@[\d.]+$/, replacement: new URL('./node_modules/@supabase/supabase-js/dist/index.mjs', import.meta.url).pathname }] },
   test: {
     environment: 'jsdom',
     globals: true,
