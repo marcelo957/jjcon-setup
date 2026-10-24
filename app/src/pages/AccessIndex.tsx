@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { DEMO_PASSWORDS, DEMO_TOKENS } from '../auth/mockAuthService';
 import { IS_MOCK_AUTH, mockAuth } from '../auth/service';
+import type { ConnectionCheck } from '../lib/supabase';
 
 type Row = { id: string; caption: string; to: string; how?: string };
 
@@ -35,6 +36,31 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
 ];
 
 /** Index of every designed state, like the JJCon Access canvas. Phone layouts are the same routes under 480px wide. */
+/**
+ * Whether this build is connected to the Supabase project. Loads the Supabase client only
+ * here, so the rest of the app doesn't carry it until it's actually used.
+ */
+function BackendStatus() {
+  const [check, setCheck] = useState<ConnectionCheck | null>(null);
+  useEffect(() => {
+    let live = true;
+    import('../lib/supabase').then((m) => m.checkConnection()).then((c) => { if (live) setCheck(c); });
+    return () => { live = false; };
+  }, []);
+  const text = !check ? 'Checking the connection to Supabase…'
+    : check.state === 'not-configured' ? 'Supabase is not set up in this build: the project URL and anon key are missing. The app keeps using its built-in demo data.'
+    : check.state === 'connected' ? `Connected to Supabase project ${check.host}. The URL and anon key work.`
+    : check.state === 'bad-key' ? `Supabase project ${check.host} answered, but rejected the anon key. Copy the anon / public key again from Project Settings → API.`
+    : `Can't reach Supabase project ${check.host}. ${check.reason}`;
+  const tone = check?.state === 'connected' ? 'var(--feedback-success-text)' : check && check.state !== 'not-configured' ? 'var(--feedback-danger-text)' : 'var(--text-secondary)';
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-label="Backend">
+      <h2 className="ref-h2">Backend</h2>
+      <p className="ref-text" role="status" style={{ color: tone }}>{text}</p>
+    </section>
+  );
+}
+
 export function AccessIndex() {
   const { signOut } = useAuth();
   const [resetDone, setResetDone] = useState(false);
@@ -63,6 +89,7 @@ export function AccessIndex() {
         </section>
       ))}
       <p className="ref-text">On a phone (under 480px wide) the same screens drop the card and use 48px fields and buttons.</p>
+      <BackendStatus />
       {IS_MOCK_AUTH && (
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <button

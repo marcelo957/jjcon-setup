@@ -1,3 +1,7 @@
 node_modules
 dist
 *.tsbuildinfo
+# Local settings and keys never go to GitHub; .env.example (placeholders only) does.
+.env
+.env.*
+!.env.example

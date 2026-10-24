@@ -32,7 +32,12 @@ jobs:
       - run: npm ci
       - run: npm test
       # Pages serves the site from /<repo>/, so assets and routes need that base.
+      # The Supabase URL and anon key come from repository secrets (Settings → Secrets and
+      # variables → Actions). Without them the site builds and runs on its demo data.
       - run: npm run build -- --base=/${{ github.event.repository.name }}/
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       # Pages has no SPA rewrites: its 404 page boots the app, which then routes the deep link.
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

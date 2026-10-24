@@ -20,6 +20,22 @@ npm test
 npm run build
 ```
 
+## Supabase
+
+The app is being moved onto Supabase one step at a time. Step 1 (connect) is in: the client is
+installed and reads two values from environment variables. Nothing reads or writes Supabase data
+yet; the app still runs on its built-in demo data.
+
+- **On a developer machine:** copy `.env.example` to `.env.local` and fill in the project URL and
+  the **anon / public** key from Supabase → Project Settings → API. `.env.local` is git-ignored.
+- **On the published site:** add the same two values as repository secrets named
+  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (GitHub → Settings → Secrets and variables →
+  Actions), then re-run the deploy.
+- Never use the `service_role` key in the app: it bypasses every security rule.
+
+`/access` shows whether the build is connected (it asks the project's auth service for its
+public settings). The Supabase client loads only where it's used.
+
 ## Deploy
 
 `.github/workflows/deploy.yml` tests, builds and publishes the app to GitHub Pages
