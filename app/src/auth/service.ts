@@ -18,7 +18,7 @@ export const opsDirectory: PeopleDirectory = {
  */
 export const mockAuth = new MockAuthService({ directory: opsDirectory });
 /** Supabase Auth when the project URL and key are set (the published site); the demo otherwise. */
-export const authService: AuthService = supabase ? new SupabaseAuthService(supabase, initialHash) : mockAuth;
+export const authService: AuthService = supabase ? new SupabaseAuthService(supabase, initialHash, opsDirectory) : mockAuth;
 
 /** True while running against the mock: shows demo links where a real backend would send email. */
 export const IS_MOCK_AUTH = authService === mockAuth;

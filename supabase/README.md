@@ -15,6 +15,13 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    changes, withdrawing unused invitations and signing someone out everywhere (admins only).
    Run it before creating the first user.
 
+4. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+   send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
+   → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
+   replaces an unused invitation but never touches a login that has been used.
+5. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+   "Invite user" and "Reset password" email templates (Authentication → Emails).
+
 All scripts run inside a transaction: if anything fails, nothing is left half-created.
 Running `01_tables.sql` a second time stops with "relation already exists" and changes nothing.
 

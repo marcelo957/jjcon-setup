@@ -28,8 +28,11 @@ function linkError(hash: string): 'expired' | 'not-found' | null {
   return code === 'otp_expired' ? 'expired' : 'not-found';
 }
 
+/** Where the app's People list comes from, so an invitation carries the person's name and email. */
+export interface InviteDirectory { list(): { id: string; name: string; email: string }[] }
+
 export class SupabaseAuthService implements AuthService {
-  constructor(private sb: SupabaseClient, private hash = '') {}
+  constructor(private sb: SupabaseClient, private hash = '', private people: InviteDirectory = { list: () => [] }) {}
 
   private async me(): Promise<Me | null> {
     const { data, error } = await this.sb.rpc('me');
@@ -130,8 +133,15 @@ export class SupabaseAuthService implements AuthService {
             : undefined
         }));
     },
-    invite: async (): Promise<{ devLink?: string }> => {
-      throw new Error('Inviting from the app arrives in the next step (4b). For now, invite people from Supabase → Authentication → Users.');
+    /** Sent by the `invite` Edge Function, which checks the caller is an admin. Re-inviting replaces an unused invitation. */
+    invite: async (personId: string, role: Role): Promise<{ devLink?: string }> => {
+      const p = this.people.list().find((x) => x.id === personId);
+      if (!p?.email) throw new Error('Add an email address for this person first.');
+      const { error } = await this.sb.functions.invoke('invite', {
+        body: { personId, name: p.name, email: p.email, role, redirectTo: linkTarget('invite/link') }
+      });
+      if (error) throw new Error(await functionError(error));
+      return {};
     },
     revokeInvite: async (personId: string) => { await this.call('revoke_invite', { target_person: personId }); },
     setRole: async (personId: string, role: Role) => { await this.call('set_role', { target_person: personId, new_role: role }); },
@@ -142,6 +152,16 @@ export class SupabaseAuthService implements AuthService {
     const { error } = await this.sb.rpc(fn, args);
     if (error) throw new Error(error.message);
   }
+}
+
+/** The message an Edge Function sent back, or a plain explanation when it couldn't be reached. */
+async function functionError(error: { message: string; context?: unknown }): Promise<string> {
+  const res = error.context;
+  if (res instanceof Response) {
+    try { const body = await res.json(); if (body?.error) return String(body.error); } catch { /* not JSON */ }
+    if (res.status === 404) return 'The invitation service isn\'t set up in Supabase yet (Edge Function "invite").';
+  }
+  return 'The invitation could not be sent. Check your connection and try again.';
 }
 
 function blankInvitation(): Invitation {
