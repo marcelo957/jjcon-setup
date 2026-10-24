@@ -22,9 +22,11 @@ npm run build
 
 ## Supabase
 
-The app is being moved onto Supabase one step at a time. Step 1 (connect) is in: the client is
-installed and reads two values from environment variables. Nothing reads or writes Supabase data
-yet; the app still runs on its built-in demo data.
+The app is being moved onto Supabase one step at a time. Done so far: the connection (step 1),
+the tables (step 2, `../supabase/`), and sign-in through Supabase Auth (step 4a). When the two
+values below are set, signing in, signing out, "forgot password" and accepting an invitation go
+through Supabase (`src/auth/supabaseAuthService.ts`); without them the app uses its demo logins.
+Sectors, tasks and people still live in each browser until the data switch.
 
 - **On a developer machine:** copy `.env.example` to `.env.local` and fill in the project URL and
   the **anon / public** key from Supabase → Project Settings → API. `.env.local` is git-ignored.

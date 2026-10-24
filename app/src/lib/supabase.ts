@@ -11,7 +11,15 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? '';
 
 export const supabaseConfigured = url !== '' && anonKey !== '';
 
-export const supabase: SupabaseClient | null = supabaseConfigured ? createClient(url, anonKey) : null;
+/**
+ * The address-bar fragment as the page first loaded, before the client reads and clears it:
+ * an invitation or reset link that has expired says so there (#error_code=otp_expired).
+ */
+export const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
+
+export const supabase: SupabaseClient | null = supabaseConfigured
+  ? createClient(url, anonKey, { auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true } })
+  : null;
 
 export type ConnectionCheck =
   | { state: 'not-configured' }

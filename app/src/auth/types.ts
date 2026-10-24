@@ -33,6 +33,8 @@ export interface Invitation {
 export type SignInResult =
   | { ok: true; session: Session }
   | { ok: false; reason: 'invalid' }
+  /** The sign-in service couldn't be reached (offline, or the backend is down). */
+  | { ok: false; reason: 'unavailable' }
   | { ok: false; reason: 'deactivated'; deactivatedAt: string; contactName: string };
 
 export type InvitationLookup =
@@ -66,6 +68,8 @@ export interface AccessAdmin {
 }
 
 export interface AuthService {
+  /** End the session with the backend too (the demo has nothing to end). */
+  signOut?(): Promise<void>;
   /** The session as it stands now: role and name refreshed, or null once it was signed out, deactivated or removed. */
   checkSession(session: Session): Promise<Session | null>;
   access: AccessAdmin;
