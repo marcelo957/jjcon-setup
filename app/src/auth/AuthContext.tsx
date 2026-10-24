@@ -23,7 +23,8 @@ export function AuthProvider({ service, children }: { service: AuthService; chil
   const signOut = useCallback(() => {
     clearSession();
     setSession(null);
-  }, []);
+    void service.signOut?.();
+  }, [service]);
 
   // Re-check the session when the app opens and whenever the tab comes back: a role change
   // applies on the next page, and deactivation or "sign out of all devices" ends it.

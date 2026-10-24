@@ -74,7 +74,13 @@ export function AccessIndex() {
           way to create a login. <Link to="/">Open the app</Link>
         </p>
       </div>
-      {SECTIONS.map((s) => (
+      {!IS_MOCK_AUTH && (
+        <p className="ref-text">
+          Signing in uses the team's Supabase logins, so the demo accounts and demo links below this point are not shown.{' '}
+          <Link to="/sign-in">Sign in</Link> · <Link to="/forgot-password">Forgot your password</Link> · <Link to="/access/roles">Roles and permissions</Link>
+        </p>
+      )}
+      {IS_MOCK_AUTH && SECTIONS.map((s) => (
         <section key={s.title} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 className="ref-h2">{s.title}</h2>
           <ul className="ref-links">

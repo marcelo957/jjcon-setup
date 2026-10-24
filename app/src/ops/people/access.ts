@@ -9,7 +9,7 @@ import type { Person } from '../data/types';
 export function useAccessList() {
   const { service } = useAuth();
   const [list, setList] = useState<AccessInfo[] | null>(null);
-  const refresh = useCallback(() => { service.access.listAccess().then(setList); }, [service]);
+  const refresh = useCallback(() => { service.access.listAccess().then(setList, () => setList([])); }, [service]);
   useEffect(() => { refresh(); }, [refresh]);
   return { list, refresh, admin: service.access };
 }

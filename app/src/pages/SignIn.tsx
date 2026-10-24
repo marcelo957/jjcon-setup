@@ -6,7 +6,7 @@ import { validateEmail } from '../auth/validation';
 import { AuthAlert, AuthHeader, AuthNote, AuthPage, FieldGroup, KeepSignedIn, SubmitButton, TextField, TextLink } from '../components/AuthCard';
 import { EVENT_NAME } from '../config';
 
-type Failure = { kind: 'invalid' } | { kind: 'deactivated'; deactivatedAt: string; contactName: string };
+type Failure = { kind: 'invalid' } | { kind: 'unavailable' } | { kind: 'deactivated'; deactivatedAt: string; contactName: string };
 
 export function SignIn() {
   const { service, session, startSession } = useAuth();
@@ -36,6 +36,8 @@ export function SignIn() {
       navigate(state?.from ?? '/', { replace: true });
     } else if (result.reason === 'deactivated') {
       setFailure({ kind: 'deactivated', deactivatedAt: result.deactivatedAt, contactName: result.contactName });
+    } else if (result.reason === 'unavailable') {
+      setFailure({ kind: 'unavailable' });
     } else {
       setFailure({ kind: 'invalid' });
     }
@@ -54,6 +56,11 @@ export function SignIn() {
       {failure?.kind === 'invalid' && (
         <AuthAlert kind="danger" icon="circle-exclamation">
           That email and password don’t match. Check caps lock, or reset your password.
+        </AuthAlert>
+      )}
+      {failure?.kind === 'unavailable' && (
+        <AuthAlert kind="danger" icon="circle-exclamation">
+          Can’t reach the sign-in service right now. Check your connection and try again in a minute.
         </AuthAlert>
       )}
       {failure?.kind === 'deactivated' && (
