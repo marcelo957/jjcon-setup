@@ -4,6 +4,7 @@ import { ROLE_LABEL } from '../auth/permissions';
 import { DS } from '../ds/bushido';
 import { Icon, iconName } from '../ds/Icon';
 import { useMe } from './access';
+import { useStoredFileSync } from './files/sync';
 import { activeSectors, dateLabel, initials } from './data/selectors';
 import { useOps } from './data/store';
 import { LOAD_IN_FIRST_DAY, LOAD_IN_LABEL } from '../config';
@@ -35,6 +36,7 @@ const daysUntil = (iso: string) => Math.ceil((new Date(`${iso}T00:00:00`).getTim
 /** The console frame: Bushido header, the menu, and who is signed in with Sign out. */
 export function Shell() {
   const me = useMe();
+  useStoredFileSync();
   const data = useOps();
   const [navOpen, setNavOpen] = useState(() => window.innerWidth > 900);
   const person = data.people.find((p) => p.id === me.id);
