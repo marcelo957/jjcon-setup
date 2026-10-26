@@ -7,7 +7,7 @@ import { dateLabel, dayLabel, materialGroups, plansOf, sizeLabel } from '../data
 import type { CustomBlock, FileRef, MatRow, PlanKey, Sector, Step } from '../data/types';
 import { opsStore } from '../data/store';
 import { plural } from '../data/tasks';
-import { storePdf } from '../files/fileStore';
+import { discardPdf, storePdf, type FileWhere } from '../files/fileStore';
 import { countPages } from '../files/pdf';
 import { Modal, UploadChip } from '../ui/bits';
 import { PdfThumb, PdfViewer, type PdfView } from '../ui/PdfViewer';
@@ -173,7 +173,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-subtle)', paddingTop: 12, marginBottom: 12 }}>
           <span className="overline overline--secondary">PDF files · one per required plan</span>
           {req.map((p) => (
-            <UploadRow key={p.key} name={p.name} file={s.plans[p.key].file} prev={s.plans[p.key].prevUploadedAt} meId={meId}
+            <UploadRow key={p.key} name={p.name} file={s.plans[p.key].file} prev={s.plans[p.key].prevUploadedAt} meId={meId} where={{ sectorId: s.id, slot: `plan:${p.key}` }}
               onFile={(f) => opsStore().setPlanFile(s.id, p.key, f)} onRemove={() => opsStore().removePlanFile(s.id, p.key)} />
           ))}
         </div>
@@ -198,7 +198,7 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
  * One drop zone per required plan: drag a PDF in or pick one. The upload counts at once, before
  * Save: the plan is done. Replacing keeps it done; Remove PDF makes it outstanding again.
  */
-export function UploadRow({ name, file, prev, onFile, onRemove, meId }: { name: string; file?: FileRef; prev?: string; onFile: (f: FileRef) => void; onRemove: () => void; meId: string }) {
+export function UploadRow({ name, file, prev, onFile, onRemove, meId, where }: { name: string; file?: FileRef; prev?: string; onFile: (f: FileRef) => void; onRemove: () => void; meId: string; where: FileWhere }) {
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -209,7 +209,10 @@ export function UploadRow({ name, file, prev, onFile, onRemove, meId }: { name: 
     setError(null);
     setBusy(true);
     try {
-      onFile(await storePdf(f, meId, countPages));
+      const stored = await storePdf(f, meId, countPages, where, file?.uploadedAt);
+      onFile(stored);
+      // The file it replaced: gone from Storage (or, for a demo drawing, marked removed). Best effort.
+      if (file) void discardPdf(file, where).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The upload failed. Try again.');
     } finally {
@@ -256,7 +259,13 @@ export function UploadRow({ name, file, prev, onFile, onRemove, meId }: { name: 
         <Modal title={`Remove the ${name} PDF?`} icon="trash" iconColor="var(--feedback-danger-text)" onClose={() => setConfirm(false)} width={520}
           footer={<>
             <Button ghost onClick={() => setConfirm(false)}>Cancel</Button>
-            <Button variant="danger" icon="trash" onClick={() => { onRemove(); setConfirm(false); }}>Remove PDF</Button>
+            <Button variant="danger" icon="trash" busy={busy} onClick={async () => {
+              setError(null);
+              setBusy(true);
+              try { await discardPdf(file, where); onRemove(); setConfirm(false); }
+              catch (e) { setError(e instanceof Error ? e.message : 'The file could not be removed.'); setConfirm(false); }
+              finally { setBusy(false); }
+            }}>Remove PDF</Button>
           </>}>
           <p style={{ margin: 0, fontSize: 14, lineHeight: '22px' }}>
             {file.name} comes off this sector. {name} goes back to not done on the dashboard, in Tasks and on the Team page, and stays outstanding until a new PDF is uploaded.
@@ -527,7 +536,7 @@ export function CustomCard({ s, c, editing: editMode, change, ownerName, canChec
         : safeUrl(c.url ?? '') ? <LinkOut url={safeUrl(c.url!)} label={c.label || c.url!} /> : <Blank icon={kd.icon} text="No link set yet." />)}
       {c.kind === 'pdf' && (
         <>
-          {editMode && <UploadRow name={c.name} file={c.file} meId={meId} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
+          {editMode && <UploadRow name={c.name} file={c.file} meId={meId} where={{ sectorId: s.id, slot: c.id }} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
           {!editMode && c.file && <PdfViewer file={c.file} />}
           {!editMode && !c.file && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--border-subtle)', borderLeft: '6px solid var(--feedback-warning-accent)', borderRadius: 8, background: 'var(--color-neutral-surface-50)' }}>

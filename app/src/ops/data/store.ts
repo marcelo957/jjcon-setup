@@ -1,3 +1,5 @@
+import type { StoredFile } from '../files/sync';
+import { slotFolder } from '../files/paths';
 import { CONTENT_KEYS, contentPrint, isContentKey, isFinal, slotMeta } from './content';
 import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
@@ -299,6 +301,39 @@ export class OpsStore {
       const c = s.custom.find((x) => x.id === blockId);
       if (c) c.file = file;
     });
+  }
+
+  /**
+   * What Storage holds, applied to every sector: a stored file (the newest per plan) becomes the
+   * plan's file; a plan whose stored file is gone loses it; a removed demo plan loses its drawing.
+   */
+  applyStoredFiles(stored: StoredFile[], removedDemo: { sector_id: string; slot: string }[]) {
+    const has = new Map(stored.map((f) => [`${f.sector_id}/${f.slot}`, f]));
+    const gone = new Set(removedDemo.map((r) => `${r.sector_id}/${r.slot}`));
+    const next = structuredClone(this.data);
+    let changed = false;
+    const now = this.now().toISOString();
+    next.sectors.forEach((s) => {
+      let touched = false;
+      const settle = (slot: string, current: FileRef | undefined, set: (f: FileRef | undefined, prev?: string) => void) => {
+        const f = has.get(`${s.id}/${slotFolder(slot)}`);
+        if (f) {
+          if (current?.id === `sb:${f.path}`) return;
+          set({ id: `sb:${f.path}`, name: f.name, size: f.size ?? 0, pages: f.pages, uploadedAt: f.uploaded_at, uploadedBy: f.uploaded_by }, f.replaced_uploaded_at ?? undefined);
+          touched = true;
+        } else if (current && (current.id.startsWith('sb:') || (current.id.startsWith('sample:') && gone.has(`${s.id}/${slot}`)))) {
+          set(undefined);
+          touched = true;
+        }
+      };
+      (Object.keys(s.plans) as PlanKey[]).forEach((k) => settle(`plan:${k}`, s.plans[k].file, (f, prev) => {
+        if (f) { s.plans[k].file = f; if (prev) s.plans[k].prevUploadedAt = prev; else delete s.plans[k].prevUploadedAt; }
+        else { delete s.plans[k].file; delete s.plans[k].prevUploadedAt; }
+      }));
+      s.custom.filter((c) => c.kind === 'pdf').forEach((c) => settle(c.id, c.file, (f) => { if (f) c.file = f; else delete c.file; }));
+      if (touched) { s.contentChangedAt = now; changed = true; }
+    });
+    if (changed) this.commit(next);
   }
 
   removeCustomFile(id: string, blockId: string) {

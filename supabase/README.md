@@ -15,11 +15,16 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    changes, withdrawing unused invitations and signing someone out everywhere (admins only).
    Run it before creating the first user.
 
-4. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+4. `04_storage.sql` — step 3, file storage. A private Storage bucket `floorplans` (PDF only,
+   50 MB each), files kept as `<sector>/<plan-G | plan-A | … | custom block id>/<file>.pdf`.
+   Anyone signed in and active can view; admins, and editors on the sectors they lead or own, can
+   upload and delete. `stored_files()` tells the app what exists, so plan status follows Storage:
+   a deleted file (even one deleted from the dashboard) makes that plan outstanding again.
+5. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-5. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+6. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
 
 All scripts run inside a transaction: if anything fails, nothing is left half-created.
