@@ -62,4 +62,13 @@ describe('Floorplans in Supabase Storage', () => {
     expect(opsStore().sector('champ-jjc')!.plans.C).toMatchObject({ required: true, file: { id: 'sb:champ-jjc/plan-C/1-mats.pdf' } });
     expect(row('champ-jjc', 'C').done).toBe(true);
   });
+
+  it('also shows such a plan when this browser already had its file from an earlier check', () => {
+    const file = stored({ sector_id: 'champ-jjc', slot: 'plan-A', path: 'champ-jjc/plan-A/1-layout.pdf' });
+    opsStore().applyStoredFiles([file], []);
+    // As an earlier version left it: the file known, the plan not chosen.
+    (opsStore() as unknown as { edit: (id: string, fn: (s: { plans: { A: { required: boolean } } }) => void) => void }).edit('champ-jjc', (s) => { s.plans.A.required = false; });
+    opsStore().applyStoredFiles([file], []);
+    expect(opsStore().sector('champ-jjc')!.plans.A.required).toBe(true);
+  });
 });
