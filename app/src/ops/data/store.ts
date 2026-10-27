@@ -326,11 +326,18 @@ export class OpsStore {
           touched = true;
         }
       };
-      (Object.keys(s.plans) as PlanKey[]).forEach((k) => settle(`plan:${k}`, s.plans[k].file, (f, prev) => {
+      (Object.keys(s.plans) as PlanKey[]).forEach((k) => {
+        settle(`plan:${k}`, s.plans[k].file, (f, prev) => {
+          if (f) { s.plans[k].file = f; if (prev) s.plans[k].prevUploadedAt = prev; else delete s.plans[k].prevUploadedAt; }
+          else { delete s.plans[k].file; delete s.plans[k].prevUploadedAt; }
+        });
         // A plan with a file in Storage is one this sector uses, even where this browser hadn't chosen it yet.
-        if (f) { s.plans[k].file = f; s.plans[k].required = true; delete s.noFloorplans; if (prev) s.plans[k].prevUploadedAt = prev; else delete s.plans[k].prevUploadedAt; }
-        else { delete s.plans[k].file; delete s.plans[k].prevUploadedAt; }
-      }));
+        if (has.has(`${s.id}/${slotFolder(`plan:${k}`)}`) && !s.plans[k].required) {
+          s.plans[k].required = true;
+          delete s.noFloorplans;
+          changed = true;
+        }
+      });
       s.custom.filter((c) => c.kind === 'pdf').forEach((c) => settle(c.id, c.file, (f) => { if (f) c.file = f; else delete c.file; }));
       if (touched) { s.contentChangedAt = now; changed = true; }
     });
