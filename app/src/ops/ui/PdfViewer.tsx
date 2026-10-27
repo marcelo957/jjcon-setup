@@ -3,7 +3,7 @@ import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { Icon } from '../../ds/Icon';
 import { dateLabel, sizeLabel } from '../data/selectors';
 import type { FileRef } from '../data/types';
-import { readFile } from '../files/fileStore';
+import { readFile, StorageReadError } from '../files/fileStore';
 import { closePdf, openPdf } from '../files/pdf';
 
 export function usePdf(file: FileRef | undefined) {
@@ -22,7 +22,12 @@ export function usePdf(file: FileRef | undefined) {
         return openPdf(b);
       })
       .then((d) => { opened = d; if (live) setDoc(d); else void closePdf(d); })
-      .catch(() => { if (live) setError('This PDF could not be opened. Download it to check the file, or upload it again.'); });
+      .catch((e) => {
+        if (!live) return;
+        setError(e instanceof StorageReadError
+          ? `Supabase Storage didn't hand over this PDF (${e.message}). Reload the page; if it keeps happening, tell your admin.`
+          : 'This PDF could not be opened. Download it to check the file, or upload it again.');
+      });
     return () => { live = false; if (opened) void closePdf(opened); };
   }, [file?.id]);
   return { doc, blob, error };

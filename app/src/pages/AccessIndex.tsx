@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { DEMO_PASSWORDS, DEMO_TOKENS } from '../auth/mockAuthService';
 import { IS_MOCK_AUTH, mockAuth } from '../auth/service';
 import type { ConnectionCheck } from '../lib/supabase';
+import type { SyncReport } from '../ops/files/sync';
 
 type Row = { id: string; caption: string; to: string; how?: string };
 
@@ -57,8 +58,28 @@ function BackendStatus() {
     <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-label="Backend">
       <h2 className="ref-h2">Backend</h2>
       <p className="ref-text" role="status" style={{ color: tone }}>{text}</p>
+      {check?.state === 'connected' && <StorageStatus />}
     </section>
   );
+}
+
+/** What this login is told is in floorplan storage, the same check the app makes every two minutes. */
+function StorageStatus() {
+  const { session } = useAuth();
+  const [report, setReport] = useState<SyncReport | null | 'checking'>('checking');
+  useEffect(() => {
+    let live = true;
+    if (session) import('../ops/files/sync').then((m) => m.syncStoredFiles()).then((r) => { if (live) setReport(r); });
+    return () => { live = false; };
+  }, [session]);
+  const text = !session ? 'Sign in to check floorplan storage.'
+    : report === 'checking' ? 'Checking floorplan storage…'
+    : !report ? 'Floorplan storage is not set up in this build.'
+    : report.error !== undefined ? `Floorplan storage check failed: ${report.error}`
+    : report.files.length ? `Floorplan storage: you can see ${report.files.length} file${report.files.length === 1 ? '' : 's'} (${report.files.join(', ')}).`
+    : 'Floorplan storage: you can see no files.';
+  const bad = report && report !== 'checking' && report.error;
+  return <p className="ref-text" role="status" style={{ color: bad ? 'var(--feedback-danger-text)' : 'var(--text-secondary)' }}>{text}</p>;
 }
 
 export function AccessIndex() {

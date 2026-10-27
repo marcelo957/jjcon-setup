@@ -12,12 +12,21 @@ export interface StoredFile {
  * Brings this browser's plans in line with what is actually in Storage: files others uploaded
  * appear, and files deleted anywhere disappear (so the plan is outstanding again).
  */
-export async function syncStoredFiles(): Promise<void> {
-  if (!supabase) return;
+export async function syncStoredFiles(): Promise<SyncReport | null> {
+  if (!supabase) return null;
   const [stored, removed] = await Promise.all([supabase.rpc('stored_files'), supabase.rpc('removed_demo_files')]);
-  if (stored.error || removed.error) return;
-  opsStore().applyStoredFiles(stored.data as StoredFile[], removed.data as { sector_id: string; slot: string }[]);
+  const error = stored.error ?? removed.error;
+  if (error) {
+    console.warn('Floorplan storage check failed:', error);
+    return { error: error.message };
+  }
+  const files = stored.data as StoredFile[];
+  opsStore().applyStoredFiles(files, removed.data as { sector_id: string; slot: string }[]);
+  return { files: files.map((f) => `${f.sector_id} / ${f.slot}`) };
 }
+
+/** What the last check against Storage found, for the access page. */
+export type SyncReport = { files: string[]; error?: undefined } | { error: string; files?: undefined };
 
 /** Keep in step while the console is open: on load, when the tab comes back, and every two minutes. */
 export function useStoredFileSync() {
