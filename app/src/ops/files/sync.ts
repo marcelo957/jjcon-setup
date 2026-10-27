@@ -20,7 +20,8 @@ export async function syncStoredFiles(): Promise<SyncReport | null> {
     console.warn('Floorplan storage check failed:', error);
     return { error: error.message };
   }
-  const files = stored.data as StoredFile[];
+  // The Supabase dashboard leaves a hidden ".emptyFolderPlaceholder" behind when it empties a folder; it's not a plan.
+  const files = (stored.data as StoredFile[]).filter((f) => !f.path.split('/').pop()!.startsWith('.'));
   opsStore().applyStoredFiles(files, removed.data as { sector_id: string; slot: string }[]);
   return { files: files.map((f) => `${f.sector_id} / ${f.slot}`) };
 }

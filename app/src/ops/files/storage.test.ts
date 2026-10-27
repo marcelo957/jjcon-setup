@@ -8,6 +8,7 @@ const rpc = vi.fn(async () => ({ data: null, error: null }));
 vi.mock('../../lib/supabase', () => ({ supabase: { storage: { from: () => ({ upload, remove, download: vi.fn() }) }, rpc } }));
 
 const { storePdf, discardPdf } = await import('./fileStore');
+const { syncStoredFiles } = await import('./sync');
 
 const pdf = () => new File(['%PDF-1.4 test'], 'Banners plan (v2).pdf', { type: 'application/pdf' });
 const row = (sector: string, slot: string) => taskRows(opsStore().get(), toIsoDay(new Date())).find((r) => r.key === `${sector}:${slot}`)!;
@@ -70,5 +71,14 @@ describe('Floorplans in Supabase Storage', () => {
     (opsStore() as unknown as { edit: (id: string, fn: (s: { plans: { A: { required: boolean } } }) => void) => void }).edit('champ-jjc', (s) => { s.plans.A.required = false; });
     opsStore().applyStoredFiles([file], []);
     expect(opsStore().sector('champ-jjc')!.plans.A.required).toBe(true);
+  });
+
+  it('treats a folder emptied in the Supabase dashboard as having no file', async () => {
+    opsStore().applyStoredFiles([stored()], []);
+    rpc.mockResolvedValueOnce({ data: [stored({ path: 'customer/plan-A/.emptyFolderPlaceholder' })] as never, error: null })
+      .mockResolvedValueOnce({ data: [] as never, error: null });
+    await syncStoredFiles();
+    expect(opsStore().sector('customer')!.plans.A.file).toBeUndefined();
+    expect(row('customer', 'A').done).toBe(false);
   });
 });
