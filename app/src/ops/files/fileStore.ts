@@ -38,11 +38,15 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
   });
 }
 
+/** Storage refused or failed to hand back a file; the message is Storage's own reason. */
+export class StorageReadError extends Error {}
+
 export async function readFile(file: FileRef): Promise<Blob | null> {
   if (file.id.startsWith('sb:')) {
     if (!supabase) return null;
     const { data, error } = await supabase.storage.from(BUCKET).download(storagePath(file.id));
-    return error ? null : data;
+    if (error) throw new StorageReadError(error.message || 'no reason given');
+    return data;
   }
   if (file.id.startsWith('sample:')) {
     const [, sectorId, key] = file.id.split(':');
