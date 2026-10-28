@@ -24,11 +24,17 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    active, so the app reads and saves sectors, people, tasks and check-offs in the database instead
    of each browser. Deactivated people and the public key see nothing. The app still decides what
    each role may change; step 5 moves those rules into the database.
-6. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+6. `06_lockdown.sql` — step 5, the lockdown. The database itself enforces each role: everyone
+   signed in ticks lines and steps and marks packets printed; the person responsible for a task
+   writes its delay note and marks it final (editors also move its deadline); editors write the
+   content of sectors they lead or own; admins do everything else. A row someone may not add or
+   delete is refused with a plain message; in a row they may only partly change, the database keeps
+   the original value of the rest. Supabase's own tools (SQL Editor, the invite function) aren't limited.
+7. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-7. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+8. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
 
 `checks/crew_files.sql` is a read-only check of what the newest crew login sees in floorplan storage.
