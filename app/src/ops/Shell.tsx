@@ -2,10 +2,12 @@ import { useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ROLE_LABEL } from '../auth/permissions';
 import { DS } from '../ds/bushido';
+import { Button } from '../ds/Button';
 import { Icon, iconName } from '../ds/Icon';
 import { useMe } from './access';
 import { useStoredFileSync } from './files/sync';
 import { activeSectors, dateLabel, initials } from './data/selectors';
+import { remoteData, useRemoteData } from './data/remote';
 import { useOps } from './data/store';
 import { LOAD_IN_FIRST_DAY, LOAD_IN_LABEL } from '../config';
 
@@ -36,6 +38,7 @@ const daysUntil = (iso: string) => Math.ceil((new Date(`${iso}T00:00:00`).getTim
 /** The console frame: Bushido header, the menu, and who is signed in with Sign out. */
 export function Shell() {
   const me = useMe();
+  const remote = useRemoteData();
   useStoredFileSync();
   const data = useOps();
   const [navOpen, setNavOpen] = useState(() => window.innerWidth > 900);
@@ -90,7 +93,21 @@ export function Shell() {
           </nav>
         )}
         <main className="ops-main">
-          <Outlet />
+          {remote.state === 'loading' && <p role="status" style={{ padding: 24 }}>Loading the team's data…</p>}
+          {remote.state === 'error' && (
+            <div className="notice" role="alert" style={{ margin: 24 }}>
+              <div className="notice__title">Can't load the team's data</div>
+              <div className="notice__text">{remote.error}</div>
+              <div><Button onClick={() => void remoteData()?.refresh()}>Try again</Button></div>
+            </div>
+          )}
+          {remote.state === 'ready' && remote.saveError && (
+            <div className="notice" role="alert" style={{ margin: '16px 24px 0' }}>
+              <div className="notice__title">Your last change wasn't saved</div>
+              <div className="notice__text">{remote.saveError} The page now shows what the database holds; make the change again if it's still needed.</div>
+            </div>
+          )}
+          {remote.state === 'ready' && <Outlet />}
         </main>
       </div>
     </div>

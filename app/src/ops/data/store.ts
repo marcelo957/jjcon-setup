@@ -8,9 +8,9 @@ import { addDays, splitKey } from './tasks';
 import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Sector, TaskState } from './types';
 
 /**
- * The console's data, kept in the browser until there is a real API. Every screen reads it
- * through `useOps()` and changes it only through these methods, so swapping in a server means
- * replacing this class, not the screens.
+ * The console's data. Every screen reads it through `useOps()` and changes it only through these
+ * methods. A copy is kept in the browser; with Supabase connected (see remote.ts) each change is also
+ * written to the database, and the database's version replaces the copy whenever it's refreshed.
  */
 
 // v3: written blocks carry no status; content, edits and final locks instead.
@@ -35,9 +35,15 @@ export interface SectorStructure {
 
 type Listener = () => void;
 
+/** Where changes go besides this browser: the database. */
+export interface ChangeSink { push(before: OpsData, after: OpsData): void }
+
 export class OpsStore {
   private data: OpsData;
   private listeners = new Set<Listener>();
+  private sink: ChangeSink | null = null;
+  /** The last word from Storage, applied again over each copy that comes from the database. */
+  private stored: { files: StoredFile[]; removedDemo: { sector_id: string; slot: string }[] } | null = null;
 
   constructor(private storage: Storage = localStorage, private now: () => Date = () => new Date()) {
     this.data = this.load();
@@ -65,7 +71,14 @@ export class OpsStore {
 
   get = () => this.data;
 
-  private commit(next: OpsData) {
+  /** Changes made from now on are also sent to `sink`. */
+  connect(sink: ChangeSink) {
+    this.sink = sink;
+  }
+
+  /** `local`: a change that only brings this copy in line with somewhere else, so nothing is sent. */
+  private commit(next: OpsData, local = false) {
+    if (this.sink && !local) this.sink.push(this.data, next);
     this.data = next;
     this.storage.setItem(KEY, JSON.stringify(next));
     this.listeners.forEach((fn) => fn());
@@ -79,6 +92,13 @@ export class OpsStore {
     fn(s);
     if (content) s.contentChangedAt = this.now().toISOString();
     this.commit(next);
+  }
+
+  /** The database's version replaces this browser's copy. */
+  replaceFromRemote(d: OpsData) {
+    const next = this.stored ? this.withStoredFiles(d, this.stored.files, this.stored.removedDemo, false) ?? d : d;
+    if (JSON.stringify(next) === JSON.stringify(this.data)) return;
+    this.commit(next, true);
   }
 
   reset() {
@@ -284,6 +304,7 @@ export class OpsStore {
 
   /** Attach an uploaded PDF to a plan: the plan is done from now on. Replacing keeps it done. */
   setPlanFile(id: string, key: PlanKey, file: FileRef) {
+    this.stored = null; // Storage's last word is out of date until the next check
     this.edit(id, (s) => {
       const slot = s.plans[key];
       slot.prevUploadedAt = slot.file?.uploadedAt;
@@ -293,10 +314,12 @@ export class OpsStore {
 
   /** Take a plan's PDF away: the plan is outstanding again, everywhere. */
   removePlanFile(id: string, key: PlanKey) {
+    this.stored = null; // Storage's last word is out of date until the next check
     this.edit(id, (s) => { delete s.plans[key].file; delete s.plans[key].prevUploadedAt; });
   }
 
   setCustomFile(id: string, blockId: string, file: FileRef) {
+    this.stored = null; // Storage's last word is out of date until the next check
     this.edit(id, (s) => {
       const c = s.custom.find((x) => x.id === blockId);
       if (c) c.file = file;
@@ -308,9 +331,17 @@ export class OpsStore {
    * plan's file; a plan whose stored file is gone loses it; a removed demo plan loses its drawing.
    */
   applyStoredFiles(stored: StoredFile[], removedDemo: { sector_id: string; slot: string }[]) {
+    this.stored = { files: stored, removedDemo };
+    const next = this.withStoredFiles(this.data, stored, removedDemo, true);
+    // Storage is the record of files: this copy follows it; nothing is written back.
+    if (next) this.commit(next, true);
+  }
+
+  /** `d` with Storage's files applied, or null if nothing changes. `stamp` marks changed sectors' packets out of date. */
+  private withStoredFiles(d: OpsData, stored: StoredFile[], removedDemo: { sector_id: string; slot: string }[], stamp: boolean): OpsData | null {
     const has = new Map(stored.map((f) => [`${f.sector_id}/${f.slot}`, f]));
     const gone = new Set(removedDemo.map((r) => `${r.sector_id}/${r.slot}`));
-    const next = structuredClone(this.data);
+    const next = structuredClone(d);
     let changed = false;
     const now = this.now().toISOString();
     next.sectors.forEach((s) => {
@@ -339,12 +370,13 @@ export class OpsStore {
         }
       });
       s.custom.filter((c) => c.kind === 'pdf').forEach((c) => settle(c.id, c.file, (f) => { if (f) c.file = f; else delete c.file; }));
-      if (touched) { s.contentChangedAt = now; changed = true; }
+      if (touched) { if (stamp) s.contentChangedAt = now; changed = true; }
     });
-    if (changed) this.commit(next);
+    return changed ? next : null;
   }
 
   removeCustomFile(id: string, blockId: string) {
+    this.stored = null; // Storage's last word is out of date until the next check
     this.edit(id, (s) => {
       const c = s.custom.find((x) => x.id === blockId);
       if (c) delete c.file;

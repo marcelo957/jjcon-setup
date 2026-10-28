@@ -20,12 +20,18 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    Anyone signed in and active can view; admins, and editors on the sectors they lead or own, can
    upload and delete. `stored_files()` tells the app what exists, so plan status follows Storage:
    a deleted file (even one deleted from the dashboard) makes that plan outstanding again.
-5. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+5. `05_data_access.sql` — the data switch. Opens the eight tables to people who are signed in and
+   active, so the app reads and saves sectors, people, tasks and check-offs in the database instead
+   of each browser. Deactivated people and the public key see nothing. The app still decides what
+   each role may change; step 5 moves those rules into the database.
+6. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-6. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+7. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
+
+`checks/crew_files.sql` is a read-only check of what the newest crew login sees in floorplan storage.
 
 All scripts run inside a transaction: if anything fails, nothing is left half-created.
 Running `01_tables.sql` a second time stops with "relation already exists" and changes nothing.
