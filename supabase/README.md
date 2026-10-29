@@ -42,6 +42,9 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
 `08_clear_demo_sectors.sql` deletes the 27 demo sectors and everything in them, keeping people, logins and
 any sector added since, to start the real event from empty. It can't be undone.
 
+`09_restore_demo_sectors.sql` undoes it: puts the demo sectors back as step 2 first loaded them (later
+changes to them can't be recovered), leaving everything that still exists as it is.
+
 `checks/crew_files.sql` is a read-only check of what the newest crew login sees in floorplan storage.
 
 All scripts run inside a transaction: if anything fails, nothing is left half-created.
