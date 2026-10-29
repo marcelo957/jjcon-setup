@@ -39,6 +39,9 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
 9. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
 
+`08_clear_demo_sectors.sql` deletes the 27 demo sectors and everything in them, keeping people, logins and
+any sector added since, to start the real event from empty. It can't be undone.
+
 `checks/crew_files.sql` is a read-only check of what the newest crew login sees in floorplan storage.
 
 All scripts run inside a transaction: if anything fails, nothing is left half-created.
