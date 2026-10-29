@@ -36,7 +36,11 @@ export const PERMISSIONS: { capability: Capability; label: string; grants: Recor
   {
     capability: 'checkOff',
     label: 'Check off material items and instruction steps',
-    grants: { admin: { scope: 'all' }, editor: { scope: 'all' }, crew: { scope: 'all' } }
+    grants: {
+      admin: { scope: 'all', label: 'All sectors' },
+      editor: { scope: 'led', label: 'Sectors they lead or own' },
+      crew: { scope: 'led', label: 'Sectors they lead or own' }
+    }
   },
   {
     capability: 'markFinal',

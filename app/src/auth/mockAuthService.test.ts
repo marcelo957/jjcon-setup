@@ -78,7 +78,10 @@ describe('session storage', () => {
 
 describe('can', () => {
   it('matches the roles table', () => {
-    expect(can('crew', 'checkOff')).toBe(true);
+    expect(can('crew', 'checkOff', { leadsSector: true })).toBe(true);
+    expect(can('crew', 'checkOff', { leadsSector: false })).toBe(false);
+    expect(can('editor', 'checkOff', { leadsSector: false })).toBe(false);
+    expect(can('admin', 'checkOff', { leadsSector: false })).toBe(true);
     expect(can('crew', 'changeDeadline')).toBe(false);
     expect(can('crew', 'markFinal', { isOwnTask: false })).toBe(false);
     expect(can('crew', 'markFinal', { isOwnTask: true })).toBe(true);

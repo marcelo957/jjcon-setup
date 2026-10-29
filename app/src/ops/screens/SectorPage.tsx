@@ -118,7 +118,7 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
     return { due: r?.due ?? s.day, late: !!r?.late, lateDays: r?.lateDays ?? 0, canFinal: r ? me.canMarkFinal(r.who) : false };
   };
   const pn = (id: string) => personName(people, id);
-  const props: CardProps = { s, editing, change, ownerName, canCheck: me.canCheckOff, meId: me.id, info, pn };
+  const props: CardProps = { s, editing, change, ownerName, canCheck: me.canCheckOff(s), meId: me.id, info, pn };
   const xref = s.xref ? opsStore().sector(s.xref.sectorId) : undefined;
   const packet = packetState(s);
 
