@@ -30,11 +30,13 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    content of sectors they lead or own; admins do everything else. A row someone may not add or
    delete is refused with a plain message; in a row they may only partly change, the database keeps
    the original value of the rest. Supabase's own tools (SQL Editor, the invite function) aren't limited.
-7. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+7. `07_checkoff_scope.sql` — ticks only on your own sectors: admins tick everywhere; editors and crew
+   only on sectors they lead or own. A tick anywhere else isn't saved.
+8. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-8. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+9. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
 
 `checks/crew_files.sql` is a read-only check of what the newest crew login sees in floorplan storage.

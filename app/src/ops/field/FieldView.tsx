@@ -188,9 +188,9 @@ function FieldSector({ s, data }: { s: Sector; data: OpsData }) {
       <div className="field-pad" role={tab ? 'tabpanel' : undefined}>
         {!tab && <FieldNotice n={{ title: 'Nothing to build from yet', text: `This sector has no floorplan, list or steps. Contact ${owner}.`, icon: 'circle-info' }} />}
         {tab === 'floorplan' && <FloorplanTab s={s} owner={owner} params={params} setParams={setParams} />}
-        {tab === 'materials' && <MaterialsTab s={s} owner={owner} canCheck={me.canCheckOff} />}
+        {tab === 'materials' && <MaterialsTab s={s} owner={owner} canCheck={me.canCheckOff(s)} />}
         {tab === 'info' && <InfoTab s={s} owner={owner} />}
-        {tab === 'steps' && <StepsTab s={s} owner={owner} canCheck={me.canCheckOff} />}
+        {tab === 'steps' && <StepsTab s={s} owner={owner} canCheck={me.canCheckOff(s)} />}
       </div>
     </>
   );

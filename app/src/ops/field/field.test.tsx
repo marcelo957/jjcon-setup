@@ -50,6 +50,17 @@ describe('Field view', () => {
     expect(box).toHaveAttribute('aria-checked', 'true');
   });
 
+  it("doesn't let crew tick lines on a sector they don't lead or own", async () => {
+    const s = opsStore().sector('goodie-booth')!;
+    expect([s.leadId, s.ownerId]).not.toContain('p-dandre');
+    const row = s.blocks.mainMat.rows.find((r) => !r.checked)!;
+    const user = await renderAs('crew', '/field/goodie-booth?tab=materials');
+    const box = await screen.findByRole('checkbox', { name: new RegExp(`^${row.item}, quantity`) });
+    await user.click(box);
+    expect(opsStore().sector('goodie-booth')!.blocks.mainMat.rows.find((r) => r.id === row.id)!.checked).toBe(false);
+    expect(box).toHaveAttribute('aria-checked', 'false');
+  });
+
   it('says so when instructions are empty, instead of showing a status', async () => {
     opsStore().unlockFinal('customer', 'instr', 'p-marcelo');
     opsStore().saveSector('customer', (x) => { x.blocks.instr.steps = []; });
