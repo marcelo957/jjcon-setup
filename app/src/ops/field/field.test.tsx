@@ -61,6 +61,21 @@ describe('Field view', () => {
     expect(box).toHaveAttribute('aria-checked', 'false');
   });
 
+  it('lets the lead set the build status, and only on their own sectors', async () => {
+    const user = await renderAs('crew', '/field/rooms');
+    const pick = await screen.findByRole('combobox', { name: 'Build status' });
+    await user.selectOptions(pick, 'progress');
+    expect(opsStore().sector('rooms')!.build).toBe('progress');
+    expect(pick).toHaveValue('progress');
+    expect(pick.closest('.build')).toHaveClass('build--progress');
+  });
+
+  it("shows the build status without a picker on someone else's sector", async () => {
+    await renderAs('crew', '/field/goodie-booth');
+    expect(await screen.findByRole('tab', { name: /Materials/i })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Build status' })).not.toBeInTheDocument();
+  });
+
   it('says so when instructions are empty, instead of showing a status', async () => {
     opsStore().unlockFinal('customer', 'instr', 'p-marcelo');
     opsStore().saveSector('customer', (x) => { x.blocks.instr.steps = []; });

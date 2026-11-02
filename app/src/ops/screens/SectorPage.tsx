@@ -9,7 +9,7 @@ import { dateLabel, otherItems, packetState, personName, planRoll, windowLabel }
 import { opsStore, useOps } from '../data/store';
 import { taskKey, taskRows, toIsoDay } from '../data/tasks';
 import type { PlanKey, Sector } from '../data/types';
-import { BuildTag, ContentChip, Segments, UploadChip } from '../ui/bits';
+import { BuildControl, ContentChip, Segments, UploadChip } from '../ui/bits';
 import { ArchiveDialog, DeleteDialog } from '../ui/SectorDialogs';
 import { CustomCard, FloorplanCard, InfoCard, LinkCard, MaterialCard, StepsCard, type CardProps } from './sectorCards';
 
@@ -141,7 +141,7 @@ function SectorView({ sector, people }: { sector: Sector; people: ReturnType<typ
           <div className="crumbs"><Link to="/sectors">Sectors</Link><span className="muted">/</span><span style={{ color: 'var(--text-primary)' }}>{groupName(s.group)}</span></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h1 className="page-head__title">{s.name}</h1>
-            <BuildTag status={s.build} />
+            <BuildControl status={s.build} canSet={me.canSetBuild(s)} onChange={(b) => opsStore().setBuild(s.id, b)} />
             {s.archived && <span className="badge badge--kept"><Icon fa="box-archive" size={9} />Archived</span>}
           </div>
           <div className="page-head__lead">{s.location}</div>
