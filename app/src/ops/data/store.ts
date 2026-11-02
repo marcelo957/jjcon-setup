@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
 import { addDays, splitKey } from './tasks';
-import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Sector, TaskState } from './types';
+import type { BlockKey, BuildStatus, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Sector, TaskState } from './types';
 
 /**
  * The console's data. Every screen reads it through `useOps()` and changes it only through these
@@ -227,6 +227,11 @@ export class OpsStore {
       delete m.final;
       m.unlocked = { by, at: this.now().toISOString() };
     }, false);
+  }
+
+  /** The physical work on site. Not content: the printed packet stays current. */
+  setBuild(id: string, status: BuildStatus) {
+    this.edit(id, (s) => { s.build = status; }, false);
   }
 
   archive(id: string, by: string, reason = 'Not running this year') {

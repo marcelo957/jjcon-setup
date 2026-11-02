@@ -12,7 +12,7 @@ import { activeSectors, personName, windowLabel } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import { dayDiff, toIsoDay } from '../data/tasks';
 import type { OpsData, Sector } from '../data/types';
-import { BuildTag, PageHead } from '../ui/bits';
+import { BuildControl, BuildTag, PageHead } from '../ui/bits';
 import { PhonePdf } from '../ui/PdfViewer';
 
 /** Where load-in stands today, for the phone's header. */
@@ -171,7 +171,8 @@ function FieldSector({ s, data }: { s: Sector; data: OpsData }) {
             <div className="overline" style={{ color: '#fff', opacity: 0.8 }}>{groupName(s.group)}</div>
             <h2 className="field-top__name">{s.name}</h2>
           </div>
-          <BuildTag status={s.build} style={{ background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', flex: '0 0 auto' }} />
+          <BuildControl status={s.build} canSet={me.canSetBuild(s)} onChange={(b) => opsStore().setBuild(s.id, b)}
+            style={{ background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', flex: '0 0 auto' }} />
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14, margin: '10px 0 12px', opacity: 0.92 }}>
           <span><Icon fa="user" size={12} style={{ opacity: 0.7 }} /> {personName(data.people, s.leadId)}</span>
