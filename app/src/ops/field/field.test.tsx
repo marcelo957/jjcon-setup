@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from '../../App';
@@ -10,6 +10,7 @@ import type { Role } from '../../auth/types';
 import { packetPages } from '../data/packet';
 import { activeSectors } from '../data/selectors';
 import { opsStore } from '../data/store';
+import { sectorStatus } from '../data/tasks';
 
 const PEOPLE: Record<Role, { personId: string; name: string; email: string }> = {
   admin: { personId: 'p-marcelo', name: 'Marcelo', email: 'marcelo@ibjjf.com' },
@@ -61,19 +62,23 @@ describe('Field view', () => {
     expect(box).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('lets the lead set the build status, and only on their own sectors', async () => {
+  it('shows the status worked out from the content, with no way to set it, and follows removals at once', async () => {
     const user = await renderAs('crew', '/field/rooms');
-    const pick = await screen.findByRole('combobox', { name: 'Build status' });
-    await user.selectOptions(pick, 'progress');
-    expect(opsStore().sector('rooms')!.build).toBe('progress');
-    expect(pick).toHaveValue('progress');
-    expect(pick.closest('.build')).toHaveClass('build--progress');
-  });
-
-  it("shows the build status without a picker on someone else's sector", async () => {
-    await renderAs('crew', '/field/goodie-booth');
+    const status = () => screen.getAllByText(/^(Not started|In progress|Complete)$/).find((el) => el.closest('.field-top'))!;
     expect(await screen.findByRole('tab', { name: /Materials/i })).toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Build status' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    const s = opsStore().sector('rooms')!;
+    const label = (st: string) => ({ none: 'Not started', progress: 'In progress', complete: 'Complete' } as Record<string, string>)[st];
+    expect(status()).toHaveTextContent(label(sectorStatus(s)));
+    // Empty every required item: Not started.
+    act(() => { (['mainMat', 'netMat', 'instr', 'install', 'info', 'link'] as const).forEach((k) => opsStore().unlockFinal('rooms', k, 'p-marcelo')); s.custom.forEach((c) => opsStore().unlockFinal('rooms', c.id, 'p-marcelo')); });
+    act(() => opsStore().saveSector('rooms', (x) => {
+      x.blocks.mainMat.rows = []; x.blocks.netMat.rows = []; x.blocks.instr.steps = []; x.blocks.install.steps = []; x.blocks.info.rows = [];
+      x.blocks.link.url = ''; Object.values(x.plans).forEach((p) => { delete p.file; }); x.custom.forEach((c) => { c.rows = []; c.steps = []; c.shots = []; delete c.file; c.url = ''; });
+    }));
+    expect(status()).toHaveTextContent('Not started');
+    expect(sectorStatus(opsStore().sector('rooms')!)).toBe('none');
+    void user;
   });
 
   it('says so when instructions are empty, instead of showing a status', async () => {

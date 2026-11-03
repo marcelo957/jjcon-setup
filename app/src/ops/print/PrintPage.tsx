@@ -6,6 +6,7 @@ import { Button } from '../../ds/Button';
 import { Icon } from '../../ds/Icon';
 import { BUILD, groupName } from '../data/meta';
 import { packetPages, type PacketPage } from '../data/packet';
+import { sectorStatus } from '../data/tasks';
 import { activeSectors, dateLabel, packetState, personName, sizeLabel, windowLabel } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { OpsData, Sector } from '../data/types';
@@ -190,7 +191,7 @@ const overline = { font: 'var(--ib-text-overline)', letterSpacing: 1, textTransf
 
 /** One Letter page of a packet, at 96 dpi. Black on white only, so it copies cleanly. */
 function Sheet({ s, data, page, n, total, onReady }: { s: Sector; data: OpsData; page: PacketPage; n: number; total: number; onReady?: () => void }) {
-  const b = BUILD[s.build];
+  const b = BUILD[sectorStatus(s)];
   return (
     <div className="packet-sheet" style={{ width: PAGE_W, height: PAGE_H, background: '#fff', color: ink, padding: '56px 56px 48px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, borderBottom: `3px solid ${ink}`, paddingBottom: 10 }}>
@@ -207,7 +208,7 @@ function Sheet({ s, data, page, n, total, onReady }: { s: Sector; data: OpsData;
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', padding: '8px 0 14px', borderBottom: rule, fontSize: 14 }}>
         <span>Category: <strong>{groupName(s.group)}</strong></span>
         <span>Window: <strong className="mono">{windowLabel(s)}</strong></span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>Build status: <Icon fa={b.icon} size={14} /><strong>{b.label}</strong></span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>Status: <Icon fa={b.icon} size={14} /><strong>{b.label}</strong></span>
         <span style={{ marginLeft: 'auto' }}>Sheet: <strong>{page.sheet}</strong></span>
       </div>
 

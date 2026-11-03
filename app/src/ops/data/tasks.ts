@@ -1,7 +1,7 @@
 import { blockState, customState, type ContentKey, type ContentState } from './content';
 import { customKind, PLAN_KINDS } from './meta';
 import { activeSectors, dayLabel } from './selectors';
-import type { FileRef, OpsData, PlanKey, Sector, Stamp, TaskState } from './types';
+import type { BuildStatus, FileRef, OpsData, PlanKey, Sector, Stamp, TaskState } from './types';
 
 export type TaskType = 'floorplan' | 'material' | 'instructions' | 'other';
 export const TASK_TYPES: { id: TaskType; label: string }[] = [
@@ -91,6 +91,17 @@ export function sectorItems(s: Sector) {
     out.push(state ? { ...base, kind: 'content', ready: !state.empty, state } : { ...base, kind: 'upload', ready: !!c.file, file: c.file ?? null });
   });
   return out;
+}
+
+/**
+ * A sector's status, worked out from what's filled in right now; nobody sets it. Only the items the
+ * sector requires count: Not started with none of them filled in (or none required), In progress with
+ * some, Complete with all. Removing content moves it back down.
+ */
+export function sectorStatus(s: Sector): BuildStatus {
+  const items = sectorItems(s);
+  const filled = items.filter((i) => i.ready).length;
+  return filled === 0 ? 'none' : filled === items.length ? 'complete' : 'progress';
 }
 
 /** One row per item every active sector requires. */

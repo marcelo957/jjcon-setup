@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../../ds/Icon';
-import { BUILD, BUILD_ORDER } from '../data/meta';
+import { BUILD } from '../data/meta';
 import type { BuildStatus } from '../data/types';
 
 /**
@@ -26,22 +26,6 @@ export function ContentChip({ summary, late, final, size, onClick, title }: {
 export function BuildTag({ status, style }: { status: BuildStatus; style?: React.CSSProperties }) {
   const b = BUILD[status];
   return <span className={`build build--${status}`} style={style}><Icon fa={b.icon} size={9} />{b.label}</span>;
-}
-
-/** The build status tag; for someone who may change it, the tag opens a list of the three statuses. */
-export function BuildControl({ status, canSet, onChange, style }: {
-  status: BuildStatus; canSet: boolean; onChange: (s: BuildStatus) => void; style?: React.CSSProperties;
-}) {
-  if (!canSet) return <BuildTag status={status} style={style} />;
-  const b = BUILD[status];
-  return (
-    <span className={`build build--${status} build--pick`} style={style}>
-      <Icon fa={b.icon} size={9} />{b.label}<Icon fa="angle-down" size={10} />
-      <select aria-label="Build status" value={status} onChange={(e) => onChange(e.target.value as BuildStatus)}>
-        {BUILD_ORDER.map((k) => <option key={k} value={k}>{BUILD[k].label}</option>)}
-      </select>
-    </span>
-  );
 }
 
 /**

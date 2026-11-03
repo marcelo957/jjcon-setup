@@ -1,4 +1,4 @@
-/** Build status: the physical work on site. */
+/** A sector's status, worked out from its required items (sectorStatus in tasks.ts); never stored. */
 export type BuildStatus = 'none' | 'progress' | 'complete';
 
 /** Organisational only: where a sector is listed. It never decides what blocks a sector has. */
@@ -119,7 +119,6 @@ export interface Sector {
   day: string;
   from: string;
   to: string;
-  build: BuildStatus;
   /** Staff-type sectors that genuinely need no floorplan: shown as "—" instead of "Not set". */
   noFloorplans?: boolean;
   plans: Record<PlanKey, PlanSlot>;
