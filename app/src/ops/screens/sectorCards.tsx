@@ -185,7 +185,8 @@ export function FloorplanCard({ s, editing, change, ownerName, plan, setPlan, st
           action={canEdit && !s.noFloorplans ? <Button size="small" variant="neutral" outlined icon="pen" onClick={startEdit}>Choose plans</Button> : undefined} />
       )}
       {pick && slot && pick.required && (slot.file ? (
-        <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} view={view ?? undefined} onView={setView} />
+        <PdfViewer file={slot.file} prevUploadedAt={slot.prevUploadedAt} view={view ?? undefined} onView={setView}
+          onRotate={(r) => opsStore().setFileRotation(s.id, `plan:${pick.key}`, r)} />
       ) : !editing && (
         <Notice big icon="file-pdf" title={`No PDF uploaded · ${pick.name}`} text={`Owner ${ownerName} has to upload this plan before load-in.`}
           action={canEdit ? <Button size="small" variant="neutral" outlined icon="upload" onClick={startEdit}>Upload PDF</Button> : undefined} />
@@ -537,7 +538,7 @@ export function CustomCard({ s, c, editing: editMode, change, ownerName, canChec
       {c.kind === 'pdf' && (
         <>
           {editMode && <UploadRow name={c.name} file={c.file} meId={meId} where={{ sectorId: s.id, slot: c.id }} onFile={(f) => opsStore().setCustomFile(s.id, c.id, f)} onRemove={() => opsStore().removeCustomFile(s.id, c.id)} />}
-          {!editMode && c.file && <PdfViewer file={c.file} />}
+          {!editMode && c.file && <PdfViewer file={c.file} onRotate={(r) => opsStore().setFileRotation(s.id, c.id, r)} />}
           {!editMode && !c.file && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--border-subtle)', borderLeft: '6px solid var(--feedback-warning-accent)', borderRadius: 8, background: 'var(--color-neutral-surface-50)' }}>
               <Icon fa="file-circle-exclamation" size={24} style={{ color: 'var(--feedback-warning-accent)' }} />

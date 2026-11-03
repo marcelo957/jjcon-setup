@@ -28,7 +28,8 @@ const n = (v: string | number | boolean | null | undefined) => (v === undefined 
 function fileCols(f: FileRef | undefined, prev?: string): Row {
   return {
     file_path: n(f?.id), file_name: n(f?.name), file_size: n(f?.size), file_pages: n(f?.pages),
-    file_uploaded_at: n(f?.uploadedAt), file_uploaded_by: n(f?.uploadedBy ?? null), file_replaced_uploaded_at: n(prev)
+    file_uploaded_at: n(f?.uploadedAt), file_uploaded_by: n(f?.uploadedBy ?? null), file_replaced_uploaded_at: n(prev),
+    file_rotation: f?.rotation ?? 0
   };
 }
 function metaCols(m: ContentMeta): Row {
@@ -115,6 +116,8 @@ function file(b: Row): FileRef | undefined {
   if (!str(b.file_path)) return undefined;
   const f: FileRef = { id: b.file_path as string, name: str(b.file_name) ?? '', size: Number(b.file_size ?? 0), pages: Number(b.file_pages ?? 1), uploadedAt: ts(b.file_uploaded_at) ?? '' };
   if (str(b.file_uploaded_by)) f.uploadedBy = b.file_uploaded_by as string;
+  const r = Number(b.file_rotation ?? 0);
+  if (r === 90 || r === 180 || r === 270) f.rotation = r;
   return f;
 }
 

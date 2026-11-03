@@ -9,7 +9,7 @@ const ALIAS: Record<string, string> = {
   'ellipsis-vertical': 'ellipsis-v', 'box-archive': 'archive', 'cloud-arrow-up': 'cloud-upload-alt', 'table-list': 'th-list',
   'arrow-up-right-from-square': 'external-link-alt', 'file-circle-exclamation': 'file', 'magnifying-glass': 'search',
   'triangle-exclamation': 'exclamation-triangle', display: 'desktop', 'angles-left': 'angle-double-left',
-  'angles-right': 'angle-double-right', 'floppy-disk': 'save', 'up-right-and-down-left-from-center': 'expand-alt', 'rotate-left': 'undo-alt',
+  'angles-right': 'angle-double-right', 'floppy-disk': 'save', 'up-right-and-down-left-from-center': 'expand-alt', 'rotate-left': 'undo-alt', 'rotate-right': 'redo-alt',
   'circle-dot': 'dot-circle', 'person-digging': 'hard-hat', gears: 'cogs', 'boxes-stacked': 'boxes', 'screwdriver-wrench': 'tools',
   'file-pen': 'file-signature', 'circle-minus': 'minus-circle', 'up-right-from-square': 'external-link-alt'
 };

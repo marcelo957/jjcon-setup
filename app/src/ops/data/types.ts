@@ -33,7 +33,11 @@ export interface FileRef {
   pages: number;
   uploadedAt: string;
   uploadedBy?: string | null;
+  /** Degrees clockwise the plan is turned when shown. Display only: the stored file is untouched. */
+  rotation?: Rotation;
 }
+
+export type Rotation = 0 | 90 | 180 | 270;
 
 /** A required plan is done exactly when its PDF is uploaded; there is no status to set. */
 export interface PlanSlot {
