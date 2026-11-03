@@ -214,7 +214,7 @@ function FloorplanTab({ s, owner, params, setParams }: { s: Sector; owner: strin
         </div>
       )}
       <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 16, letterSpacing: '.04em', margin: '0 2px 8px' }}>{pick.name}</div>
-      {pick.file ? <PhonePdf file={pick.file} /> : <FieldNotice n={pick.notice!} warn />}
+      {pick.file ? <PhonePdf file={pick.file} onRotate={(r) => opsStore().setFileRotation(s.id, `plan:${pick.key}`, r)} /> : <FieldNotice n={pick.notice!} warn />}
     </>
   );
 }
@@ -299,7 +299,7 @@ function InfoTab({ s, owner }: { s: Sector; owner: string }) {
               ))}
             </div>
           )}
-          {r.file && <PhonePdf file={r.file} />}
+          {r.file && <PhonePdf file={r.file} onRotate={(rot) => opsStore().setFileRotation(s.id, r.key, rot)} />}
         </div>
       ))}
     </div>

@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
 import { addDays, splitKey } from './tasks';
-import type { BlockKey, BuildStatus, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Sector, TaskState } from './types';
+import type { BlockKey, BuildStatus, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Rotation, Sector, TaskState } from './types';
 
 /**
  * The console's data. Every screen reads it through `useOps()` and changes it only through these
@@ -378,6 +378,18 @@ export class OpsStore {
       if (touched) { if (stamp) s.contentChangedAt = now; changed = true; }
     });
     return changed ? next : null;
+  }
+
+  /**
+   * Turn how a plan or PDF block is shown, for everyone who opens it. `slot` is 'plan:G' or a custom
+   * block id. Not a content change: the file and its packet stay as they are.
+   */
+  setFileRotation(id: string, slot: string, rotation: Rotation) {
+    this.edit(id, (s) => {
+      const f = slot.startsWith('plan:') ? s.plans[slot.slice(5) as PlanKey]?.file : s.custom.find((c) => c.id === slot)?.file;
+      if (!f) return;
+      if (rotation) f.rotation = rotation; else delete f.rotation;
+    }, false);
   }
 
   removeCustomFile(id: string, blockId: string) {

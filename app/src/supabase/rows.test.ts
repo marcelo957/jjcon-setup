@@ -22,6 +22,15 @@ describe('app data as database rows', () => {
     expect(norm(fromRows(t))).toEqual(norm(seed()));
   });
 
+  it('keeps a plan\'s rotation, and writes only that block when it turns', () => {
+    const before = seed();
+    const after = structuredClone(before);
+    after.sectors.find((x) => x.id === 'customer')!.plans.A.file!.rotation = 270;
+    expect(fromRows(toRows(after)).sectors.find((x) => x.id === 'customer')!.plans.A.file!.rotation).toBe(270);
+    const diff = diffRows(toRows(before), toRows(after));
+    expect(diff.upsert).toEqual({ content_blocks: [expect.objectContaining({ id: 'customer:plan:A', file_rotation: 270 })] });
+  });
+
   it('writes only the rows that changed, and deletes the ones that went', () => {
     const before = seed();
     const after = structuredClone(before);

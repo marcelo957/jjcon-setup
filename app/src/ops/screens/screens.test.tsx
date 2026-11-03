@@ -208,6 +208,22 @@ describe('Sector page', () => {
     expect(screen.getByText('Download PDF')).toBeInTheDocument();
   });
 
+  it('turns a plan a quarter clockwise per click, for everyone, without touching the file', async () => {
+    const user = await renderAs('crew', '/sectors/customer');
+    const plan = () => opsStore().sector('customer')!.plans.A.file!;
+    const id = plan().id;
+    await user.click(screen.getAllByRole('tab').find((t) => t.textContent?.includes('Tables'))!);
+    const turns = [];
+    for (let i = 0; i < 4; i++) {
+      await user.click(screen.getByRole('button', { name: /^Rotate clockwise/ }));
+      turns.push(plan().rotation ?? 0);
+    }
+    expect(turns).toEqual([90, 180, 270, 0]);
+    expect(plan().id).toBe(id);
+    expect(screen.getByRole('button', { name: '100%' })).toBeInTheDocument();
+    expect(screen.getByText('Download PDF')).toBeInTheDocument();
+  });
+
   it('shows the missing-PDF notice for a required plan with no file', async () => {
     await renderAs('admin', '/sectors/store?plan=D');
     expect(screen.getByText('No PDF uploaded · Power Drops & Extension Cords')).toBeInTheDocument();

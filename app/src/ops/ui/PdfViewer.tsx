@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { Icon } from '../../ds/Icon';
 import { dateLabel, sizeLabel } from '../data/selectors';
-import type { FileRef } from '../data/types';
+import type { FileRef, Rotation } from '../data/types';
 import { readFile, StorageReadError } from '../files/fileStore';
 import { closePdf, openPdf } from '../files/pdf';
 
@@ -33,9 +33,15 @@ export function usePdf(file: FileRef | undefined) {
   return { doc, blob, error };
 }
 
-/** Renders one page into a canvas at `scale` CSS pixels per PDF point, sharp on high-density screens. */
-function PageCanvas({ doc, page, scale, onSize, onDone, minDpr = 1 }: {
-  doc: PDFDocumentProxy; page: number; scale: number; onSize?: (w: number, h: number) => void; onDone?: () => void; minDpr?: number;
+/** The next quarter turn clockwise: 0 → 90 → 180 → 270 → 0. */
+export const nextRotation = (r: Rotation = 0): Rotation => ((r + 90) % 360) as Rotation;
+
+/**
+ * Renders one page into a canvas at `scale` CSS pixels per PDF point, sharp on high-density screens,
+ * turned `rotation` degrees clockwise on top of the page's own rotation. `onSize` reports the turned size.
+ */
+function PageCanvas({ doc, page, scale, rotation = 0, onSize, onDone, minDpr = 1 }: {
+  doc: PDFDocumentProxy; page: number; scale: number; rotation?: Rotation; onSize?: (w: number, h: number) => void; onDone?: () => void; minDpr?: number;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -43,10 +49,11 @@ function PageCanvas({ doc, page, scale, onSize, onDone, minDpr = 1 }: {
     let live = true;
     doc.getPage(page).then((p) => {
       if (!live || !ref.current) return;
-      const base = p.getViewport({ scale: 1 });
+      const turn = (p.rotate + rotation) % 360;
+      const base = p.getViewport({ scale: 1, rotation: turn });
       onSize?.(base.width, base.height);
       const dpr = Math.max(minDpr, window.devicePixelRatio || 1);
-      const vp = p.getViewport({ scale: scale * dpr });
+      const vp = p.getViewport({ scale: scale * dpr, rotation: turn });
       const c = ref.current;
       c.width = Math.floor(vp.width);
       c.height = Math.floor(vp.height);
@@ -56,7 +63,7 @@ function PageCanvas({ doc, page, scale, onSize, onDone, minDpr = 1 }: {
       task.promise.then(() => { if (live) onDone?.(); }, () => {});
     });
     return () => { live = false; task?.cancel(); };
-  }, [doc, page, scale]);
+  }, [doc, page, scale, rotation]);
   return <canvas ref={ref} role="img" aria-label={`Page ${page}`} style={{ display: 'block', background: '#fff', boxShadow: 'var(--ib-elevation-1)' }} />;
 }
 
@@ -74,9 +81,13 @@ export const defaultPdfView = (): PdfView =>
 /**
  * The floorplan card's viewer. Opens at 100% (true size) at the top of the page; scrolls and
  * drags to pan when the page is bigger than the card; presets for 100%, fit to width and fit
- * to page. Pass `view`/`onView` to keep one zoom across several plans.
+ * to page. Pass `view`/`onView` to keep one zoom across several plans. `onRotate` saves a quarter
+ * turn with the file, so everyone sees the plan upright; the zoom setting carries over to the turned page.
  */
-export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView }: { file: FileRef; prevUploadedAt?: string; view?: PdfView; onView?: (v: PdfView) => void }) {
+export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView, onRotate }: {
+  file: FileRef; prevUploadedAt?: string; view?: PdfView; onView?: (v: PdfView) => void; onRotate?: (r: Rotation) => void;
+}) {
+  const rotation = file.rotation ?? 0;
   const { doc, blob, error } = usePdf(file);
   const [page, setPage] = useState(1);
   const [ownView, setOwnView] = useState<PdfView>(defaultPdfView);
@@ -90,8 +101,8 @@ export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView }: { fi
   const [href, setHref] = useState<string | null>(null);
 
   useEffect(() => { setPage(1); }, [file.id]);
-  // Every plan, and every page, opens at its top-left corner.
-  useEffect(() => { const el = boxRef.current; if (el) { el.scrollTop = 0; el.scrollLeft = 0; } }, [file.id, page]);
+  // Every plan, every page and every turn opens at its top-left corner.
+  useEffect(() => { const el = boxRef.current; if (el) { el.scrollTop = 0; el.scrollLeft = 0; } }, [file.id, page, rotation]);
   useEffect(() => {
     if (!blob) return;
     const u = URL.createObjectURL(blob);
@@ -142,6 +153,10 @@ export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView }: { fi
           <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom out" onClick={() => step(-1)}><Icon fa="minus" size={14} /></button>
           <span className="mono" style={{ fontSize: 13, minWidth: 48, textAlign: 'center' }} aria-live="polite" aria-label={`Zoom ${Math.round(zoom * 100)}%`}>{Math.round(zoom * 100)}%</span>
           <button type="button" className="icon-btn icon-btn--30" aria-label="Zoom in" onClick={() => step(1)}><Icon fa="plus" size={14} /></button>
+          {onRotate && (
+            <button type="button" className="icon-btn icon-btn--30" aria-label={`Rotate clockwise (now ${rotation}°)`} title="Rotate 90° clockwise, for everyone who opens this plan"
+              onClick={() => onRotate(nextRotation(rotation))}><Icon fa="rotate-right" size={14} /></button>
+          )}
           <span role="group" aria-label="Zoom presets" style={{ display: 'inline-flex', border: '1px solid var(--border-divider)', borderRadius: 4, overflow: 'hidden' }}>
             {preset('100%', { mode: 'zoom', zoom: 1 }, view.mode === 'zoom' && view.zoom === 1)}
             {preset('Fit width', { mode: 'width' }, view.mode === 'width')}
@@ -176,7 +191,7 @@ export function PdfViewer({ file, prevUploadedAt, view: viewProp, onView }: { fi
         {doc && (
           // Top-aligned; centred across while it's narrower than the card, panned when wider.
           <div style={{ width: 'max-content', margin: '0 auto', padding: PAD }}>
-            <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} onSize={(w, h) => { if (w !== pageSize.w || h !== pageSize.h) setPageSize({ w, h }); }} />
+            <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} rotation={rotation} onSize={(w, h) => { if (w !== pageSize.w || h !== pageSize.h) setPageSize({ w, h }); }} />
           </div>
         )}
       </div>
@@ -193,7 +208,7 @@ export function PdfThumb({ file }: { file?: FileRef }) {
   const { doc } = usePdf(file);
   return (
     <div style={{ flex: '0 0 96px', height: 68, border: '1px solid var(--border-divider)', background: 'var(--color-neutral-white)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {file && doc ? <PageCanvas doc={doc} page={1} scale={0.105} /> : (
+      {file && doc ? <PageCanvas doc={doc} page={1} scale={0.105} rotation={file.rotation} /> : (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-neutral-surface-100)', color: 'var(--color-neutral-gray-300)' }}>
           <Icon fa="file-pdf" size={22} />
         </div>
@@ -204,10 +219,11 @@ export function PdfThumb({ file }: { file?: FileRef }) {
 
 /**
  * The phone's floorplan: a fixed-height pane the lead scrolls and pinches, with large
- * zoom and page buttons. Opens fitted to the pane's width.
+ * zoom and page buttons. Opens fitted to the pane's width. `onRotate` turns it for everyone, as on desktop.
  */
-export function PhonePdf({ file }: { file: FileRef }) {
+export function PhonePdf({ file, onRotate }: { file: FileRef; onRotate?: (r: Rotation) => void }) {
   const { doc, error } = usePdf(file);
+  const rotation = file.rotation ?? 0;
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState<number | null>(null);
   const [w, setW] = useState(0);
@@ -222,6 +238,7 @@ export function PhonePdf({ file }: { file: FileRef }) {
     return () => ro.disconnect();
   }, []);
   useEffect(() => { setPage(1); setZoom(null); }, [file.id]);
+  useEffect(() => { const el = boxRef.current; if (el) { el.scrollTop = 0; el.scrollLeft = 0; } }, [file.id, page, rotation]);
   const fit = w ? Math.max(0.2, (w - 24) / pageSize.w) : 0.38;
   const scale = zoom ?? fit;
   const pages = doc?.numPages ?? file.pages;
@@ -246,7 +263,7 @@ export function PhonePdf({ file }: { file: FileRef }) {
         {!error && !doc && <div className="muted" style={{ padding: 12, fontSize: 14 }}>Loading the floorplan…</div>}
         {doc && (
           <div style={{ width: 'max-content', padding: 12 }}>
-            <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} onSize={(pw, ph) => { if (pw !== pageSize.w || ph !== pageSize.h) setPageSize({ w: pw, h: ph }); }} />
+            <PageCanvas doc={doc} page={Math.min(page, pages)} scale={scale} rotation={rotation} onSize={(pw, ph) => { if (pw !== pageSize.w || ph !== pageSize.h) setPageSize({ w: pw, h: ph }); }} />
           </div>
         )}
       </div>
@@ -255,6 +272,9 @@ export function PhonePdf({ file }: { file: FileRef }) {
         <span className="mono" style={{ fontSize: 15, minWidth: 56, textAlign: 'center' }} aria-live="polite">{Math.round(scale * 100)}%</span>
         <button type="button" style={big} aria-label="Zoom in" onClick={() => setZoom(Math.min(3, +(scale + 0.2).toFixed(2)))}><Icon fa="plus" size={14} /></button>
         <button type="button" onClick={() => setZoom(null)} style={{ ...big, width: 'auto', padding: '0 12px', color: 'var(--brand-primary)', fontFamily: 'Inter, sans-serif', fontSize: 14 }}>Fit</button>
+        {onRotate && (
+          <button type="button" style={big} aria-label={`Rotate clockwise (now ${rotation}°)`} onClick={() => onRotate(nextRotation(rotation))}><Icon fa="rotate-right" size={14} /></button>
+        )}
         <span className="muted" style={{ fontSize: 13, marginLeft: 'auto', textAlign: 'right' }}>Pinch to zoom</span>
       </div>
     </div>
