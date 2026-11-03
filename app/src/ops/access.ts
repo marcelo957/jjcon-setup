@@ -14,7 +14,6 @@ export function useMe() {
     canEditSector: (s: Sector) => can(role, 'editSectorContent', { leadsSector: leads(s) }),
     /** Tick material lines, checklist lines and steps: admins anywhere, others on sectors they lead or own. */
     canCheckOff: (s: Sector) => can(role, 'checkOff', { leadsSector: leads(s) }),
-    canSetBuild: (s: Sector) => can(role, 'setBuildStatus', { leadsSector: leads(s) }),
     /** Mark a written block final, or unlock it: the responsible person, or an admin. */
     canMarkFinal: (who: string) => can(role, 'markFinal', { isOwnTask: who === session.personId }),
     canSetDeadline: (who: string) => can(role, 'changeDeadline', { isOwnTask: who === session.personId }),

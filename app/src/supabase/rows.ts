@@ -55,7 +55,7 @@ export function toRows(d: OpsData): Tables {
   d.sectors.forEach((s) => {
     t.sectors.push({
       id: s.id, name: s.name, sector_group: s.group, lead_id: n(s.leadId), owner_id: n(s.ownerId), location: s.location ?? '',
-      build_day: s.day, window_from: s.from, window_to: s.to, build_status: s.build, no_floorplans: !!s.noFloorplans,
+      build_day: s.day, window_from: s.from, window_to: s.to, no_floorplans: !!s.noFloorplans,
       archived_at: n(s.archived?.at), archived_by: n(s.archived?.by), archive_reason: n(s.archived?.reason),
       related_sector_id: n(s.xref?.sectorId), related_text: n(s.xref?.text), related_tail: n(s.xref?.tail),
       packet_printed_at: n(s.packetPrintedAt), content_changed_at: n(s.contentChangedAt)
@@ -174,7 +174,6 @@ export function fromRows(t: Tables): OpsData {
     const sector: Sector = {
       id, name: r.name as string, group: r.sector_group as Sector['group'], leadId: str(r.lead_id) ?? '', ownerId: str(r.owner_id) ?? '',
       location: str(r.location) ?? '', day: String(r.build_day).slice(0, 10), from: String(r.window_from).slice(0, 5), to: String(r.window_to).slice(0, 5),
-      build: r.build_status as Sector['build'],
       plans,
       blocks: {
         mainMat: { on: on('mainMat'), ...bm('mainMat'), rows: itemsOf(bid('mainMat')).map(mat) },

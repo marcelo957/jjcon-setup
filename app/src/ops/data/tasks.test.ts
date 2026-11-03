@@ -1,5 +1,5 @@
 import { OpsStore } from './store';
-import { addDays, dayDiff, taskRows, toIsoDay } from './tasks';
+import { addDays, dayDiff, sectorStatus, taskRows, toIsoDay } from './tasks';
 
 const now = new Date('2026-10-12T15:00:00');
 const today = toIsoDay(now);
@@ -94,4 +94,61 @@ describe('task actions', () => {
 it('counts calendar days', () => {
   expect(dayDiff('2026-10-12', '2026-10-15')).toBe(3);
   expect(addDays('2026-10-30', 3)).toBe('2026-11-02');
+});
+
+describe('sector status', () => {
+  // Podium Jiu-Jitsu Con requires plans G, A and C, the main material list and instructions.
+  const empty = () => {
+    const s = structuredClone(store().sector('pod-jjc')!);
+    Object.values(s.plans).forEach((p) => { delete p.file; });
+    s.blocks.mainMat.rows = [];
+    s.blocks.instr.steps = [];
+    return s;
+  };
+  const file = { id: 'f-1', name: 'plan.pdf', size: 1, pages: 1, uploadedAt: '2026-10-12T00:00:00.000Z' };
+  const fill = (s: ReturnType<typeof empty>) => {
+    (['G', 'A', 'C'] as const).forEach((k) => { s.plans[k].file = { ...file }; });
+    s.blocks.mainMat.rows = [{ id: 'r1', item: 'Table', qty: 1, checked: false }];
+    s.blocks.instr.steps = [{ id: 's1', text: 'Build it', done: false }];
+    return s;
+  };
+
+  it('is Not started with nothing filled in, In progress with some, Complete with every required item', () => {
+    const s = empty();
+    expect(sectorStatus(s)).toBe('none');
+    s.plans.G.file = { ...file };
+    expect(sectorStatus(s)).toBe('progress');
+    fill(s);
+    expect(sectorStatus(s)).toBe('complete');
+  });
+
+  it('goes back down as soon as content is removed', () => {
+    const s = fill(empty());
+    delete s.plans.A.file;
+    expect(sectorStatus(s)).toBe('progress');
+    s.blocks.instr.steps = [];
+    (['G', 'C'] as const).forEach((k) => { delete s.plans[k].file; });
+    expect(sectorStatus(s)).toBe('progress');
+    s.blocks.mainMat.rows = [];
+    expect(sectorStatus(s)).toBe('none');
+  });
+
+  it('ignores blocks and plans the sector does not require', () => {
+    const s = fill(empty());
+    expect(s.plans.B.required).toBe(false);
+    expect(s.blocks.netMat.on).toBe(false);
+    expect(sectorStatus(s)).toBe('complete');
+    const other = empty();
+    other.blocks.netMat.rows = [{ id: 'n1', item: 'Switch', qty: 1, checked: false }];
+    other.plans.B.file = { ...file };
+    expect(sectorStatus(other)).toBe('none');
+  });
+
+  it('is Not started for a sector that requires nothing', () => {
+    const s = fill(empty());
+    Object.values(s.plans).forEach((p) => { p.required = false; });
+    (['mainMat', 'netMat', 'instr', 'install', 'info', 'link'] as const).forEach((k) => { s.blocks[k].on = false; });
+    s.custom = [];
+    expect(sectorStatus(s)).toBe('none');
+  });
 });

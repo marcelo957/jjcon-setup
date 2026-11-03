@@ -10,9 +10,9 @@ import {
 } from '../data/packet';
 import { activeSectors, personName, windowLabel } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
-import { dayDiff, toIsoDay } from '../data/tasks';
+import { dayDiff, sectorStatus, toIsoDay } from '../data/tasks';
 import type { OpsData, Sector } from '../data/types';
-import { BuildControl, BuildTag, PageHead } from '../ui/bits';
+import { BuildTag, PageHead } from '../ui/bits';
 import { PhonePdf } from '../ui/PdfViewer';
 
 /** Where load-in stands today, for the phone's header. */
@@ -49,7 +49,7 @@ export function FieldView() {
           <section className="card card--pad" aria-label="What the phone shows">
             <h2 className="card__title" style={{ margin: '0 0 8px', fontWeight: 400 }}>What the phone shows</h2>
             <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: '22px' }}>
-              Everything written or uploaded for the sector, as soon as it exists, and the <strong>build status</strong> of the physical work. Printed packets mark anything not yet final.
+              Everything written or uploaded for the sector, as soon as it exists, and its <strong>status</strong>: how much of what it requires is filled in. Printed packets mark anything not yet final.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {BUILD_ORDER.map((k) => (
@@ -128,10 +128,10 @@ function SectorCard({ s, data }: { s: Sector; data: OpsData }) {
   const prog = fieldProgress(s, owner);
   const main = s.blocks.mainMat;
   return (
-    <Link to={`/field/${s.id}`} className="field-sector" style={{ borderLeftColor: BUILD[s.build].accent }}>
+    <Link to={`/field/${s.id}`} className="field-sector" style={{ borderLeftColor: BUILD[sectorStatus(s)].accent }}>
       <span style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
         <span className="field-sector__name">{s.name}</span>
-        <BuildTag status={s.build} style={{ marginLeft: 'auto', flex: '0 0 auto' }} />
+        <BuildTag status={sectorStatus(s)} style={{ marginLeft: 'auto', flex: '0 0 auto' }} />
       </span>
       <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 14, color: 'var(--color-neutral-gray-300)', marginTop: 6 }}>
         <Icon fa="user" size={11} style={{ color: 'var(--icon-tertiary)' }} />{personName(data.people, s.leadId)}
@@ -171,8 +171,7 @@ function FieldSector({ s, data }: { s: Sector; data: OpsData }) {
             <div className="overline" style={{ color: '#fff', opacity: 0.8 }}>{groupName(s.group)}</div>
             <h2 className="field-top__name">{s.name}</h2>
           </div>
-          <BuildControl status={s.build} canSet={me.canSetBuild(s)} onChange={(b) => opsStore().setBuild(s.id, b)}
-            style={{ background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', flex: '0 0 auto' }} />
+          <BuildTag status={sectorStatus(s)} style={{ background: 'var(--color-neutral-white)', color: 'var(--brand-primary)', flex: '0 0 auto' }} />
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14, margin: '10px 0 12px', opacity: 0.92 }}>
           <span><Icon fa="user" size={12} style={{ opacity: 0.7 }} /> {personName(data.people, s.leadId)}</span>

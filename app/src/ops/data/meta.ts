@@ -1,9 +1,9 @@
 import type { BlockKey, BuildStatus, CustomKind, GroupId, PlanKey } from './types';
 
 export const BUILD: Record<BuildStatus, { label: string; icon: string; accent: string; note: string }> = {
-  none: { label: 'Not started', icon: 'circle-dot', accent: 'var(--border-divider)', note: 'crate unopened' },
-  progress: { label: 'In progress', icon: 'person-digging', accent: 'var(--accent-gold)', note: 'crew on site' },
-  complete: { label: 'Complete', icon: 'circle-check', accent: 'var(--feedback-success-text)', note: 'lead signed off' }
+  none: { label: 'Not started', icon: 'circle-dot', accent: 'var(--border-divider)', note: 'Nothing filled in yet' },
+  progress: { label: 'In progress', icon: 'person-digging', accent: 'var(--accent-gold)', note: 'Some required items filled in' },
+  complete: { label: 'Complete', icon: 'circle-check', accent: 'var(--feedback-success-text)', note: 'All required items filled in' }
 };
 export const BUILD_ORDER: BuildStatus[] = ['none', 'progress', 'complete'];
 

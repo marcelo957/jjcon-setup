@@ -37,11 +37,14 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
 9. `13_plan_rotation.sql` — a saved rotation (0, 90, 180, 270° clockwise) for each floorplan and PDF block,
    used by the viewer's rotate button. Display only; the PDF itself is never changed. Anyone signed in
    can turn a plan. Run it before the app update with the rotate button goes live.
-10. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
+10. `14_drop_build_status.sql` — removes the old hand-set sector status. A sector's status (Not started,
+   In progress, Complete) is worked out in the app from its required items, so the field isn't used.
+   Run it after the app update that stopped using it. 11 and 12 aren't needed after this.
+11. `functions/invite/index.ts` — step 4b, the **invite** Edge Function the People page calls to
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-11. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
+12. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
    "Invite user" and "Reset password" email templates (Authentication → Emails).
 
 `08_clear_demo_sectors.sql` deletes the 27 demo sectors and everything in them, keeping people, logins and

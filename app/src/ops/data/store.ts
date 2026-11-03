@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { BLOCK_DEFS, PLAN_KEYS } from './meta';
 import { seedData } from './seed';
 import { addDays, splitKey } from './tasks';
-import type { BlockKey, BuildStatus, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Rotation, Sector, TaskState } from './types';
+import type { BlockKey, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, Rotation, Sector, TaskState } from './types';
 
 /**
  * The console's data. Every screen reads it through `useOps()` and changes it only through these
@@ -173,7 +173,7 @@ export class OpsStore {
   createSector(f: SectorStructure): string {
     const id = `sec-${Math.random().toString(36).slice(2, 8)}`;
     const blank: Sector = {
-      id, name: '', group: f.group, leadId: '', ownerId: '', location: '', day: f.day, from: f.from, to: f.to, build: 'none',
+      id, name: '', group: f.group, leadId: '', ownerId: '', location: '', day: f.day, from: f.from, to: f.to,
       plans: Object.fromEntries(PLAN_KEYS.map((k) => [k, { required: false }])) as Sector['plans'],
       blocks: {
         mainMat: { on: false, rows: [] }, netMat: { on: false, rows: [] },
@@ -227,11 +227,6 @@ export class OpsStore {
       delete m.final;
       m.unlocked = { by, at: this.now().toISOString() };
     }, false);
-  }
-
-  /** The physical work on site. Not content: the printed packet stays current. */
-  setBuild(id: string, status: BuildStatus) {
-    this.edit(id, (s) => { s.build = status; }, false);
   }
 
   archive(id: string, by: string, reason = 'Not running this year') {

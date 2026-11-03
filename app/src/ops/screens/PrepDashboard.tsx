@@ -7,7 +7,7 @@ import { EVENT_NAME, VENUE } from '../../config';
 import { useMe } from '../access';
 import { blockState, isFinal } from '../data/content';
 import { GROUPS } from '../data/meta';
-import { taskKey, taskRows, toIsoDay, attention } from '../data/tasks';
+import { sectorStatus, taskKey, taskRows, toIsoDay, attention } from '../data/tasks';
 import { activeSectors, dateLabel, isComplete, otherRoll, personName, planRoll, sortPeople } from '../data/selectors';
 import { opsStore, useOps } from '../data/store';
 import type { Sector } from '../data/types';
@@ -200,7 +200,7 @@ function SectorRow({ s, people, selected, onSelect, expand, setExpand, open, can
             <button type="button" className="name-btn" onClick={() => open(s)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: '0 1 auto' }}>{s.name}</button>
             {urgency.late > 0 && <span className="flag-blocked" title="Items past their deadline with nothing in place"><Icon fa="triangle-exclamation" size={10} />{urgency.late} late</span>}
             {!urgency.late && urgency.week > 0 && <span className="flag-soon" title="Items still missing and due in the next 7 days"><Icon fa="clock" size={10} />{urgency.week} due this week</span>}
-            <BuildTag status={s.build} style={{ marginLeft: 'auto' }} />
+            <BuildTag status={sectorStatus(s)} style={{ marginLeft: 'auto' }} />
           </span>
         </td>
         <td style={{ padding: '3px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>

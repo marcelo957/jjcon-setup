@@ -1,7 +1,7 @@
 import { BLOCK_DEFAULTS, PLAN_KEYS } from './meta';
 import { sortSectors } from './selectors';
 import { addDays, sectorItems, toIsoDay } from './tasks';
-import type { BlockKey, Blocks, ContentMeta, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, Sector, TaskState } from './types';
+import type { BlockKey, Blocks, BuildStatus, ContentMeta, CustomBlock, FileRef, GroupId, OpsData, Person, PlanKey, PlanSlot, Sector, TaskState } from './types';
 
 /**
  * The design's statuses, kept only to tell the demo's story: nothing written yet (none), written
@@ -25,8 +25,9 @@ export const SEED_PEOPLE: Person[] = [
 
 type Row = [string, number, string?];
 
-// id, group, name, owner, lead, location, day (Aug), from, to, build, [mainMat/info status, instr/install status]
-const SECTORS: [string, GroupId, string, string, string, string, number, string, string, Sector['build'], PrepStatus, PrepStatus][] = [
+// id, group, name, owner, lead, location, day (Aug), from, to, build (no longer used: a sector's status is
+// worked out from its content), [mainMat/info status, instr/install status]
+const SECTORS: [string, GroupId, string, string, string, string, number, string, string, BuildStatus, PrepStatus, PrepStatus][] = [
   ['store', 'ibjjf', 'IBJJF Store', 'p-diego', 'p-diego', 'Concourse A · 12 × 8 m', 25, '10:00', '16:00', 'none', 'draft', 'ready'],
   ['ent-spec', 'ibjjf', 'Entrance — Spectators', 'p-gordo', 'p-gordo', 'North doors · 14 × 5 m', 24, '09:00', '13:00', 'none', 'draft', 'draft'],
   ['customer', 'ibjjf', 'Customer Service', 'p-marcelo', 'p-dandre', 'Entrance left · 6 × 3 m', 25, '08:00', '10:00', 'complete', 'ready', 'ready'],
@@ -228,7 +229,7 @@ export function seedData(now = new Date()): OpsData {
 
   const tick = (count: number | 'all' | undefined, i: number) => count === 'all' || (count !== undefined && i < count);
 
-  const sectors: Sector[] = SECTORS.map(([id, group, name, ownerId, leadId, location, day, from, to, build, m, i]) => {
+  const sectors: Sector[] = SECTORS.map(([id, group, name, ownerId, leadId, location, day, from, to, , m, i]) => {
       const on = { mainMat: false, netMat: false, instr: false, info: false, install: false, link: false, ...BLOCK_DEFAULTS[group], ...BLOCKS_BY[id] };
       const st = (k: BlockKey): PrepStatus => STATUS_BY[id]?.[k] ?? (k === 'instr' || k === 'install' ? i : k === 'link' ? 'approved' : m);
 
@@ -291,7 +292,7 @@ export function seedData(now = new Date()): OpsData {
       }
 
       const sector: Sector = {
-        id, name, group, ownerId, leadId, location, day: eventDay(day), from, to, build,
+        id, name, group, ownerId, leadId, location, day: eventDay(day), from, to,
         plans, blocks, custom,
         contentChangedAt: ago(0.1),
         ...(NO_FLOORPLANS.has(id) ? { noFloorplans: true } : {}),
