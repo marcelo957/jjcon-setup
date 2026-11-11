@@ -17,6 +17,9 @@ export const supabaseConfigured = url !== '' && anonKey !== '';
  */
 export const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
 
+/** The address's query as the page first loaded: an emailed link carries ?token_hash=…&type=… there. */
+export const initialSearch = typeof window !== 'undefined' ? window.location.search : '';
+
 export const supabase: SupabaseClient | null = supabaseConfigured
   ? createClient(url, anonKey, { auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true } })
   : null;

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSession } from './session';
 import type {
-  AccessInfo, AuthService, Invitation, InvitationLookup, ResetLookup, Role, Session, SignInResult
+  AccessInfo, AuthService, Invitation, InvitationLookup, PasswordRefused, ResetLookup, Role, Session, SignInResult
 } from './types';
 
 /**
@@ -15,6 +15,17 @@ interface Me {
   deactivated_at: string | null; deactivated_by_name: string | null;
   invited_by_name: string | null; invited_by_email: string | null;
 }
+
+type LinkKind = 'recovery' | 'invite';
+
+/** How the session from an emailed link signed in, by link kind (the access token's "amr"). */
+const LINK_METHODS: Record<LinkKind, string[]> = { recovery: ['recovery', 'otp'], invite: ['invite', 'otp', 'magiclink'] };
+/** A browser that signed in with the link this long ago still counts as having opened it. */
+const LINK_GRACE_SECONDS = 15 * 60;
+
+/** Errors that mean the session behind the link is gone, rather than the new password being turned down. */
+const isSessionGone = (e: { status?: number; code?: string; name?: string }) =>
+  e.status === 401 || e.name === 'AuthSessionMissingError' || e.code === 'session_not_found' || e.code === 'bad_jwt';
 
 /** Where emailed links land. Supabase must list these under Authentication → URL Configuration. */
 export const linkTarget = (path: 'reset-password/link' | 'invite/link') =>
@@ -32,7 +43,45 @@ function linkError(hash: string): 'expired' | 'not-found' | null {
 export interface InviteDirectory { list(): { id: string; name: string; email: string }[] }
 
 export class SupabaseAuthService implements AuthService {
-  constructor(private sb: SupabaseClient, private hash = '', private people: InviteDirectory = { list: () => [] }) {}
+  constructor(private sb: SupabaseClient, private hash = '', private people: InviteDirectory = { list: () => [] }, private search = '') {}
+
+  /** The emailed link's one-time code, while it hasn't been used: ?token_hash=…&type=recovery|invite. */
+  private pendingLink(kind: LinkKind): string | null {
+    const p = new URLSearchParams(this.search);
+    return p.get('type') === kind ? p.get('token_hash') : null;
+  }
+
+  /**
+   * The session this browser got from a link of this kind in the last few minutes. An email link
+   * opened twice (by a mail scanner, a preview, a second click) fails the second time; if this
+   * browser already signed in with it, carry on instead of saying it expired.
+   */
+  private async recentLinkSession(kind: LinkKind) {
+    const { data } = await this.sb.auth.getSession();
+    const s = data.session;
+    if (!s) return null;
+    try {
+      const claims = JSON.parse(atob(s.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { amr?: { method: string; timestamp: number }[] };
+      const now = Date.now() / 1000;
+      return claims.amr?.some((a) => LINK_METHODS[kind].includes(a.method) && now - a.timestamp < LINK_GRACE_SECONDS) ? s : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private clearPendingLink() {
+    this.search = '';
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+  }
+
+  async confirmLink(kind: LinkKind): Promise<void> {
+    const tokenHash = this.pendingLink(kind);
+    if (!tokenHash) return;
+    // Used once, here and only here; take it out of the address so a reload doesn't try again.
+    this.clearPendingLink();
+    const { error } = await this.sb.auth.verifyOtp({ token_hash: tokenHash, type: kind });
+    if (error && !(await this.recentLinkSession(kind))) this.hash = `#error_code=${error.code === 'otp_expired' || error.status === 403 ? 'otp_expired' : 'invalid'}`;
+  }
 
   private async me(): Promise<Me | null> {
     const { data, error } = await this.sb.rpc('me');
@@ -66,7 +115,10 @@ export class SupabaseAuthService implements AuthService {
     const { data, error } = await this.sb.auth.getUser();
     if (error || !data.user) return null;
     const me = await this.me();
-    if (!me || !me.active || me.person_id !== current.personId) { await this.sb.auth.signOut(); return null; }
+    if (!me || !me.active) { await this.sb.auth.signOut(); return null; }
+    // Supabase is signed in as someone else now (an emailed link for another person was opened here):
+    // end the old app session, but keep that sign-in so the link's page can finish.
+    if (me.person_id !== current.personId) return null;
     if (me.name === current.name && me.email === current.email && me.role === current.role) return current;
     return { ...current, name: me.name, email: me.email, role: me.role };
   }
@@ -79,8 +131,13 @@ export class SupabaseAuthService implements AuthService {
 
   /** A reset link signs the person in for long enough to choose a new password. */
   async lookupReset(): Promise<ResetLookup> {
+    if (this.pendingLink('recovery')) {
+      // Already used in this browser a moment ago: carry on as if it had just been confirmed.
+      if (!(await this.recentLinkSession('recovery'))) return { status: 'confirm' };
+      this.clearPendingLink();
+    }
     const err = linkError(this.hash);
-    if (err) return { status: err };
+    if (err && !(await this.recentLinkSession('recovery'))) return { status: err };
     const { data } = await this.sb.auth.getSession();
     const email = data.session?.user.email;
     return email ? { status: 'valid', email } : { status: 'not-found' };
@@ -88,14 +145,18 @@ export class SupabaseAuthService implements AuthService {
 
   async resetPassword(_token: string, password: string, keep: boolean) {
     const { error } = await this.sb.auth.updateUser({ password });
-    if (error) return { ok: false as const, status: 'expired' as const };
+    if (error) return isSessionGone(error) ? { ok: false as const, status: 'expired' as const } : ({ ok: false, refused: error.message } satisfies PasswordRefused);
     const me = await this.me();
     if (!me || !me.active) { await this.sb.auth.signOut(); return { ok: false as const, status: 'not-found' as const }; }
     return { ok: true as const, session: this.session(me, keep) };
   }
 
   async lookupInvitation(): Promise<InvitationLookup> {
-    const err = linkError(this.hash);
+    if (this.pendingLink('invite')) {
+      if (!(await this.recentLinkSession('invite'))) return { status: 'confirm' };
+      this.clearPendingLink();
+    }
+    const err = (await this.recentLinkSession('invite')) ? null : linkError(this.hash);
     if (err === 'expired') return { status: 'expired', invitation: blankInvitation() };
     if (err) return { status: 'not-found' };
     const { data } = await this.sb.auth.getSession();
@@ -114,7 +175,7 @@ export class SupabaseAuthService implements AuthService {
 
   async acceptInvitation(_token: string, input: { name: string; password: string; keep: boolean }) {
     const { error } = await this.sb.auth.updateUser({ password: input.password, data: { password_set: true } });
-    if (error) return { ok: false as const, status: 'expired' as const };
+    if (error) return isSessionGone(error) ? { ok: false as const, status: 'expired' as const } : ({ ok: false, refused: error.message } satisfies PasswordRefused);
     await this.sb.rpc('set_my_name', { new_name: input.name });
     const me = await this.me();
     if (!me) return { ok: false as const, status: 'revoked' as const };

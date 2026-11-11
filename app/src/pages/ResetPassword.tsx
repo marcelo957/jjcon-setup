@@ -32,6 +32,25 @@ export function ResetPassword() {
 
   if (!lookup) return <AuthLoading />;
 
+  if (lookup.status === 'confirm') {
+    // The emailed link is used only on this press, so a mail scanner opening it first can't use it up.
+    const go = async (e: FormEvent) => {
+      e.preventDefault();
+      setBusy(true);
+      await service.confirmLink?.('recovery');
+      setLookup(await service.lookupReset(token));
+      setBusy(false);
+    };
+    return (
+      <AuthPage>
+        <AuthHeader title="Reset your password" sub="Continue to choose a new password for JJCON SetUp." />
+        <form className="auth-form" onSubmit={go} noValidate>
+          <SubmitButton busy={busy} busyLabel="Opening…">Continue</SubmitButton>
+        </form>
+      </AuthPage>
+    );
+  }
+
   if (lookup.status !== 'valid') {
     const copy = DEAD_LINK[lookup.status];
     return (
@@ -54,6 +73,8 @@ export function ResetPassword() {
     if (result.ok) {
       startSession(result.session);
       navigate('/', { replace: true });
+    } else if ('refused' in result) {
+      setErrors({ password: result.refused });
     } else {
       setLookup({ status: result.status });
     }

@@ -42,11 +42,16 @@ export type InvitationLookup =
   | { status: 'expired'; invitation: Invitation }
   | { status: 'used'; invitation: Invitation }
   | { status: 'revoked'; invitation: Invitation }
-  | { status: 'not-found' };
+  | { status: 'not-found' }
+  /** The emailed link is here but not used yet: it's used when the person presses Continue (see confirmLink). */
+  | { status: 'confirm' };
 
 export type ResetLookup =
   | { status: 'valid'; email: string }
-  | { status: 'expired' | 'used' | 'not-found' };
+  | { status: 'expired' | 'used' | 'not-found' | 'confirm' };
+
+/** The backend turned down the new password itself (too weak, same as before…), in its own words. */
+export type PasswordRefused = { ok: false; refused: string };
 
 /** What the People page shows about someone's login. */
 export interface AccessInfo {
@@ -77,10 +82,15 @@ export interface AuthService {
   /** Always resolves the same way whether or not the email has a login, so it can't be used to probe accounts. */
   requestPasswordReset(email: string): Promise<{ devLink?: string }>;
   lookupReset(token: string): Promise<ResetLookup>;
-  resetPassword(token: string, password: string, keep: boolean): Promise<{ ok: true; session: Session } | { ok: false; status: Exclude<ResetLookup['status'], 'valid'> }>;
+  resetPassword(token: string, password: string, keep: boolean): Promise<{ ok: true; session: Session } | { ok: false; status: Exclude<ResetLookup['status'], 'valid'> } | PasswordRefused>;
   lookupInvitation(token: string): Promise<InvitationLookup>;
   acceptInvitation(
     token: string,
     input: { name: string; password: string; keep: boolean }
-  ): Promise<{ ok: true; session: Session } | { ok: false; status: Exclude<InvitationLookup['status'], 'valid'> }>;
+  ): Promise<{ ok: true; session: Session } | { ok: false; status: Exclude<InvitationLookup['status'], 'valid'> } | PasswordRefused>;
+  /**
+   * Use the emailed link (a lookup said 'confirm'). Only on a person's press, so email scanners that
+   * open links to check them don't use it up. Look the link up again afterwards.
+   */
+  confirmLink?(kind: 'recovery' | 'invite'): Promise<void>;
 }
