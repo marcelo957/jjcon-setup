@@ -44,8 +44,11 @@ Run these in order, once each, in Supabase → **SQL Editor** → **New query** 
    send (or re-send) an invitation. Deploy it in Supabase → Edge Functions → Deploy a new function
    → Via Editor, named `invite`, with "Verify JWT" left on. Only an active admin can use it; it
    replaces an unused invitation but never touches a login that has been used.
-12. `email/invite.html` and `email/reset-password.html` — optional wording for Supabase's
-   "Invite user" and "Reset password" email templates (Authentication → Emails).
+12. `email/invite.html` and `email/reset-password.html` — the wording for Supabase's "Invite user" and
+   "Reset password" email templates (Authentication → Emails). Use them: their link opens the app's page,
+   which uses the one-time link only when the person presses Continue. Supabase's default link is used up
+   by whatever opens it first, so an email scanner checking links makes it "expired" before the person
+   arrives.
 
 `08_clear_demo_sectors.sql` deletes the 27 demo sectors and everything in them, keeping people, logins and
 any sector added since, to start the real event from empty. It can't be undone.

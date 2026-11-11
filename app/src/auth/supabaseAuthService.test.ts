@@ -58,6 +58,60 @@ describe('Supabase sign-in', () => {
   });
 });
 
+/** A session as an emailed link leaves it: the access token says how and when it signed in. */
+const linkSession = (method: string, secondsAgo = 5) => {
+  const claims = btoa(JSON.stringify({ amr: [{ method, timestamp: Math.floor(Date.now() / 1000) - secondsAgo }] })).replace(/=+$/, '');
+  return { access_token: `h.${claims}.s`, user: { email: 'diego@ibjjf.com', invited_at: '2026-10-20T00:00:00Z', created_at: '2026-10-20T00:00:00Z', user_metadata: {} } };
+};
+
+describe('Emailed links opened twice, or by a mail scanner', () => {
+  it('uses a reset link only when the person presses Continue', async () => {
+    const sb = fakeClient();
+    const verifyOtp = vi.fn(async () => { (sb.auth as { getSession: unknown }).getSession = vi.fn(async () => ({ data: { session: linkSession('otp') } })); return { error: null }; });
+    Object.assign(sb.auth, { verifyOtp });
+    const svc = new SupabaseAuthService(sb as never, '', undefined, '?token_hash=abc&type=recovery');
+    expect(await svc.lookupReset()).toEqual({ status: 'confirm' });
+    expect(verifyOtp).not.toHaveBeenCalled();
+    await svc.confirmLink('recovery');
+    expect(verifyOtp).toHaveBeenCalledWith({ token_hash: 'abc', type: 'recovery' });
+    expect(await svc.lookupReset()).toEqual({ status: 'valid', email: 'diego@ibjjf.com' });
+  });
+
+  it('says a used-up link expired when this browser never signed in with it', async () => {
+    const sb = fakeClient();
+    Object.assign(sb.auth, { verifyOtp: vi.fn(async () => ({ error: { status: 403, code: 'otp_expired', message: 'Email link is invalid or has expired' } })) });
+    const svc = new SupabaseAuthService(sb as never, '', undefined, '?token_hash=abc&type=invite');
+    expect(await svc.lookupInvitation()).toEqual({ status: 'confirm' });
+    await svc.confirmLink('invite');
+    expect(await svc.lookupInvitation()).toMatchObject({ status: 'expired' });
+  });
+
+  it('carries on when the second opening fails but this browser signed in with the first moments ago', async () => {
+    const expiredHash = '#error=access_denied&error_code=otp_expired';
+    expect(await new SupabaseAuthService(fakeClient({ session: linkSession('recovery') }) as never, expiredHash).lookupReset()).toEqual({ status: 'valid', email: 'diego@ibjjf.com' });
+    expect(await new SupabaseAuthService(fakeClient({ session: linkSession('invite') }) as never, expiredHash).lookupInvitation()).toMatchObject({ status: 'valid' });
+    // An ordinary sign-in, or a link used long ago, doesn't count.
+    expect(await new SupabaseAuthService(fakeClient({ session: linkSession('password') }) as never, expiredHash).lookupReset()).toEqual({ status: 'expired' });
+    expect(await new SupabaseAuthService(fakeClient({ session: linkSession('recovery', 3600) }) as never, expiredHash).lookupReset()).toEqual({ status: 'expired' });
+  });
+
+  it("passes on Supabase's own reason when it turns a new password down, instead of calling the link expired", async () => {
+    const weak = fakeClient();
+    weak.auth.updateUser = vi.fn(async () => ({ error: { status: 422, code: 'same_password', name: 'AuthApiError', message: 'New password should be different from the old password.' } })) as never;
+    expect(await new SupabaseAuthService(weak as never).resetPassword('link', 'pw-123456789', true)).toEqual({ ok: false, refused: 'New password should be different from the old password.' });
+    const gone = fakeClient();
+    gone.auth.updateUser = vi.fn(async () => ({ error: { status: 401, name: 'AuthApiError', message: 'Invalid JWT' } })) as never;
+    expect(await new SupabaseAuthService(gone as never).resetPassword('link', 'pw-123456789', true)).toEqual({ ok: false, status: 'expired' });
+  });
+
+  it("doesn't sign out a link opened here for someone other than whoever was signed in to the app", async () => {
+    const sb = fakeClient();
+    const crew = { personId: 'p-dandre', name: "D'Andre", email: 'jackson@ibjjf.com', role: 'crew' as const, keep: true, expiresAt: null };
+    expect(await new SupabaseAuthService(sb as never).checkSession(crew)).toBeNull();
+    expect(sb.auth.signOut).not.toHaveBeenCalled();
+  });
+});
+
 describe('Supabase sign-in, offline', () => {
   it('says the service is unreachable rather than blaming the password', async () => {
     const sb = { auth: { signInWithPassword: vi.fn(async () => { throw new TypeError('Failed to fetch'); }) }, rpc: vi.fn() };

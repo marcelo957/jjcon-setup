@@ -1,5 +1,5 @@
 import { opsStore } from '../ops/data/store';
-import { initialHash, supabase } from '../lib/supabase';
+import { initialHash, initialSearch, supabase } from '../lib/supabase';
 import { MockAuthService, type PeopleDirectory } from './mockAuthService';
 import { SupabaseAuthService } from './supabaseAuthService';
 import type { AuthService } from './types';
@@ -18,7 +18,7 @@ export const opsDirectory: PeopleDirectory = {
  */
 export const mockAuth = new MockAuthService({ directory: opsDirectory });
 /** Supabase Auth when the project URL and key are set (the published site); the demo otherwise. */
-export const authService: AuthService = supabase ? new SupabaseAuthService(supabase, initialHash, opsDirectory) : mockAuth;
+export const authService: AuthService = supabase ? new SupabaseAuthService(supabase, initialHash, opsDirectory, initialSearch) : mockAuth;
 
 /** True while running against the mock: shows demo links where a real backend would send email. */
 export const IS_MOCK_AUTH = authService === mockAuth;

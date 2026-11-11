@@ -33,6 +33,27 @@ export function AcceptInvitation() {
 
   if (!lookup) return <AuthLoading />;
 
+  if (lookup.status === 'confirm') {
+    // The emailed link is used only on this press, so a mail scanner opening it first can't use it up.
+    const go = async (e: FormEvent) => {
+      e.preventDefault();
+      setBusy(true);
+      await service.confirmLink?.('invite');
+      const r = await service.lookupInvitation(token);
+      setLookup(r);
+      if (r.status === 'valid') setName(r.invitation.name);
+      setBusy(false);
+    };
+    return (
+      <AuthPage>
+        <AuthHeader eyebrow="Invitation" title="You’re invited to JJCON SetUp" sub="Continue to see your invitation and choose a password." />
+        <form className="auth-form" onSubmit={go} noValidate>
+          <SubmitButton busy={busy} busyLabel="Opening…">Continue</SubmitButton>
+        </form>
+      </AuthPage>
+    );
+  }
+
   if (lookup.status === 'not-found') {
     return (
       <AuthPage>
@@ -94,6 +115,8 @@ export function AcceptInvitation() {
     if (result.ok) {
       startSession(result.session);
       navigate('/', { replace: true });
+    } else if ('refused' in result) {
+      setErrors({ password: result.refused });
     } else {
       setLookup(await service.lookupInvitation(token));
     }
